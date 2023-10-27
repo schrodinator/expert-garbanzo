@@ -141,14 +141,14 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// replace with real authentication
-	if req.Username == "tony" && req.Password == "123" {
+	if req.Password == masterPassword {
 		type response struct {
 			OTP string `json:"otp"`
 		}
 
 		otp := m.otps.NewOTP()
 
-		resp := response{
+		resp := response {
 			OTP: otp.Key,
 		}
 

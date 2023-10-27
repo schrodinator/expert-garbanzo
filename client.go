@@ -29,6 +29,7 @@ func NewClient(conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
 		connection: conn,
 		manager:    manager,
+		chatroom:   defaultChatroom,
 		egress:     make(chan Event),
 	}
 }
