@@ -1,4 +1,5 @@
 var selectedChat = "general";
+var username = "";
 
 class Event {
     constructor(type, payload){
@@ -76,9 +77,9 @@ function routeEvent(event) {
 
 function appendChatMessage(messageEvent) {
     var date = new Date(messageEvent.sent);
-    const formattedMsg = `${fmtTimeFromDate(date)}: ${messageEvent.message}`;
+    const formattedMsg = `${fmtTimeFromDate(date)} <b>${username}</b>: ${messageEvent.message}<br>`;
     textarea = document.getElementById("chatmessages");
-    textarea.innerHTML = textarea.innerHTML + "\n" + formattedMsg;
+    textarea.innerHTML += formattedMsg;
     textarea.scrollTop = textarea.scrollHeight;
 }
 
@@ -90,9 +91,9 @@ function sendEvent(eventName, payload) {
 function sendMessage() {
     var newmessage = document.getElementById("message");
     if (newmessage != null) {
-        // hardcoded username as sender
-        let outgoingEvent = new SendMessageEvent(newmessage.value, "tony");
+        let outgoingEvent = new SendMessageEvent(newmessage.value, username);
         sendEvent("send_message", outgoingEvent);
+        newmessage.value = "";
     }
     return false;
 }
@@ -121,8 +122,9 @@ function login() {
         }
         // user is authenticated
         connectWebsocket(data.otp);
+        username = formData.username;
         document.getElementById("login-form").reset();
-        document.getElementById("welcome-header").innerHTML = "Welcome, " + formData.username;
+        document.getElementById("welcome-header").innerHTML = "Welcome, " + username;
         document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
     }).catch((e) => { alert(e) });
 
