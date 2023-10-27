@@ -116,6 +116,9 @@ function login() {
     }).then((data) => {
         // user is authenticated
         connectWebsocket(data.otp);
+        document.getElementById("login-form").reset();
+        document.getElementById("welcome-header").innerHTML = "Welcome, " + formData.username;
+        document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
     }).catch((e) => { alert(e) });
 
     return false;
