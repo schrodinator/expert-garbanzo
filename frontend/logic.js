@@ -28,6 +28,20 @@ class ChangeChatRoomEvent {
     }
 }
 
+// Pad single-digit numbers with a leading zero
+function padZero(number) {
+    return number < 10 ? `0${number}` : `${number}`;
+}
+
+// Get formatted time string from a Date object
+function fmtTimeFromDate(date) {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+
+    return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
+}
+
 function changeChatRoom() {
     var newchat = document.getElementById("chatroom");
     if (newchat != null && newchat.value != selectedChat) {
@@ -62,7 +76,7 @@ function routeEvent(event) {
 
 function appendChatMessage(messageEvent) {
     var date = new Date(messageEvent.sent);
-    const formattedMsg = `${date.toLocaleString()}: ${messageEvent.message}`;
+    const formattedMsg = `${fmtTimeFromDate(date)}: ${messageEvent.message}`;
     textarea = document.getElementById("chatmessages");
     textarea.innerHTML = textarea.innerHTML + "\n" + formattedMsg;
     textarea.scrollTop = textarea.scrollHeight;
