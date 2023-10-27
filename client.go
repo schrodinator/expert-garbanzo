@@ -18,17 +18,18 @@ type ClientList map[*Client]bool
 type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
-
+	username   string
 	chatroom   string
 
 	// egress is used to avoid concurrent writes on the websocket connection
 	egress chan Event
 }
 
-func NewClient(conn *websocket.Conn, manager *Manager) *Client {
+func NewClient(username string, conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
 		connection: conn,
 		manager:    manager,
+		username:   username,
 		chatroom:   defaultChatroom,
 		egress:     make(chan Event),
 	}

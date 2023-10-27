@@ -104,7 +104,9 @@ func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if !m.otps.VerifyOTP(otp) {
+	
+	username := m.otps.VerifyOTP(otp)
+	if username == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -118,7 +120,7 @@ func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := NewClient(conn, m)
+	client := NewClient(username, conn, m)
 
 	m.addClient(client)
 
@@ -146,7 +148,7 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 			OTP string `json:"otp"`
 		}
 
-		otp := m.otps.NewOTP()
+		otp := m.otps.NewOTP(req.Username)
 
 		resp := response {
 			OTP: otp.Key,
