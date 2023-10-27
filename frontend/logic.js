@@ -114,6 +114,11 @@ function login() {
             throw 'unauthorized';
         }
     }).then((data) => {
+        // check that username is not taken and we were issued an OTP
+        if (data.otp === "") {
+            document.getElementById("welcome-header").innerHTML = data.message
+            return false
+        }
         // user is authenticated
         connectWebsocket(data.otp);
         document.getElementById("login-form").reset();

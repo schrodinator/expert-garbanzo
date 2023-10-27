@@ -79,7 +79,7 @@ func SendMessage(event Event, c *Client) error {
 		Payload: data,
 	}
 
-	for client := range c.manager.clients {
+	for _, client := range c.manager.clients {
 		if client.chatroom == c.chatroom {
 			client.egress <- outgoingEvent
 		}
@@ -104,7 +104,7 @@ func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	
+
 	username := m.otps.VerifyOTP(otp)
 	if username == "" {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -135,7 +135,15 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	var req userLoginRequest
+	type response struct {
+		OTP     string `json:"otp"`
+		Message string `json:"message"`
+	}
+
+	var (
+		req  userLoginRequest
+		resp response
+	)
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -143,45 +151,44 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// replace with real authentication
-	if req.Password == masterPassword {
-		type response struct {
-			OTP string `json:"otp"`
-		}
-
-		otp := m.otps.NewOTP(req.Username)
-
-		resp := response {
-			OTP: otp.Key,
-		}
-
-		data, err := json.Marshal(resp)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+	if req.Password != masterPassword {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	w.WriteHeader(http.StatusUnauthorized)
+	// Enforce unique usernames
+	if _, exists := m.clients[req.Username]; exists {
+		// someone with this username is already logged in
+		resp.Message = "Username " + req.Username + " is already logged in. Choose a different username."
+	} else {
+		otp := m.otps.NewOTP(req.Username)
+		resp.OTP = otp.Key
+	}
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 func (m *Manager) addClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.clients[client] = true
+	m.clients[client.username] = client
 }
 
 func (m *Manager) removeClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	if _, ok := m.clients[client]; ok {
+	if _, exists := m.clients[client.username]; exists {
 		client.connection.Close()
-		delete(m.clients, client)
+		delete(m.clients, client.username)
 	}
 }
 
