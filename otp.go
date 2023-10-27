@@ -24,13 +24,13 @@ func NewRetentionMap(ctx context.Context, retentionPeriod time.Duration) Retenti
 }
 
 func (rm RetentionMap) NewOTP() OTP {
-	o := OTP{
+	otp := OTP{
 		Key:     uuid.NewString(),
 		Created: time.Now(),
 	}
 
-	rm[o.Key] = o
-	return o
+	rm[otp.Key] = otp
+	return otp
 }
 
 func (rm RetentionMap) VerifyOTP(otp string) bool {
