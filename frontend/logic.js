@@ -143,8 +143,12 @@ function login() {
         }
         // user is authenticated
         connectWebsocket(data.otp);
-        username = formData.username;
-        document.getElementById("login-form").reset();
+        const username = formData.username;
+        const loginForm = document.getElementById("login-form");
+        loginForm.reset();
+        const submitButton = loginForm.querySelector("input[type=submit]");
+        submitButton.disabled = true;
+        document.getElementById("login-div").style.display = "none";
         document.getElementById("welcome-header").innerHTML = "Welcome, " + username;
         document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
     }).catch((e) => { alert(e) });

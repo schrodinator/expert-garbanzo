@@ -7,6 +7,17 @@
     <body>
         <div class="center">
             <h1>Amazing Chat Application</h1>
+
+            <div class="login" id="login-div">
+                <form class="login" id="login-form">
+                    <label for="username">username:</label>
+                    <input type="text" id="username" name="username"><br>
+                    <label for="password">password:</label>
+                    <input type="password" id="password" name="password"><br>
+                    <input type="submit" value="login">
+                </form>
+            </div>
+
             <h3 id="welcome-header"></h3>
             <h3 id="connection-header">Connected to Websocket: false</h3>
             <h3 id="chat-header">Currently not in chat</h3>
@@ -28,16 +39,6 @@
                 <input type="text" id="message" name="message"><br><br>
                 <input type="submit" value="Send message">
             </form>
-
-            <div style="border: 3px solid black;margin-top:30px;">
-                <form id="login-form">
-                    <label for="username">username:</label>
-                    <input type="text" id="username" name="username"><br>
-                    <label for="password">password:</label>
-                    <input type="password" id="password" name="password"><br>
-                    <input type="submit" value="login">
-                </form>
-            </div>
 
         </div>
 
