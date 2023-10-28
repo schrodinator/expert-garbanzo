@@ -85,11 +85,20 @@ function routeEvent(event) {
     }
 }
 
+function htmlEscape(str) {
+    return str.replace(/&/g, '&amp;')
+              .replace(/>/g, '&gt;')
+              .replace(/</g, '&lt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;')
+              .replace(/`/g, '&#96;');
+}
+
 function appendChatMessage(messageEvent) {
     var date = new Date(messageEvent.sentDate);
     const senderName = messageEvent.from;
     const senderColor = messageEvent.color;
-    const formattedMsg = `${fmtTimeFromDate(date)} <span style="font-weight:bold; color:${senderColor}">${senderName}</span>: ${messageEvent.message}<br>`;
+    const formattedMsg = `${fmtTimeFromDate(date)} <span style="font-weight:bold; color:${senderColor}">${senderName}</span>: ${htmlEscape(messageEvent.message)}<br>`;
     textarea = document.getElementById("chatmessages");
     textarea.innerHTML += formattedMsg;
     textarea.scrollTop = textarea.scrollHeight;
