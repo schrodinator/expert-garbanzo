@@ -1,5 +1,13 @@
 var selectedChat = "general";
 var username = "";
+var usercolor;
+
+const colors = ["#FF5733", "#3498DB", "#E74C3C", "#2ECC71", "#F1C40F",
+                "#9B59B6", "#34495E", "#27AE60", "#D35400", "#7D3C98"];
+
+const randomIndex = Math.floor(Math.random() * colors.length);
+usercolor = colors[randomIndex];
+
 
 class Event {
     constructor(type, payload){
@@ -9,17 +17,19 @@ class Event {
 }
 
 class SendMessageEvent {
-    constructor(message, from) {
+    constructor(message, from, color) {
         this.message = message;
         this.from = from;
+        this.color = color;
     }
 }
 
 class NewMessageEvent {
-    constructor(message, from, sent) {
+    constructor(message, from, color, sentDate) {
         this.message = message;
         this.from = from;
-        this.sent = sent;
+        this.color = color;
+        this.sentDate = sentDate;
     }
 }
 
@@ -76,8 +86,10 @@ function routeEvent(event) {
 }
 
 function appendChatMessage(messageEvent) {
-    var date = new Date(messageEvent.sent);
-    const formattedMsg = `${fmtTimeFromDate(date)} <b>${username}</b>: ${messageEvent.message}<br>`;
+    var date = new Date(messageEvent.sentDate);
+    const senderName = messageEvent.from;
+    const senderColor = messageEvent.color;
+    const formattedMsg = `${fmtTimeFromDate(date)} <span style="font-weight:bold; color:${senderColor}">${senderName}</span>: ${messageEvent.message}<br>`;
     textarea = document.getElementById("chatmessages");
     textarea.innerHTML += formattedMsg;
     textarea.scrollTop = textarea.scrollHeight;
@@ -91,7 +103,7 @@ function sendEvent(eventName, payload) {
 function sendMessage() {
     var newmessage = document.getElementById("message");
     if (newmessage != null) {
-        let outgoingEvent = new SendMessageEvent(newmessage.value, username);
+        let outgoingEvent = new SendMessageEvent(newmessage.value, username, usercolor);
         sendEvent("send_message", outgoingEvent);
         newmessage.value = "";
     }

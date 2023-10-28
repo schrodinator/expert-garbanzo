@@ -68,6 +68,7 @@ func SendMessage(event Event, c *Client) error {
 	broadMessage.Sent = time.Now()
 	broadMessage.Message = chatevent.Message
 	broadMessage.From = chatevent.From
+	broadMessage.Color = chatevent.Color
 
 	data, err := json.Marshal(broadMessage)
 	if err != nil {

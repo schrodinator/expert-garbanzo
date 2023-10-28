@@ -21,11 +21,12 @@ const (
 type SendMessageEvent struct {
 	Message string `json:"message"`
 	From    string `json:"from"`
+	Color   string `json:"color"`
 }
 
 type NewMessageEvent struct {
 	SendMessageEvent
-	Sent time.Time `json:"sent"`
+	Sent time.Time `json:"sentDate"`
 }
 
 type ChangeRoomEvent struct {
