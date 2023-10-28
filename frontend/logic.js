@@ -1,12 +1,3 @@
-var selectedChat = "general";
-var username = "";
-var usercolor;
-
-const colors = ["red", "green", "blue", "dodgerblue", "darkorange", "purple", "hotpink", "brown", "black", "gray"];
-
-usercolor = colors[Math.floor(Math.random() * colors.length)];
-
-
 class Event {
     constructor(type, payload){
         this.type = type;
@@ -35,6 +26,29 @@ class ChangeChatRoomEvent {
     constructor(name) {
         this.name = name;
     }
+}
+
+var selectedChat = "general";
+var username = "";
+var usercolor;
+
+const colors = ["red", "darkorange", "blue", "dodgerblue", "green", "brown", "purple", "hotpink", "black", "gray"];
+
+usercolor = colors[Math.floor(Math.random() * colors.length)];
+
+colorContainer = document.getElementById("color-container");
+for (let i = 0; i < colors.length; i++) {
+    const colorItem = document.createElement("div");
+    colorItem.className = "color-item";
+    colorItem.style = `background-color:${colors[i]}`
+    colorItem.onclick = function () {
+      changeColor(this);
+    };
+    colorContainer.appendChild(colorItem);
+}
+
+function changeColor(element) {
+    usercolor = getComputedStyle(element).backgroundColor;
 }
 
 // Pad single-digit numbers with a leading zero
@@ -115,10 +129,6 @@ function sendMessage() {
         newmessage.value = "";
     }
     return false;
-}
-
-function changeColor(element) {
-    usercolor = getComputedStyle(element).backgroundColor;
 }
 
 function login() {
