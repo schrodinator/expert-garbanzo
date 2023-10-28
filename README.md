@@ -8,6 +8,8 @@ Install third-party Go libraries:
 - `go get github.com/gorilla/websocket`
 - `go get github.com/google/uuid`
 
+Generate a self-signed certificate by running `gencert.bash`
+
 Start the server: `go run *go`
 
 In a browser, navigate to: `https://localhost:8080`
