@@ -143,7 +143,7 @@ function login() {
         }
         // user is authenticated
         connectWebsocket(data.otp);
-        const username = formData.username;
+        username = formData.username;
         const loginForm = document.getElementById("login-form");
         loginForm.reset();
         const submitButton = loginForm.querySelector("input[type=submit]");
