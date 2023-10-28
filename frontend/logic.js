@@ -2,11 +2,9 @@ var selectedChat = "general";
 var username = "";
 var usercolor;
 
-const colors = ["#FF5733", "#3498DB", "#E74C3C", "#2ECC71", "#F1C40F",
-                "#9B59B6", "#34495E", "#27AE60", "#D35400", "#7D3C98"];
+const colors = ["red", "green", "blue", "dodgerblue", "darkorange", "purple", "hotpink", "brown", "black", "gray"];
 
-const randomIndex = Math.floor(Math.random() * colors.length);
-usercolor = colors[randomIndex];
+usercolor = colors[Math.floor(Math.random() * colors.length)];
 
 
 class Event {
@@ -117,6 +115,10 @@ function sendMessage() {
         newmessage.value = "";
     }
     return false;
+}
+
+function changeColor(element) {
+    usercolor = getComputedStyle(element).backgroundColor;
 }
 
 function login() {

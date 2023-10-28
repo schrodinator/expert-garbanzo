@@ -19,11 +19,41 @@ div.login {
     margin-top: 30px;
 }
 
+#msg-color-container {
+    display: flex;
+    max-width: 600px;
+    max-height: 300px;
+}
+
 div.messagearea {
-    width: 300px;
-    height: 200px;
+    flex: 1;
+    height: 300px;
     border: 1px solid #ccc;
     padding: 5px;
     background-color: white;
     overflow: scroll;
 }
+
+.grid-container {
+    width: 50px;
+}
+
+.grid-item {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #000;
+    margin: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-1 { background-color: red; }
+.color-2 { background-color: darkorange; }
+.color-3 { background-color: blue; }
+.color-4 { background-color: dodgerblue; }
+.color-5 { background-color: green; }
+.color-6 { background-color: brown; }
+.color-7 { background-color: purple; }
+.color-8 { background-color: hotpink; }
+.color-9 { background-color: gray; }
+.color-10 { background-color: black; }
