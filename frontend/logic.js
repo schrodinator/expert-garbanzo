@@ -28,11 +28,19 @@ class ChangeChatRoomEvent {
     }
 }
 
+class NewGameEvent {
+    constructor(words, sentTime) {
+        this.words = words;
+        this.sentTime = sentTime;
+    }
+}
+
 var selectedChat = "general";
 var username = "";
 var usercolor;
 
-const colors = ["red", "darkorange", "blue", "dodgerblue", "green", "brown", "purple", "hotpink", "black", "gray"];
+const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
+                "brown", "purple", "hotpink", "black", "gray"];
 
 usercolor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -45,6 +53,27 @@ for (let i = 0; i < colors.length; i++) {
       changeColor(this);
     };
     colorContainer.appendChild(colorItem);
+}
+
+const gameBoard = document.getElementById("gameboard");
+for (let i = 0; i < 25; i++) {
+    const cardItem = document.createElement("div");
+    cardItem.className = "card";
+    cardItem.id = `card-${i}`;
+    gameBoard.appendChild(cardItem);
+}
+
+function newGame(gameEvent) {
+    for (let i = 0; i < 25; i++) {
+        const cardItem = document.getElementById(`card-${i}`);
+        cardItem.innerHTML = `${gameEvent.words[i]}`;
+    }
+}
+
+function initNewGame() {
+    let dummyEvent = new Event("new_game", "");
+    sendEvent("new_game", dummyEvent);
+    return false;
 }
 
 function changeColor(element) {
@@ -91,8 +120,12 @@ function routeEvent(event) {
             const messageEvent = Object.assign(new NewMessageEvent, event.payload);
             appendChatMessage(messageEvent);
             break;
+        case "new_game":
+            const gameEvent = Object.assign(new NewGameEvent, event.payload);
+            newGame(gameEvent);
+            break;
         default:
-            alert("unsupported message type");
+            alert("unsupported message type: " + event.type);
             break;
     }
 }
@@ -199,4 +232,5 @@ window.onload = function() {
     document.getElementById("chatroom-selection").onsubmit = changeChatRoom;
     document.getElementById("chatroom-message").onsubmit = sendMessage;
     document.getElementById("login-form").onsubmit = login;
+    document.getElementById("newgame-button").onclick = initNewGame;
 }

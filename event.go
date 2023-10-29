@@ -16,6 +16,7 @@ const (
 	EventSendMessage = "send_message"
 	EventNewMessage  = "new_message"
 	EventChangeRoom  = "change_room"
+	EventNewGame     = "new_game"
 )
 
 type SendMessageEvent struct {
@@ -31,4 +32,9 @@ type NewMessageEvent struct {
 
 type ChangeRoomEvent struct {
 	Name string `json:"name"`
+}
+
+type NewGameEvent struct {
+	Words []string  `json:"words"`
+	Sent  time.Time `json:"sentTime"`
 }

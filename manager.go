@@ -42,7 +42,32 @@ func NewManager(ctx context.Context) *Manager {
 
 func (m *Manager) setupEventHandlers() {
 	m.handlers[EventSendMessage] = SendMessage
-	m.handlers[EventChangeRoom] = ChatRoomHandler
+	m.handlers[EventChangeRoom]  = ChatRoomHandler
+	m.handlers[EventNewGame]     = NewGameHandler
+}
+
+func NewGameHandler(event Event, c *Client) error {
+	var gameMessage NewGameEvent
+	gameMessage.Words = getGameWords()
+	gameMessage.Sent  = time.Now()
+
+	data, err := json.Marshal(gameMessage)
+	if err != nil {
+		return fmt.Errorf("failed to marshal broadcast message: %v", err)
+	}
+
+	outgoingEvent := Event{
+		Type:    EventNewGame,
+		Payload: data,
+	}
+
+	// TODO: not scalable; need other mapping of chatroom to clients
+	for _, client := range c.manager.clients {
+		if client.chatroom == c.chatroom {
+			client.egress <- outgoingEvent
+		}
+	}
+	return nil	
 }
 
 func ChatRoomHandler(event Event, c *Client) error {

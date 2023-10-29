@@ -19,6 +19,8 @@ func main() {
 func setupAPI() {
 	ctx := context.Background()
 
+	readDictionary("/usr/share/dict/words")
+
 	manager := NewManager(ctx)
 
 	http.Handle("/", http.FileServer(http.Dir("./frontend")))
