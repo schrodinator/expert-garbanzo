@@ -29,15 +29,17 @@ class ChangeChatRoomEvent {
 }
 
 class NewGameEvent {
-    constructor(words, sentTime) {
-        this.words = words;
+    constructor(wordsToAlignment, sentTime) {
         this.sentTime = sentTime;
+        this.wordsToAlignment = wordsToAlignment;
+        this.wordsToCardId = new Map();
     }
 }
 
 var selectedChat = "general";
 var username = "";
 var usercolor;
+var currentGame;
 
 const numCards = 25;
 
@@ -65,12 +67,14 @@ for (let i = 0; i < numCards; i++) {
     gameBoard.appendChild(cardItem);
 }
 
-function newGame(gameEvent) {
+function setupBoard() {
     let i = 0;
-    for (const [word, alignment] of Object.entries(gameEvent.words)) {
-        const cardItem = document.getElementById(`card-${i}`);
+    for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
+        const cardId = `card-${i}`;
+        currentGame.wordsToCardId[word] = cardId;
+        const cardItem = document.getElementById(cardId);
         cardItem.className = `card ${alignment}`;
-        cardItem.innerHTML = `${word}`;
+        cardItem.innerHTML = word;
         i += 1;
     }
 }
@@ -130,8 +134,8 @@ function routeEvent(event) {
             appendChatMessage(messageEvent);
             break;
         case "new_game":
-            const gameEvent = Object.assign(new NewGameEvent, event.payload);
-            newGame(gameEvent);
+            currentGame = Object.assign(new NewGameEvent, event.payload);
+            setupBoard();
             break;
         default:
             alert("unsupported message type: " + event.type);

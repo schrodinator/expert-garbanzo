@@ -36,6 +36,6 @@ type ChangeRoomEvent struct {
 }
 
 type NewGameEvent struct {
-	Words map[string]string  `json:"words"`
+	Words map[string]string  `json:"wordsToAlignment"`
 	Sent  time.Time `json:"sentTime"`
 }
