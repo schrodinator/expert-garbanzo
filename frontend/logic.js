@@ -32,7 +32,7 @@ class NewGameEvent {
     constructor(wordsToAlignment, sentTime) {
         this.sentTime = sentTime;
         this.wordsToAlignment = wordsToAlignment;
-        this.wordsToCardId = new Map();
+        this.wordsToUid = new Object();
     }
 }
 
@@ -70,13 +70,48 @@ for (let i = 0; i < numCards; i++) {
 function setupBoard() {
     let i = 0;
     for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
-        const cardId = `card-${i}`;
-        currentGame.wordsToCardId[word] = cardId;
-        const cardItem = document.getElementById(cardId);
-        cardItem.className = `card ${alignment}`;
-        cardItem.innerHTML = word;
+        currentGame.wordsToUid[word] = i;
+        setupCard(i, word, alignment);
         i += 1;
     }
+    document.getElementById("sort-cards").value = "alphabetical";
+}
+
+function sortCards(how) {
+    let i = 0;
+    switch (how.value) {
+        case "alignment":
+            var align = new Object();
+            for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
+                if (alignment in align) {
+                    align[alignment].push(word);
+                } else {
+                    align[alignment] = [word];
+                }
+            }
+            const alignmentOrder = ["red", "blue", "assassin", "neutral", "white"];
+            alignmentOrder.forEach(function (alignment) {
+                if (align.hasOwnProperty(alignment)) {
+                    align[alignment].forEach(function (word) {
+                        setupCard(i, word, alignment);
+                        i++;
+                    })
+                }
+            });
+            break;
+        case "alphabetical":
+            for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment).sort()) {
+                setupCard(i, word, alignment);
+                i++;
+            }
+            break;
+    }
+}
+
+function setupCard(cardIdNum, word, alignment) {
+    const card = document.getElementById(`card-${cardIdNum}`);
+    card.className = `card ${alignment}`;
+    card.innerHTML = word;
 }
 
 function requestNewGame() {
@@ -136,6 +171,7 @@ function routeEvent(event) {
         case "new_game":
             currentGame = Object.assign(new NewGameEvent, event.payload);
             setupBoard();
+            document.getElementById("sort-cards").disabled = false;
             break;
         default:
             alert("unsupported message type: " + event.type);

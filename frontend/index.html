@@ -48,6 +48,12 @@
             <div class="gameboard-container" id="gameboard-container">
                 <div class="gameboard" id="gameboard"></div>
                 <br>
+                <label for="sort-cards">Sort: </label>
+                <select name="sort-cards" id="sort-cards" onchange="sortCards(this);" disabled>
+                    <option value="alignment">Alignment</option>
+                    <option value="alphabetical" selected>Alphabetical</option>
+                </select>
+                <br>
                 <label for="role">Role: </label>
                 <select name="role" id="role" onchange="changerole();" disabled>
                     <option value="guesser" selected>Guesser</option>
