@@ -37,6 +37,23 @@ div.gameboard {
     text-align: center;
 }
 
+.red {
+    background-color: orangered;
+}
+
+.blue {
+    background-color: steelblue;
+}
+
+.neutral {
+    background-color: beige;
+}
+
+.assassin {
+    background-color: black;
+    color: white;
+}
+
 #msg-color-container {
     display: flex;
     max-width: 600px;

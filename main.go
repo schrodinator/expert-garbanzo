@@ -19,7 +19,7 @@ func main() {
 func setupAPI() {
 	ctx := context.Background()
 
-	readDictionary("/usr/share/dict/words")
+	readDictionary("./codenames-wordlist.txt")
 
 	manager := NewManager(ctx)
 

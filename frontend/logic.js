@@ -39,6 +39,8 @@ var selectedChat = "general";
 var username = "";
 var usercolor;
 
+const numCards = 25;
+
 const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
                 "brown", "purple", "hotpink", "black", "gray"];
 
@@ -56,7 +58,7 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 const gameBoard = document.getElementById("gameboard");
-for (let i = 0; i < 25; i++) {
+for (let i = 0; i < numCards; i++) {
     const cardItem = document.createElement("div");
     cardItem.className = "card";
     cardItem.id = `card-${i}`;
@@ -64,9 +66,13 @@ for (let i = 0; i < 25; i++) {
 }
 
 function newGame(gameEvent) {
-    for (let i = 0; i < 25; i++) {
+    console.log(gameEvent);
+    let i = 0;
+    for (const [word, alignment] of Object.entries(gameEvent.words)) {
         const cardItem = document.getElementById(`card-${i}`);
-        cardItem.innerHTML = `${gameEvent.words[i]}`;
+        cardItem.className = `card ${alignment}`;
+        cardItem.innerHTML = `${word}`;
+        i += 1;
     }
 }
 
