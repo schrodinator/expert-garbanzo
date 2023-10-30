@@ -9,7 +9,7 @@ import (
 var (
 	masterPassword  = getMasterPassword()
 	defaultChatroom = "general"
-	defaultRole     = "operative"
+	defaultRole     = "guesser"
 )
 
 func getMasterPassword() string {

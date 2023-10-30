@@ -50,43 +50,43 @@ func (m *Manager) setupEventHandlers() {
 func NewGameHandler(event Event, c *Client) error {
 	cards := getGameWords()
 
-	var operativeMessage NewGameEvent
-	operativeMessage.Words = cards
-	operativeMessage.Sent  = time.Now()
+	var guesserMessage NewGameEvent
+	guesserMessage.Words = cards
+	guesserMessage.Sent  = time.Now()
 
-	operativeData, err := json.Marshal(operativeMessage)
+	guesserData, err := json.Marshal(guesserMessage)
 	if err != nil {
-		return fmt.Errorf("failed to marshal operative message: %v", err)
+		return fmt.Errorf("failed to marshal guesser message: %v", err)
 	}
 
 	getAlignments(cards)
 
-	var spymasterMessage NewGameEvent
-	spymasterMessage.Words = cards
-	spymasterMessage.Sent  = operativeMessage.Sent
+	var cluegiverMessage NewGameEvent
+	cluegiverMessage.Words = cards
+	cluegiverMessage.Sent  = guesserMessage.Sent
 
-	spymasterData, err := json.Marshal(spymasterMessage)
+	cluegiverData, err := json.Marshal(cluegiverMessage)
 	if err != nil {
-		return fmt.Errorf("failed to marshal spymaster message: %v", err)
+		return fmt.Errorf("failed to marshal cluegiver message: %v", err)
 	}
 
-	operativeEvent := Event {
+	guesserEvent := Event {
 		Type:    EventNewGame,
-		Payload: operativeData,
+		Payload: guesserData,
 	}
 
-	spymasterEvent := Event {
+	cluegiverEvent := Event {
 		Type:    EventNewGame,
-		Payload: spymasterData,
+		Payload: cluegiverData,
 	}
 
 	// TODO: not scalable; need other mapping of chatroom to clients
 	for _, client := range c.manager.clients {
 		if client.chatroom == c.chatroom {
-			if client.role == "spymaster" {
-				client.egress <- spymasterEvent
+			if client.role == "cluegiver" {
+				client.egress <- cluegiverEvent
 			} else {
-				client.egress <- operativeEvent
+				client.egress <- guesserEvent
 			}
 		}
 	}
@@ -105,10 +105,10 @@ func ChatRoomHandler(event Event, c *Client) error {
 }
 
 func RoleChangeHandler(event Event, c *Client) error {
-	if c.role == "operative" {
-		c.role = "spymaster"
+	if c.role == "guesser" {
+		c.role = "cluegiver"
 	} else {
-		c.role = "operative"
+		c.role = "guesser"
 	}
 	return nil
 }
