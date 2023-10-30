@@ -20,6 +20,7 @@ type Client struct {
 	manager    *Manager
 	username   string
 	chatroom   string
+	role       string
 
 	// egress is used to avoid concurrent writes on the websocket connection
 	egress chan Event
@@ -31,6 +32,7 @@ func NewClient(username string, conn *websocket.Conn, manager *Manager) *Client 
 		manager:    manager,
 		username:   username,
 		chatroom:   defaultChatroom,
+		role:       defaultRole,
 		egress:     make(chan Event),
 	}
 }

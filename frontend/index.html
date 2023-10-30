@@ -48,6 +48,11 @@
             <div class="gameboard-container" id="gameboard-container">
                 <div class="gameboard" id="gameboard"></div>
                 <br>
+                <label for="role">Role: </label>
+                <select name="role" id="role" onchange="changerole();" disabled>
+                    <option value="operative" selected>Operative</option>
+                    <option value="spymaster">Spymaster</option>
+                </select>
                 <input type="submit" value="New Game" id="newgame-button">
             </div>
 

@@ -8,8 +8,8 @@ class Event {
 class SendMessageEvent {
     constructor(message, from, color) {
         this.message = message;
-        this.from = from;
-        this.color = color;
+        this.from    = from;
+        this.color   = color;
     }
 }
 
@@ -66,7 +66,6 @@ for (let i = 0; i < numCards; i++) {
 }
 
 function newGame(gameEvent) {
-    console.log(gameEvent);
     let i = 0;
     for (const [word, alignment] of Object.entries(gameEvent.words)) {
         const cardItem = document.getElementById(`card-${i}`);
@@ -77,8 +76,12 @@ function newGame(gameEvent) {
 }
 
 function initNewGame() {
-    let dummyEvent = new Event("new_game", "");
-    sendEvent("new_game", dummyEvent);
+    sendEvent("new_game", null);
+    return false;
+}
+
+function changerole() {
+    sendEvent("change_role", null);
     return false;
 }
 
@@ -202,6 +205,7 @@ function login() {
         document.getElementById("login-div").style.display = "none";
         document.getElementById("welcome-header").innerHTML = "Welcome, " + username;
         document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
+        document.getElementById("role").disabled = false;
     }).catch((e) => { alert(e) });
 
     return false;

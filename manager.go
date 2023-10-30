@@ -43,28 +43,51 @@ func NewManager(ctx context.Context) *Manager {
 func (m *Manager) setupEventHandlers() {
 	m.handlers[EventSendMessage] = SendMessage
 	m.handlers[EventChangeRoom]  = ChatRoomHandler
+	m.handlers[EventChangeRole]  = RoleChangeHandler
 	m.handlers[EventNewGame]     = NewGameHandler
 }
 
 func NewGameHandler(event Event, c *Client) error {
-	var gameMessage NewGameEvent
-	gameMessage.Words = getGameWords()
-	gameMessage.Sent  = time.Now()
+	cards := getGameWords()
 
-	data, err := json.Marshal(gameMessage)
+	var operativeMessage NewGameEvent
+	operativeMessage.Words = cards
+	operativeMessage.Sent  = time.Now()
+
+	operativeData, err := json.Marshal(operativeMessage)
 	if err != nil {
-		return fmt.Errorf("failed to marshal broadcast message: %v", err)
+		return fmt.Errorf("failed to marshal operative message: %v", err)
 	}
 
-	outgoingEvent := Event{
+	getAlignments(cards)
+
+	var spymasterMessage NewGameEvent
+	spymasterMessage.Words = cards
+	spymasterMessage.Sent  = operativeMessage.Sent
+
+	spymasterData, err := json.Marshal(spymasterMessage)
+	if err != nil {
+		return fmt.Errorf("failed to marshal spymaster message: %v", err)
+	}
+
+	operativeEvent := Event {
 		Type:    EventNewGame,
-		Payload: data,
+		Payload: operativeData,
+	}
+
+	spymasterEvent := Event {
+		Type:    EventNewGame,
+		Payload: spymasterData,
 	}
 
 	// TODO: not scalable; need other mapping of chatroom to clients
 	for _, client := range c.manager.clients {
 		if client.chatroom == c.chatroom {
-			client.egress <- outgoingEvent
+			if client.role == "spymaster" {
+				client.egress <- spymasterEvent
+			} else {
+				client.egress <- operativeEvent
+			}
 		}
 	}
 	return nil	
@@ -78,6 +101,15 @@ func ChatRoomHandler(event Event, c *Client) error {
 	}
 
 	c.chatroom = changeroom.Name
+	return nil
+}
+
+func RoleChangeHandler(event Event, c *Client) error {
+	if c.role == "operative" {
+		c.role = "spymaster"
+	} else {
+		c.role = "operative"
+	}
 	return nil
 }
 
