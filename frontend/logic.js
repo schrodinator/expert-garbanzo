@@ -75,7 +75,7 @@ function newGame(gameEvent) {
     }
 }
 
-function initNewGame() {
+function requestNewGame() {
     sendEvent("new_game", null);
     return false;
 }
@@ -242,5 +242,5 @@ window.onload = function() {
     document.getElementById("chatroom-selection").onsubmit = changeChatRoom;
     document.getElementById("chatroom-message").onsubmit = sendMessage;
     document.getElementById("login-form").onsubmit = login;
-    document.getElementById("newgame-button").onclick = initNewGame;
+    document.getElementById("newgame-button").onclick = requestNewGame;
 }
