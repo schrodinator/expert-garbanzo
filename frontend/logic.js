@@ -32,7 +32,7 @@ class NewGameEvent {
     constructor(wordsToAlignment, sentTime) {
         this.sentTime = sentTime;
         this.wordsToAlignment = wordsToAlignment;
-        this.wordsToUid = new Object();
+        this.wordsToCardId = new Map();
     }
 }
 
@@ -70,7 +70,6 @@ for (let i = 0; i < numCards; i++) {
 function setupBoard() {
     let i = 0;
     for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
-        currentGame.wordsToUid[word] = i;
         setupCard(i, word, alignment);
         i += 1;
     }
@@ -109,6 +108,8 @@ function sortCards(how) {
 }
 
 function setupCard(cardIdNum, word, alignment) {
+    const cardId = `card-${cardIdNum}`;
+    currentGame.wordsToCardId.set(word, cardId);
     const card = document.getElementById(`card-${cardIdNum}`);
     card.className = `card ${alignment}`;
     card.innerHTML = word;
