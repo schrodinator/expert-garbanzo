@@ -142,7 +142,7 @@ function requestNewGame() {
     return false;
 }
 
-function changerole() {
+function changeRole() {
     sendEvent("change_role", null);
     return false;
 }

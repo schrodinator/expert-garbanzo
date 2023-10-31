@@ -166,10 +166,10 @@ func ChatRoomHandler(event Event, c *Client) error {
 }
 
 func RoleChangeHandler(event Event, c *Client) error {
-	if c.role == "guesser" {
-		c.role = "cluegiver"
+	if c.role == defaultRole {
+		c.role = otherRole
 	} else {
-		c.role = "guesser"
+		c.role = defaultRole
 	}
 	return nil
 }
