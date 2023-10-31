@@ -11,6 +11,7 @@ type Event struct {
 }
 
 type EventHandler func(event Event, c *Client) error
+type EventHandlerList map[string]EventHandler
 
 const (
 	EventSendMessage = "send_message"

@@ -22,21 +22,34 @@ var (
 )
 
 type Manager struct {
-	clients ClientList
+	clients  ClientList
+	games    GameMap
+	handlers EventHandlerList
+
 	sync.RWMutex
 
 	otps RetentionMap
-
-	handlers map[string]EventHandler
 }
 
 func NewManager(ctx context.Context) *Manager {
 	m := &Manager{
 		clients:  make(ClientList),
+		games:    make(GameMap),
 		handlers: make(map[string]EventHandler),
 		otps:     NewRetentionMap(ctx, 5*time.Second),
 	}
 	m.setupEventHandlers()
+
+	// TODO: May prefer to disable "New Game" button in default chatroom
+	// and remove the lines below. Doing so would treat the default chatroom
+	// as a lobby; players must switch to a new chatroom to play games.
+	// Otherwise, creating this empty Game object at the outset is necessary
+	// to give new clients a place to be appended to. This is otherwise
+	// handled in ChatRoomHandler when changing rooms.
+	m.games[defaultChatroom] = Game{
+		players: make(ClientList),
+	}
+
 	return m
 }
 
@@ -80,14 +93,15 @@ func NewGameHandler(event Event, c *Client) error {
 		Payload: cluegiverData,
 	}
 
-	// TODO: not scalable; need other mapping of chatroom to clients
-	for _, client := range c.manager.clients {
-		if client.chatroom == c.chatroom {
-			if client.role == "cluegiver" {
-				client.egress <- cluegiverEvent
-			} else {
-				client.egress <- guesserEvent
-			}
+	game := c.manager.games[c.chatroom]
+	game.cards = cards
+	c.manager.games[c.chatroom] = game
+
+	for _, client := range game.players {
+		if client.role == "cluegiver" {
+			client.egress <- cluegiverEvent
+		} else {
+			client.egress <- guesserEvent
 		}
 	}
 	return nil	
@@ -100,7 +114,18 @@ func ChatRoomHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	c.chatroom = changeroom.Name
+	room := changeroom.Name
+	c.chatroom = room
+	game, exists := c.manager.games[room]
+	if !exists {
+		game = Game{}
+	}
+	game.players[c.username] = c
+	c.manager.games[room] = game
+
+	for key := range c.manager.games {
+		fmt.Println("ChatRoomHandler: ", key)
+	}
 	return nil
 }
 
@@ -137,11 +162,10 @@ func SendMessage(event Event, c *Client) error {
 		Payload: data,
 	}
 
-	for _, client := range c.manager.clients {
-		if client.chatroom == c.chatroom {
-			client.egress <- outgoingEvent
-		}
+	for _, client := range c.manager.games[c.chatroom].players {
+		client.egress <- outgoingEvent
 	}
+
 	return nil
 }
 
@@ -238,6 +262,10 @@ func (m *Manager) addClient(client *Client) {
 	defer m.Unlock()
 
 	m.clients[client.username] = client
+	// TODO: May prefer to disable "New Game" button in default chatroom
+	// and remove the line below. This would treat the default chatroom as a
+	// lobby; players would have to switch to a new chatroom to play games.
+	m.games[defaultChatroom].players[client.username] = client
 }
 
 func (m *Manager) removeClient(client *Client) {
@@ -247,6 +275,9 @@ func (m *Manager) removeClient(client *Client) {
 	if _, exists := m.clients[client.username]; exists {
 		client.connection.Close()
 		delete(m.clients, client.username)
+	}
+	if _, exists := m.games[client.chatroom]; exists {
+		delete(m.games[client.chatroom].players, client.username)
 	}
 }
 

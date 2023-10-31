@@ -12,6 +12,13 @@ var (
 	dictLen    int
 )
 
+type GameMap map[string]Game
+
+type Game struct {
+	players ClientList
+	cards   map[string]string
+}
+
 const numCards = 25
 
 func readDictionary(filePath string) error {
