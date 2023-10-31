@@ -52,15 +52,20 @@ class GuessResponseEvent {
     }
 }
 
-var selectedChat = "general";
-var username = "";
-var usercolor;
-var currentGame;
-
 const numCards = 25;
-
 const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
                 "brown", "purple", "hotpink", "black", "gray"];
+const defaultRoom = "General";
+const defaultRole = "guesser";
+const defaultTeam = "red";
+
+var selectedChat = defaultRoom;
+var username;
+var usercolor;
+var userTeam = defaultTeam;
+var userRole = defaultRole;
+var currentGame;
+
 
 usercolor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -83,6 +88,25 @@ for (let i = 0; i < numCards; i++) {
     gameBoard.appendChild(cardItem);
 }
 
+function abortGame() {
+    currentGame = null;
+    for (let i = 0; i < numCards; i++) {
+        const card = document.getElementById(`card-${i}`)
+        card.className = "card";
+        card.innerHTML = "";
+    }
+    document.getElementById("abort-button").hidden = true;
+    document.getElementById("newgame-button").hidden = false;
+    userTeam = defaultTeam;
+    const team = document.getElementById("team");
+    team.value = defaultTeam;
+    team.disabled = false;
+    userRole = defaultRole;
+    const role = document.getElementById("role");
+    role.value = defaultRole;
+    role.disabled = false;
+}
+
 function setupBoard() {
     let i = 0;
     for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
@@ -90,6 +114,9 @@ function setupBoard() {
         i += 1;
     }
     document.getElementById("sort-cards").value = "alphabetical";
+    if (userRole === "cluegiver") {
+        disableAllCardEvents();
+    }
 }
 
 function sortCards(how) {
@@ -143,11 +170,13 @@ function requestNewGame() {
 }
 
 function changeRole() {
+    userRole = document.getElementById("role").value;
     sendEvent("change_role", null);
     return false;
 }
 
 function changeTeam() {
+    userTeam = document.getElementById("team").value;
     sendEvent("change_team", null);
     return false;
 }
@@ -259,8 +288,12 @@ function routeEvent(event) {
             break;
         case "new_game":
             currentGame = Object.assign(new NewGameEvent, event.payload);
+            document.getElementById("role").disabled = true;
+            document.getElementById("team").disabled = true;
             setupBoard();
             document.getElementById("sort-cards").disabled = false;
+            document.getElementById("newgame-button").hidden = true;
+            document.getElementById("abort-button").hidden = false;
             break;
         case "guess_event":
             guessResponse = Object.assign(new GuessResponseEvent, event.payload);
@@ -377,4 +410,5 @@ window.onload = function() {
     document.getElementById("chatroom-message").onsubmit = sendMessage;
     document.getElementById("login-form").onsubmit = login;
     document.getElementById("newgame-button").onclick = requestNewGame;
+    document.getElementById("abort-button").onclick = abortGame;
 }
