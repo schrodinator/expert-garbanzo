@@ -56,6 +56,7 @@ func NewManager(ctx context.Context) *Manager {
 func (m *Manager) setupEventHandlers() {
 	m.handlers[EventSendMessage] = SendMessage
 	m.handlers[EventChangeRoom]  = ChatRoomHandler
+	m.handlers[EventChangeTeam]  = TeamChangeHandler
 	m.handlers[EventChangeRole]  = RoleChangeHandler
 	m.handlers[EventNewGame]     = NewGameHandler
 	m.handlers[EventMakeGuess]   = GuessEvaluationHandler
@@ -161,6 +162,15 @@ func ChatRoomHandler(event Event, c *Client) error {
 
 	for key := range c.manager.games {
 		fmt.Println("ChatRoomHandler: ", key)
+	}
+	return nil
+}
+
+func TeamChangeHandler(event Event, c *Client) error {
+	if c.team == defaultTeam {
+		c.team = otherTeam
+	} else {
+		c.team = defaultTeam
 	}
 	return nil
 }

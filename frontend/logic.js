@@ -147,6 +147,11 @@ function changeRole() {
     return false;
 }
 
+function changeTeam() {
+    sendEvent("change_team", null);
+    return false;
+}
+
 function changeColor(element) {
     usercolor = getComputedStyle(element).backgroundColor;
 }
@@ -287,6 +292,7 @@ function login() {
         document.getElementById("login-div").style.display = "none";
         document.getElementById("welcome-header").innerHTML = "Welcome, " + username;
         document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
+        document.getElementById("team").disabled = false;
         document.getElementById("role").disabled = false;
     }).catch((e) => { alert(e) });
 

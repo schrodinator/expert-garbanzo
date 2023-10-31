@@ -12,6 +12,7 @@ var (
 	defaultRole     = "guesser"
 	otherRole       = "cluegiver"
 	defaultTeam     = "red"
+	otherTeam       = "blue"
 )
 
 func getMasterPassword() string {

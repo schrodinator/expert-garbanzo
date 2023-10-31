@@ -17,6 +17,7 @@ const (
 	EventSendMessage = "send_message"
 	EventNewMessage  = "new_message"
 	EventChangeRoom  = "change_room"
+	EventChangeTeam  = "change_team"
 	EventChangeRole  = "change_role"
 	EventNewGame     = "new_game"
 	EventMakeGuess   = "guess_event"
