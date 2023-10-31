@@ -36,6 +36,22 @@ class NewGameEvent {
     }
 }
 
+class GuessEvent {
+    constructor(guess) {
+        this.guess = guess;
+        this.guesser = username;
+    }
+}
+
+class GuessResponseEvent {
+    constructor(guess, guesserTeamColor, correctColor, correct) {
+        this.guess = guess;
+        this.guesserTeamColor = guesserTeamColor;
+        this.correctColor = correctColor;
+        this.correct = correct;
+    }
+}
+
 var selectedChat = "general";
 var username = "";
 var usercolor;
@@ -113,6 +129,13 @@ function setupCard(cardIdNum, word, alignment) {
     const card = document.getElementById(`card-${cardIdNum}`);
     card.className = `card ${alignment}`;
     card.innerHTML = word;
+    card.addEventListener("click", makeGuess);
+}
+
+function makeGuess(evt) {
+    console.log("card is " + evt.target.innerHTML);
+    sendEvent("guess_event", new GuessEvent(evt.target.innerHTML));
+    return false;
 }
 
 function requestNewGame() {
@@ -159,6 +182,21 @@ function changeChatRoom() {
     return false;
 }
 
+function guessResponseHandler(guessResponse) {
+    var textarea = document.getElementById("chatmessages");
+    const color = guessResponse.guesserTeamColor;
+    const guesser = guessResponse.guesser;
+    const guess = guessResponse.guess;
+    const msg = `<br><br><span style="font-weight:bold; color:${color}">${guesser} chooses ${guess}:`;
+    if (guessResponse.correct) {
+        textarea.innerHTML += `${msg} CORRECT. A point for ${color}.</span><br><br>`;
+    } else {
+        textarea.innerHTML += `${msg} incorrect. Whomp whomp.</span><br><br>`;
+    }
+    textarea.scrollTop = textarea.scrollHeight;
+    return false;
+}
+
 function routeEvent(event) {
     if (event.type === undefined) {
         alert("no type field in the event");
@@ -173,6 +211,10 @@ function routeEvent(event) {
             currentGame = Object.assign(new NewGameEvent, event.payload);
             setupBoard();
             document.getElementById("sort-cards").disabled = false;
+            break;
+        case "guess_event":
+            guessResponse = Object.assign(new GuessResponseEvent, event.payload);
+            guessResponseHandler(guessResponse);
             break;
         default:
             alert("unsupported message type: " + event.type);

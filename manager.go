@@ -58,6 +58,7 @@ func (m *Manager) setupEventHandlers() {
 	m.handlers[EventChangeRoom]  = ChatRoomHandler
 	m.handlers[EventChangeRole]  = RoleChangeHandler
 	m.handlers[EventNewGame]     = NewGameHandler
+	m.handlers[EventMakeGuess]   = GuessEvaluationHandler
 }
 
 func NewGameHandler(event Event, c *Client) error {
@@ -105,6 +106,41 @@ func NewGameHandler(event Event, c *Client) error {
 		}
 	}
 	return nil	
+}
+
+func GuessEvaluationHandler(event Event, c *Client) error {
+	//var guessEvent    GuessEvent
+	var guessResponse GuessResponseEvent
+
+	if err := json.Unmarshal(event.Payload, &guessResponse); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
+
+	game := c.manager.games[c.chatroom]
+	alignment := game.cards[guessResponse.Guess]
+
+	//guessResponse.Guess = guessEvent.Guess;
+	guessResponse.GuesserTeam = c.team;
+	guessResponse.CardAlignment = alignment;
+	if (c.team == alignment) {
+		guessResponse.Correct = true;
+	}
+
+	data, err := json.Marshal(guessResponse)
+	if err != nil {
+		return fmt.Errorf("failed to marshal broadcast message: %v", err)
+	}
+
+	outgoingEvent := Event {
+		Type:    EventMakeGuess,
+		Payload: data,
+	}
+
+	for _, client := range game.players {
+		client.egress <- outgoingEvent
+	}
+
+	return nil
 }
 
 func ChatRoomHandler(event Event, c *Client) error {

@@ -10,6 +10,7 @@ var (
 	masterPassword  = getMasterPassword()
 	defaultChatroom = "general"
 	defaultRole     = "guesser"
+	defaultTeam     = "red"
 )
 
 func getMasterPassword() string {

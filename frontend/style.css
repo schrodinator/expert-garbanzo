@@ -58,6 +58,11 @@ div.gameboard {
     color: white;
 }
 
+.guessed {
+    background-color: gray;
+    text-decoration: line-through;
+}
+
 #msg-color-container {
     display: flex;
     max-width: 600px;

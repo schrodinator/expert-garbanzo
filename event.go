@@ -19,6 +19,7 @@ const (
 	EventChangeRoom  = "change_room"
 	EventChangeRole  = "change_role"
 	EventNewGame     = "new_game"
+	EventMakeGuess   = "guess_event"
 )
 
 type SendMessageEvent struct {
@@ -38,5 +39,17 @@ type ChangeRoomEvent struct {
 
 type NewGameEvent struct {
 	Words map[string]string  `json:"wordsToAlignment"`
-	Sent  time.Time `json:"sentTime"`
+	Sent  time.Time          `json:"sentTime"`
+}
+
+type GuessEvent struct {
+	Guess   string `json:"guess"`
+	Guesser string `json:"guesser"`
+}
+
+type GuessResponseEvent struct {
+	GuessEvent
+	GuesserTeam    string `json:"guesserTeamColor"`
+	CardAlignment  string `json:"cardAlignment"`
+	Correct        bool   `json:"correct"`
 }
