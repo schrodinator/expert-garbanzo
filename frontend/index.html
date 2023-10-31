@@ -54,6 +54,14 @@
                     <option value="alphabetical" selected>Alphabetical</option>
                 </select>
                 <br>
+                <div class="scoreboard" id="scoreboard">
+                    <div class="scoretitle" id="scoretitle">Cards Remaining</div>
+                    <div class="scoreheader redteam" id="redheader">Red</div>
+                    <div class="scoreheader blueteam" id="blueheader">Blue</div>
+                    <div class="score redteam" id="redscore">9</div>
+                    <div class="score blueteam" id="bluescore">8</div>
+                </div>
+                <br>
                 <label for="team">Team: </label>
                 <select name="team" id="team" onchange="changeTeam();" disabled>
                     <option value="red" selected>Red</option>

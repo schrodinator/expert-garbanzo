@@ -187,18 +187,64 @@ function changeChatRoom() {
 }
 
 function guessResponseHandler(guessResponse) {
-    var textarea = document.getElementById("chatmessages");
-    const color = guessResponse.guesserTeamColor;
     const guesser = guessResponse.guesser;
     const guess = guessResponse.guess;
-    const msg = `<br><br><span style="font-weight:bold; color:${color}">${guesser} chooses ${guess}:`;
-    if (guessResponse.correct) {
-        textarea.innerHTML += `${msg} CORRECT. A point for ${color}.</span><br><br>`;
+    const guesserColor = guessResponse.guesserTeamColor;
+    const cardColor = guessResponse.cardAlignment;
+
+    disableCardEvents(guess);
+    notifyChatroom(guess, guesser, guesserColor, cardColor);
+    updateScoreboard(guesserColor, cardColor);
+}
+
+function notifyChatroom(guess, guesser, guesserColor, cardColor) {
+    // Capitalize the team color
+    const teamName = guesserColor.charAt(0).toUpperCase() + guesserColor.substring(1);
+    const textarea = document.getElementById("chatmessages");
+    const msg = `<br><span style="font-weight:bold; color:${guesserColor}">${guesser} uncovers ${guess}: `;
+    if (guesserColor === cardColor) {
+        textarea.innerHTML += `${msg} CORRECT. A point for ${teamName}.</span><br>`;
     } else {
-        textarea.innerHTML += `${msg} incorrect. Whomp whomp.</span><br><br>`;
+        textarea.innerHTML += `${msg} incorrect. Card is ${cardColor}.</span><br>`;
     }
     textarea.scrollTop = textarea.scrollHeight;
     return false;
+}
+
+function updateScoreboard(guesserColor, cardColor) {
+    if (cardColor == "assassin") {
+        const teamName = guesserColor.charAt(0).toUpperCase() + guesserColor.substring(1);
+        alert(`${teamName} Team uncovers the Assassin. ${teamName} Team loses!`)
+        disableAllCardEvents();
+        return false;
+    }
+    if (cardColor === "red" || cardColor === "blue") {
+        const teamName = cardColor.charAt(0).toUpperCase() + cardColor.substring(1);
+        const score = document.getElementById(`${cardColor}score`);
+        score.innerText -= 1;
+        if (score.innerText == 0) {
+            alert(`${teamName} Team wins!`)
+            disableAllCardEvents();
+        }
+    }
+    return false;
+}
+
+function disableCardEvents(word) {
+    for (var i = 0; i < numCards; i++) {
+        const card = document.getElementById(`card-${i}`)
+        if (card.innerText === word) {
+            card.removeEventListener("click", this.makeGuess);
+            return false;
+        }
+    }
+    return false;
+}
+
+function disableAllCardEvents() {
+    for (var i = 0; i < numCards; i++) {
+        document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess);
+    }
 }
 
 function routeEvent(event) {
