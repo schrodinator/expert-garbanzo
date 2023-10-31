@@ -129,12 +129,11 @@ function setupCard(cardIdNum, word, alignment) {
     const card = document.getElementById(`card-${cardIdNum}`);
     card.className = `card ${alignment}`;
     card.innerHTML = word;
-    card.addEventListener("click", makeGuess);
+    card.addEventListener("click", this.makeGuess);
 }
 
-function makeGuess(evt) {
-    console.log("card is " + evt.target.innerHTML);
-    sendEvent("guess_event", new GuessEvent(evt.target.innerHTML));
+function makeGuess() {
+    sendEvent("guess_event", new GuessEvent(this.innerHTML));
     return false;
 }
 
