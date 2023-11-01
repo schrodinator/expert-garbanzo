@@ -155,14 +155,13 @@ func ChatRoomHandler(event Event, c *Client) error {
 	c.chatroom = room
 	game, exists := c.manager.games[room]
 	if !exists {
-		game = Game{}
+		game = Game {
+			players: make(ClientList),
+		}
 	}
 	game.players[c.username] = c
 	c.manager.games[room] = game
 
-	for key := range c.manager.games {
-		fmt.Println("ChatRoomHandler: ", key)
-	}
 	return nil
 }
 
