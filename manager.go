@@ -110,7 +110,6 @@ func NewGameHandler(event Event, c *Client) error {
 }
 
 func GuessEvaluationHandler(event Event, c *Client) error {
-	//var guessEvent    GuessEvent
 	var guessResponse GuessResponseEvent
 
 	if err := json.Unmarshal(event.Payload, &guessResponse); err != nil {
@@ -120,7 +119,6 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 	alignment := game.cards[guessResponse.Guess]
 
-	//guessResponse.Guess = guessEvent.Guess;
 	guessResponse.GuesserTeam = c.team;
 	guessResponse.CardAlignment = alignment;
 	if (c.team == alignment) {

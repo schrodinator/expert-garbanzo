@@ -33,7 +33,6 @@ class NewGameEvent {
     constructor(wordsToAlignment, sentTime) {
         this.sentTime = sentTime;
         this.wordsToAlignment = wordsToAlignment;
-        this.wordsToCardId = new Map();
     }
 }
 
@@ -94,30 +93,46 @@ function abortGame() {
     for (let i = 0; i < numCards; i++) {
         const card = document.getElementById(`card-${i}`)
         card.className = "card";
-        card.innerHTML = "";
+        card.innerText = "";
     }
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
-    userTeam = defaultTeam;
+    document.getElementById("sort-cards").hidden = true;
+
     const team = document.getElementById("team");
     team.value = defaultTeam;
+    if (userTeam !== defaultTeam) {
+        changeTeam();
+    }
     team.disabled = false;
-    userRole = defaultRole;
+    
     const role = document.getElementById("role");
     role.value = defaultRole;
+    if (userRole !== defaultRole) {
+        changeRole();
+    }
     role.disabled = false;
 }
 
-function setupBoard() {
+function setupBoard(payload) {
+    // Set global variable
+    currentGame = Object.assign(new NewGameEvent, payload);
+
     let i = 0;
     for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
         setupCard(i, word, alignment);
         i += 1;
     }
-    document.getElementById("sort-cards").value = "alphabetical";
-    if (userRole === "cluegiver") {
+    if (userRole !== defaultRole) {
         disableAllCardEvents();
+        document.getElementById("sort-cards").value = "alphabetical";
+        document.getElementById("sort-cards").hidden = false;
     }
+
+    document.getElementById("role").disabled = true;
+    document.getElementById("team").disabled = true;
+    document.getElementById("newgame-button").hidden = true;
+    document.getElementById("abort-button").hidden = false;
 }
 
 function sortCards(how) {
@@ -152,16 +167,14 @@ function sortCards(how) {
 }
 
 function setupCard(cardIdNum, word, alignment) {
-    const cardId = `card-${cardIdNum}`;
-    currentGame.wordsToCardId.set(word, cardId);
     const card = document.getElementById(`card-${cardIdNum}`);
     card.className = `card ${alignment}`;
-    card.innerHTML = word;
+    card.innerText = word;
     card.addEventListener("click", this.makeGuess);
 }
 
 function makeGuess() {
-    sendEvent("guess_event", new GuessEvent(this.innerHTML));
+    sendEvent("guess_event", new GuessEvent(this.innerText));
     return false;
 }
 
@@ -213,14 +226,15 @@ function changeChatRoom() {
     return false;
 }
 
-function reportChatRoomEvent(event) {
-    roomChange = Object.assign(new ChangeChatRoomEvent, event);
+function notifyRoomEntry(payload) {
+    roomChange = Object.assign(new ChangeChatRoomEvent, payload);
     const textarea = document.getElementById("chatmessages");
     textarea.innerHTML += `<br><span style="font-weight:bold;">${roomChange.username} has entered the room.</span><br>`;
     textarea.scrollTop = textarea.scrollHeight;
 }
 
-function guessResponseHandler(guessResponse) {
+function guessResponseHandler(payload) {
+    guessResponse = Object.assign(new GuessResponseEvent, payload);
     const guesser = guessResponse.guesser;
     const guess = guessResponse.guess;
     const guesserColor = guessResponse.guesserTeamColor;
@@ -231,9 +245,12 @@ function guessResponseHandler(guessResponse) {
     updateScoreboard(guesserColor, cardColor);
 }
 
+function capitalize(word) {
+    return word.charAt(0).toUpperCase() + word.substring(1);
+}
+
 function notifyChatroom(guess, guesser, guesserColor, cardColor) {
-    // Capitalize the team color
-    const teamName = guesserColor.charAt(0).toUpperCase() + guesserColor.substring(1);
+    const teamName = capitalize(guesserColor);
     const textarea = document.getElementById("chatmessages");
     const msg = `<br><span style="font-weight:bold; color:${guesserColor}">${guesser} uncovers ${guess}: `;
     if (guesserColor === cardColor) {
@@ -247,16 +264,16 @@ function notifyChatroom(guess, guesser, guesserColor, cardColor) {
 
 function updateScoreboard(guesserColor, cardColor) {
     if (cardColor == "assassin") {
-        const teamName = guesserColor.charAt(0).toUpperCase() + guesserColor.substring(1);
+        const teamName = capitalize(guesserColor);
         alert(`${teamName} Team uncovers the Assassin. ${teamName} Team loses!`)
         disableAllCardEvents();
         return false;
     }
     if (cardColor === "red" || cardColor === "blue") {
-        const teamName = cardColor.charAt(0).toUpperCase() + cardColor.substring(1);
         const score = document.getElementById(`${cardColor}score`);
         score.innerText -= 1;
         if (score.innerText == 0) {
+            const teamName = capitalize(cardColor);
             alert(`${teamName} Team wins!`)
             disableAllCardEvents();
         }
@@ -288,24 +305,16 @@ function routeEvent(event) {
 
     switch(event.type) {
         case "new_message":
-            const messageEvent = Object.assign(new NewMessageEvent, event.payload);
-            appendChatMessage(messageEvent);
+            appendChatMessage(event.payload);
             break;
         case "new_game":
-            currentGame = Object.assign(new NewGameEvent, event.payload);
-            document.getElementById("role").disabled = true;
-            document.getElementById("team").disabled = true;
-            setupBoard();
-            document.getElementById("sort-cards").disabled = false;
-            document.getElementById("newgame-button").hidden = true;
-            document.getElementById("abort-button").hidden = false;
+            setupBoard(event.payload);
             break;
         case "guess_event":
-            guessResponse = Object.assign(new GuessResponseEvent, event.payload);
-            guessResponseHandler(guessResponse);
+            guessResponseHandler(event.payload);
             break;
         case "change_room":
-            reportChatRoomEvent(event.payload);
+            notifyRoomEntry(event.payload);
             break;
         default:
             alert("unsupported message type: " + event.type);
@@ -322,7 +331,8 @@ function htmlEscape(str) {
               .replace(/`/g, '&#96;');
 }
 
-function appendChatMessage(messageEvent) {
+function appendChatMessage(payload) {
+    const messageEvent = Object.assign(new NewMessageEvent, payload);
     var date = new Date(messageEvent.sentDate);
     const senderName = messageEvent.from;
     const senderColor = messageEvent.color;
@@ -366,6 +376,7 @@ function login() {
     }).then((data) => {
         // check that username is not taken and we were issued an OTP
         if (data.otp === "") {
+            // expect the backend to return the error message
             document.getElementById("welcome-header").innerHTML = data.message
             return false
         }
