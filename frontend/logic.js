@@ -23,8 +23,9 @@ class NewMessageEvent {
 }
 
 class ChangeChatRoomEvent {
-    constructor(name) {
-        this.name = name;
+    constructor(username, roomname) {
+        this.username = username;
+        this.roomname = roomname;
     }
 }
 
@@ -205,14 +206,18 @@ function changeChatRoom() {
         selectedChat = newchat.value;
         header = document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
 
-        let changeEvent = new ChangeChatRoomEvent(selectedChat);
+        let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
         sendEvent("change_room", changeEvent);
-        textarea = document.getElementById("chatmessages");
-        textarea.innerHTML = `You changed room into: ${selectedChat}`;
-        textarea.scrollTop = textarea.scrollHeight;
     }
     // if you don't return false, it will redirect
     return false;
+}
+
+function reportChatRoomEvent(event) {
+    roomChange = Object.assign(new ChangeChatRoomEvent, event);
+    const textarea = document.getElementById("chatmessages");
+    textarea.innerHTML += `<br><span style="font-weight:bold;">${roomChange.username} has entered the room.</span><br>`;
+    textarea.scrollTop = textarea.scrollHeight;
 }
 
 function guessResponseHandler(guessResponse) {
@@ -298,6 +303,9 @@ function routeEvent(event) {
         case "guess_event":
             guessResponse = Object.assign(new GuessResponseEvent, event.payload);
             guessResponseHandler(guessResponse);
+            break;
+        case "change_room":
+            reportChatRoomEvent(event.payload);
             break;
         default:
             alert("unsupported message type: " + event.type);

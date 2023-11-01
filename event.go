@@ -35,7 +35,8 @@ type NewMessageEvent struct {
 }
 
 type ChangeRoomEvent struct {
-	Name string `json:"name"`
+	UserName  string `json:"username"`
+	RoomName  string `json:"roomname"`
 }
 
 type NewGameEvent struct {

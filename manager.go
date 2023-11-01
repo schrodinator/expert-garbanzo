@@ -151,7 +151,7 @@ func ChatRoomHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	room := changeroom.Name
+	room := changeroom.RoomName
 	c.chatroom = room
 	game, exists := c.manager.games[room]
 	if !exists {
@@ -161,6 +161,11 @@ func ChatRoomHandler(event Event, c *Client) error {
 	}
 	game.players[c.username] = c
 	c.manager.games[room] = game
+
+	// Report to everyone in the room that the new player has entered
+	for _, client := range game.players {
+		client.egress <- event
+	}
 
 	return nil
 }
