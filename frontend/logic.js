@@ -129,6 +129,8 @@ function setupBoard(payload) {
         document.getElementById("sort-cards").hidden = false;
     }
 
+    setupScoreboard();
+
     document.getElementById("role").disabled = true;
     document.getElementById("team").disabled = true;
     document.getElementById("newgame-button").hidden = true;
@@ -171,6 +173,11 @@ function setupCard(cardIdNum, word, alignment) {
     card.className = `card ${alignment}`;
     card.innerText = word;
     card.addEventListener("click", this.makeGuess);
+}
+
+function setupScoreboard() {
+    document.getElementById("redscore").innerText = 9;
+    document.getElementById("bluescore").innerText = 8;
 }
 
 function makeGuess() {
