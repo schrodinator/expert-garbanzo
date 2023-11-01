@@ -385,10 +385,10 @@ function connectWebsocket(otp) {
         conn = new WebSocket("wss://" + document.location.host + "/ws?otp=" + otp);
 
         conn.onopen = function (evt) {
-            document.getElementById("connection-header").innerHTML = "Connected to Websocket: true";
+            document.getElementById("onconnect").hidden = false;
         }
         conn.onclose = function (evt) {
-            document.getElementById("connection-header").innerHTML = "Connected to Websocket: false";
+            document.getElementById("connection-header").innerHTML = "Disconnected";
             // handle automatic reconnection
         }
 

@@ -18,64 +18,65 @@
                 </form>
             </div>
 
-            <h3 id="welcome-header"></h3>
-            <h3 id="connection-header">Connected to Websocket: false</h3>
-            <h3 id="chat-header">Currently not in chat</h3>
+            <div id="onconnect" hidden>
+                <h3 id="welcome-header"></h3>
+                <h3 id="connection-header"></h3>
+                <h3 id="chat-header"></h3>
 
-            <form id="chatroom-selection">
-                <label for="chatroom">Chatroom:</label>
-                <input type="text" id="chatroom" name="chatroom"><br><br>
-                <input type="submit" value="Change chatroom">
-            </form>
+                <form id="chatroom-selection">
+                    <label for="chatroom">Chatroom:</label>
+                    <input type="text" id="chatroom" name="chatroom">
+                    <input type="submit" value="Change chatroom">
+                </form>
 
-            <br>
-
-            <div id="msg-color-container">
-                <div class="messagearea" id="chatmessages" name="chatmessages"></div>
-                <div class="color-container" id="color-container"></div>
-            </div>
-
-            <br>
-
-            <form id="chatroom-message">
-                <label for="message">Message:</label>
-                <input type="text" id="message" name="message">
-                <input type="submit" value="Send message">
-            </form>
-
-            <br>
-
-            <div class="gameboard-container" id="gameboard-container">
-                <div class="gameboard" id="gameboard"></div>
                 <br>
-                <label for="sort-cards">Sort: </label>
-                <select name="sort-cards" id="sort-cards" onchange="sortCards(this);" disabled>
-                    <option value="alignment">Alignment</option>
-                    <option value="alphabetical" selected>Alphabetical</option>
-                </select>
-                <br>
-                <div class="scoreboard" id="scoreboard">
-                    <div class="scoretitle" id="scoretitle">Cards Remaining</div>
-                    <div class="scoreheader redteam" id="redheader">Red</div>
-                    <div class="scoreheader blueteam" id="blueheader">Blue</div>
-                    <div class="score redteam" id="redscore">9</div>
-                    <div class="score blueteam" id="bluescore">8</div>
+
+                <div id="msg-color-container">
+                    <div class="messagearea" id="chatmessages" name="chatmessages"></div>
+                    <div class="color-container" id="color-container"></div>
                 </div>
-                <br>
-                <label for="team">Team: </label>
-                <select name="team" id="team" onchange="changeTeam();" disabled>
-                    <option value="red" selected>Red</option>
-                    <option value="blue">Blue</option>
-                </select>
-                <label for="role">Role: </label>
-                <select name="role" id="role" onchange="changeRole();" disabled>
-                    <option value="guesser" selected>Guesser</option>
-                    <option value="cluegiver">Clue Giver</option>
-                </select>
-                <input type="submit" value="New Game" id="newgame-button">
-                <input type="submit" value="Abort Game" id="abort-button" hidden>
-            </div>
 
+                <br>
+
+                <form id="chatroom-message">
+                    <label for="message">Message:</label>
+                    <input type="text" id="message" name="message">
+                    <input type="submit" value="Send message">
+                </form>
+
+                <br>
+
+                <div class="gameboard-container" id="gameboard-container">
+                    <div class="gameboard" id="gameboard"></div>
+                    <br>
+                    <label for="sort-cards">Sort: </label>
+                    <select name="sort-cards" id="sort-cards" onchange="sortCards(this);" disabled>
+                        <option value="alignment">Alignment</option>
+                        <option value="alphabetical" selected>Alphabetical</option>
+                    </select>
+                    <br>
+                    <div class="scoreboard" id="scoreboard">
+                        <div class="scoretitle" id="scoretitle">Cards Remaining</div>
+                        <div class="scoreheader redteam" id="redheader">Red</div>
+                        <div class="scoreheader blueteam" id="blueheader">Blue</div>
+                        <div class="score redteam" id="redscore">9</div>
+                        <div class="score blueteam" id="bluescore">8</div>
+                    </div>
+                    <br>
+                    <label for="team">Team: </label>
+                    <select name="team" id="team" onchange="changeTeam();" disabled>
+                        <option value="red" selected>Red</option>
+                        <option value="blue">Blue</option>
+                    </select>
+                    <label for="role">Role: </label>
+                    <select name="role" id="role" onchange="changeRole();" disabled>
+                        <option value="guesser" selected>Guesser</option>
+                        <option value="cluegiver">Clue Giver</option>
+                    </select>
+                    <input type="submit" value="New Game" id="newgame-button">
+                    <input type="submit" value="Abort Game" id="abort-button" hidden>
+                </div>
+            </div>
         </div>
 
         <script src="logic.js"></script>
