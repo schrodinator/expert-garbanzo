@@ -60,6 +60,7 @@ func (m *Manager) setupEventHandlers() {
 	m.handlers[EventChangeRole]  = RoleChangeHandler
 	m.handlers[EventNewGame]     = NewGameHandler
 	m.handlers[EventMakeGuess]   = GuessEvaluationHandler
+	m.handlers[EventGiveClue]    = ClueHandler
 }
 
 func NewGameHandler(event Event, c *Client) error {
@@ -139,6 +140,14 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		client.egress <- outgoingEvent
 	}
 
+	return nil
+}
+
+func ClueHandler (event Event, c *Client) error {
+	game := c.manager.games[c.chatroom]
+	for _, client := range game.players {
+		client.egress <- event
+	}
 	return nil
 }
 

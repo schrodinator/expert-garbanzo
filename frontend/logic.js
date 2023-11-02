@@ -14,11 +14,11 @@ class SendMessageEvent {
 }
 
 class NewMessageEvent {
-    constructor(message, from, color, sentDate) {
+    constructor(message, from, color, sentTime) {
         this.message = message;
         this.from = from;
         this.color = color;
-        this.sentDate = sentDate;
+        this.sentTime = sentTime;
     }
 }
 
@@ -123,6 +123,12 @@ function setupBoard(payload) {
     }
 
     setupScoreboard();
+
+    document.getElementById("clueheader").innerHTML = "";
+    document.getElementById("cluebox").hidden = true;
+    if (userRole !== defaultRole) {
+        document.getElementById("cluebox").hidden = false;
+    }
 
     document.getElementById("sort-cards").value = "alphabetical";
     document.getElementById("sort-cards").disabled = false;
@@ -329,12 +335,8 @@ function markGuessedCard(guessWord, cardColor) {
         if (card.innerText === guessWord) {
             card.className = `card guessed-${cardColor}`;
             if (userRole === defaultRole) {
-                //card.className = `card ${cardColor}`;
-                //card.style.textDecoration = "line-through";
                 card.removeEventListener("click", this.makeGuess, false);
-            } //else {
-                //card.className = "card guessed";
-            //}
+            }
             break;
         }
     }
@@ -359,6 +361,9 @@ function routeEvent(event) {
         case "change_room":
             notifyRoomEntry(event.payload);
             break;
+        case "give_clue":
+            clueHandler(event.payload);
+            break;
         default:
             alert("unsupported message type: " + event.type);
             break;
@@ -376,7 +381,7 @@ function htmlEscape(str) {
 
 function appendChatMessage(payload) {
     const messageEvent = Object.assign(new NewMessageEvent, payload);
-    var date = new Date(messageEvent.sentDate);
+    var date = new Date(messageEvent.sentTime);
     const senderName = messageEvent.from;
     const senderColor = messageEvent.color;
     const formattedMsg = `${fmtTimeFromDate(date)} <span style="font-weight:bold; color:${senderColor}">${senderName}</span>: ${htmlEscape(messageEvent.message)}<br>`;
@@ -398,6 +403,26 @@ function sendMessage() {
         newmessage.value = "";
     }
     return false;
+}
+
+function giveClue() {
+    var clue = document.getElementById("clue-input");
+    if (clue != null) {
+        let outgoingEvent = new SendMessageEvent(clue.value, username, userTeam);
+        sendEvent("give_clue", outgoingEvent);
+        clue.value = "";
+    }
+    return false;
+}
+
+function clueHandler(payload) {
+    const messageEvent = Object.assign(new SendMessageEvent, payload);
+    const senderName = messageEvent.from;
+    const color = messageEvent.color;
+    const senderTeam = capitalize(color);
+    const clue = messageEvent.message;
+    const clueheader = document.getElementById("clueheader");
+    clueheader.innerHTML = `${senderName} gives clue for <span style="color:${color};">${senderTeam}</span>: ${clue}`;
 }
 
 function login() {
@@ -473,4 +498,5 @@ window.onload = function() {
     document.getElementById("login-form").onsubmit = login;
     document.getElementById("newgame-button").onclick = requestNewGame;
     document.getElementById("abort-button").onclick = abortGame;
+    document.getElementById("cluebox").onsubmit = giveClue;
 }

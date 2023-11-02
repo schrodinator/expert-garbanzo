@@ -69,11 +69,20 @@
                         <div class="score redteam" id="redscore">9</div>
                         <div class="score blueteam" id="bluescore">8</div>
                     </div>
+                    
+                    <h3 id="clueheader"></h3>
+                    <form id="cluebox" hidden>
+                        <label for="cluebox">Clue:</label>
+                        <input type="text" id="clue-input">
+                        <input type="submit" value="Give Clue">
+                    </form>
+                    
                     <br>
                     <div class="gameboard" id="gameboard"></div>
                     <br>
-                    <label for="sort-cards">Sort: </label>
+
                     <select name="sort-cards" id="sort-cards" onchange="sortCards(this.value);" disabled>
+                        <label for="sort-cards">Sort: </label>
                         <option value="alignment">Alignment</option>
                         <option value="alphabetical" selected>Alphabetical</option>
                         <option value="keep-sorted">Alignment - Keep Sorted</option>
