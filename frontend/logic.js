@@ -243,13 +243,12 @@ function notifyRoomEntry(payload) {
 function guessResponseHandler(payload) {
     guessResponse = Object.assign(new GuessResponseEvent, payload);
     const guesser = guessResponse.guesser;
-    const guess = guessResponse.guess;
+    const guessWord = guessResponse.guess;
     const guesserColor = guessResponse.guesserTeamColor;
     const cardColor = guessResponse.cardAlignment;
 
-    //disableCardEvents(guess);
-    markGuessedCard(guess);
-    notifyChatroom(guess, guesser, guesserColor, cardColor);
+    markGuessedCard(guessWord, cardColor);
+    notifyChatroom(guessWord, guesser, guesserColor, cardColor);
     updateScoreboard(guesserColor, cardColor);
 }
 
@@ -306,33 +305,20 @@ function disableAllCardEvents() {
     }
 }
 
-function markGuessedCard(guessWord) {
-    var guessLoc;
+function markGuessedCard(guessWord, cardColor) {
     for (var i = 0; i < numCards; i++) {
         const card = document.getElementById(`card-${i}`)
         if (card.innerText === guessWord) {
-            guessLoc = i;
+            if (userRole === defaultRole) {
+                card.className = `card ${cardColor}`;
+                card.style.textDecoration = "line-through";
+                card.removeEventListener("click", this.makeGuess);
+            } else {
+                card.className = "card guessed";
+            }
             break;
         }
     }
-
-    var tmpWord = guessWord;
-    var tmpClass = "card guessed";
-    for (var i = numCards - 1; i >= guessLoc; i--) {
-        const card = document.getElementById(`card-${i}`);
-
-        // Do we need to disable "click" events on this card?
-        if (tmpClass.includes("guessed") && !card.classList.contains("guessed")) {
-            // The previous card was "guessed" and it's taking
-            // the place of an "unguessed" card. An "unguessed"
-            // card has an event listener that needs to be removed.
-            card.removeEventListener("click", this.makeGuess);
-        }
-
-        [card.className, tmpClass] = [tmpClass, card.className];
-        [card.innerText, tmpWord] = [tmpWord, card.innerText];
-    }
-
     return false;
 }
 
