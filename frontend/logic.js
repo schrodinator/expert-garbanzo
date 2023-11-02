@@ -97,7 +97,7 @@ function abortGame() {
     }
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
-    document.getElementById("sort-cards").hidden = true;
+    document.getElementById("sort-cards").disabled = true;
 
     const team = document.getElementById("team");
     team.value = defaultTeam;
@@ -126,7 +126,7 @@ function setupBoard(payload) {
     if (userRole !== defaultRole) {
         disableAllCardEvents();
         document.getElementById("sort-cards").value = "alphabetical";
-        document.getElementById("sort-cards").hidden = false;
+        document.getElementById("sort-cards").disabled = false;
     }
 
     setupScoreboard();
@@ -247,7 +247,8 @@ function guessResponseHandler(payload) {
     const guesserColor = guessResponse.guesserTeamColor;
     const cardColor = guessResponse.cardAlignment;
 
-    disableCardEvents(guess);
+    //disableCardEvents(guess);
+    markGuessedCard(guess);
     notifyChatroom(guess, guesser, guesserColor, cardColor);
     updateScoreboard(guesserColor, cardColor);
 }
@@ -303,6 +304,36 @@ function disableAllCardEvents() {
     for (var i = 0; i < numCards; i++) {
         document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess);
     }
+}
+
+function markGuessedCard(guessWord) {
+    var guessLoc;
+    for (var i = 0; i < numCards; i++) {
+        const card = document.getElementById(`card-${i}`)
+        if (card.innerText === guessWord) {
+            guessLoc = i;
+            break;
+        }
+    }
+
+    var tmpWord = guessWord;
+    var tmpClass = "card guessed";
+    for (var i = numCards - 1; i >= guessLoc; i--) {
+        const card = document.getElementById(`card-${i}`);
+
+        // Do we need to disable "click" events on this card?
+        if (tmpClass.includes("guessed") && !card.classList.contains("guessed")) {
+            // The previous card was "guessed" and it's taking
+            // the place of an "unguessed" card. An "unguessed"
+            // card has an event listener that needs to be removed.
+            card.removeEventListener("click", this.makeGuess);
+        }
+
+        [card.className, tmpClass] = [tmpClass, card.className];
+        [card.innerText, tmpWord] = [tmpWord, card.innerText];
+    }
+
+    return false;
 }
 
 function routeEvent(event) {
