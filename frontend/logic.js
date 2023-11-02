@@ -170,9 +170,11 @@ function sortCards(how) {
 
 function setupCard(cardIdNum, word, alignment) {
     const card = document.getElementById(`card-${cardIdNum}`);
-    card.className = `card ${alignment}`;
     card.innerText = word;
-    card.addEventListener("click", this.makeGuess);
+    card.className = `card ${alignment}`;
+    if (!card.className.includes("guessed") && userRole == defaultRole) {
+        card.addEventListener("click", this.makeGuess);
+    }
 }
 
 function setupScoreboard() {
