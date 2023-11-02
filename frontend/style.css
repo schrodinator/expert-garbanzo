@@ -27,8 +27,11 @@ div.gameboard {
 }
 
 .card {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
     height: 90px;
-    line-height: 90px;
+    line-height: 86px;
     margin: 5px;
     background-color: white;
     border: 2px solid black;
@@ -61,6 +64,27 @@ div.gameboard {
 .guessed {
     background-color: gray;
     text-decoration: line-through;
+}
+
+.guessed-red {
+    background-color: gray;
+    text-decoration: line-through;
+    border: 10px solid orangered;
+    line-height: 70px;
+}
+
+.guessed-blue {
+    background-color: gray;
+    text-decoration: line-through;
+    border: 10px solid steelblue;
+    line-height: 70px;
+}
+
+.guessed-neutral {
+    background-color: gray;
+    text-decoration: line-through;
+    border: 10px solid beige;
+    line-height: 70px;
 }
 
 #msg-color-container {

@@ -73,9 +73,10 @@
                     <div class="gameboard" id="gameboard"></div>
                     <br>
                     <label for="sort-cards">Sort: </label>
-                    <select name="sort-cards" id="sort-cards" onchange="sortCards(this);" disabled>
+                    <select name="sort-cards" id="sort-cards" onchange="sortCards(this.value);" disabled>
                         <option value="alignment">Alignment</option>
                         <option value="alphabetical" selected>Alphabetical</option>
+                        <option value="keep-sorted">Alignment - Keep Sorted</option>
                     </select>
                 </div>
             </div>

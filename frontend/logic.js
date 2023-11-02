@@ -90,11 +90,9 @@ for (let i = 0; i < numCards; i++) {
 
 function abortGame() {
     currentGame = null;
-    for (let i = 0; i < numCards; i++) {
-        const card = document.getElementById(`card-${i}`)
-        card.className = "card";
-        card.innerText = "";
-    }
+
+    resetCards();
+
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
     document.getElementById("sort-cards").disabled = true;
@@ -123,14 +121,11 @@ function setupBoard(payload) {
         setupCard(i, word, alignment);
         i += 1;
     }
-    if (userRole !== defaultRole) {
-        disableAllCardEvents();
-        document.getElementById("sort-cards").value = "alphabetical";
-        document.getElementById("sort-cards").disabled = false;
-    }
 
     setupScoreboard();
 
+    document.getElementById("sort-cards").value = "alphabetical";
+    document.getElementById("sort-cards").disabled = false;
     document.getElementById("role").disabled = true;
     document.getElementById("team").disabled = true;
     document.getElementById("newgame-button").hidden = true;
@@ -139,7 +134,15 @@ function setupBoard(payload) {
 
 function sortCards(how) {
     let i = 0;
-    switch (how.value) {
+    switch (how) {
+        case "alphabetical":
+            for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment).sort()) {
+                setupCard(i, word, alignment);
+                i++;
+            }
+            break;
+
+        case "keep-sorted":
         case "alignment":
             var align = new Object();
             for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
@@ -149,7 +152,8 @@ function sortCards(how) {
                     align[alignment] = [word];
                 }
             }
-            const alignmentOrder = ["red", "blue", "assassin", "neutral", "white"];
+            const alignmentOrder = ["white", "red", "blue", "assassin", "neutral",
+                                    "guessed", "guessed-red", "guessed-blue", "guessed-neutral"];
             alignmentOrder.forEach(function (alignment) {
                 if (align.hasOwnProperty(alignment)) {
                     align[alignment].forEach(function (word) {
@@ -159,21 +163,28 @@ function sortCards(how) {
                 }
             });
             break;
-        case "alphabetical":
-            for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment).sort()) {
-                setupCard(i, word, alignment);
-                i++;
-            }
-            break;
     }
 }
 
-function setupCard(cardIdNum, word, alignment) {
-    const card = document.getElementById(`card-${cardIdNum}`);
+function setupCard(cardNum, word, alignment) {
+    const card = document.getElementById(`card-${cardNum}`);
     card.innerText = word;
     card.className = `card ${alignment}`;
-    if (!card.className.includes("guessed") && userRole == defaultRole) {
-        card.addEventListener("click", this.makeGuess);
+    if (userRole === defaultRole) {
+        if (alignment.includes("guessed")) {
+            card.removeEventListener("click", this.makeGuess, false);
+        } else {
+            card.addEventListener("click", this.makeGuess, false);
+        }
+    }
+}
+
+function resetCards() {
+    for (let i = 0; i < numCards; i++) {
+        const card = document.getElementById(`card-${i}`)
+        card.className = "card";
+        card.innerText = "";
+        card.removeEventListener("click", this.makeGuess, false);
     }
 }
 
@@ -252,6 +263,9 @@ function guessResponseHandler(payload) {
     markGuessedCard(guessWord, cardColor);
     notifyChatroom(guessWord, guesser, guesserColor, cardColor);
     updateScoreboard(guesserColor, cardColor);
+    if (document.getElementById("sort-cards").value === "keep-sorted") {
+        sortCards("alignment");
+    }
 }
 
 function capitalize(word) {
@@ -294,7 +308,7 @@ function disableCardEvents(word) {
     for (var i = 0; i < numCards; i++) {
         const card = document.getElementById(`card-${i}`)
         if (card.innerText === word) {
-            card.removeEventListener("click", this.makeGuess);
+            card.removeEventListener("click", this.makeGuess, false);
             return false;
         }
     }
@@ -303,21 +317,24 @@ function disableCardEvents(word) {
 
 function disableAllCardEvents() {
     for (var i = 0; i < numCards; i++) {
-        document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess);
+        document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess, false);
     }
 }
 
 function markGuessedCard(guessWord, cardColor) {
+    currentGame.wordsToAlignment[guessWord] = `guessed-${cardColor}`;
+
     for (var i = 0; i < numCards; i++) {
-        const card = document.getElementById(`card-${i}`)
+        const card = document.getElementById(`card-${i}`);
         if (card.innerText === guessWord) {
+            card.className = `card guessed-${cardColor}`;
             if (userRole === defaultRole) {
-                card.className = `card ${cardColor}`;
-                card.style.textDecoration = "line-through";
-                card.removeEventListener("click", this.makeGuess);
-            } else {
-                card.className = "card guessed";
-            }
+                //card.className = `card ${cardColor}`;
+                //card.style.textDecoration = "line-through";
+                card.removeEventListener("click", this.makeGuess, false);
+            } //else {
+                //card.className = "card guessed";
+            //}
             break;
         }
     }
