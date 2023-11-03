@@ -175,7 +175,6 @@ func ClueHandler (event Event, c *Client) error {
 	// if we're here, a clue was given; now it's the guesser's turn
 	game.roleTurn = guesserRole
 	c.manager.games[c.chatroom] = game
-	fmt.Println("in ClueHandler with game.roleTurn = ", game.roleTurn)
 
 	for _, client := range game.players {
 		client.egress <- event

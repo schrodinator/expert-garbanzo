@@ -280,15 +280,10 @@ function guessResponseHandler(payload) {
     if (document.getElementById("sort-cards").value === "keep-sorted") {
         sortCards("color");
     }
-    console.log("guessResponseHandler: teamTurn: " + teamTurn + ", roleTurn: " + roleTurn);
     whoseTurn(teamTurn, roleTurn);
 }
 
 function whoseTurn(teamTurn, roleTurn) {
-    console.log("in whoseTurn");
-    console.log("userTeam: " + userTeam + ", teamTurn: " + teamTurn + 
-        ", userRole: " + userRole + ", roleTurn: " + roleTurn + ", defaultRole: " + defaultRole)
-
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
         return;
@@ -299,7 +294,6 @@ function whoseTurn(teamTurn, roleTurn) {
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
     }
     if (userRole === defaultRole) {
-        console.log("about to enable card events");
         enableCardEvents();
     }
     return;
@@ -466,8 +460,6 @@ function clueHandler(payload) {
     const clue = messageEvent.message;
     const clueheader = document.getElementById("clueheader");
     clueheader.innerHTML = `${senderName} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}`;
-
-    console.log("in clueHandler");
 
     whoseTurn(teamColor, defaultRole);
 }
