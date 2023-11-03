@@ -9,10 +9,11 @@ import (
 var (
 	masterPassword  = getMasterPassword()
 	defaultChatroom = "general"
-	defaultRole     = "guesser"
-	otherRole       = "cluegiver"
-	defaultTeam     = "red"
-	otherTeam       = "blue"
+	guesserRole     = "guesser"
+	cluegiverRole   = "cluegiver"
+	redTeam         = "red"
+	blueTeam        = "blue"
+	deathCard       = "black"
 )
 
 func getMasterPassword() string {

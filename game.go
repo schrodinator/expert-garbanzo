@@ -63,17 +63,17 @@ func getGameWords() map[string]string {
 	return cards
 }
 
-func getAlignments(cards map[string]string) {
-	var alignments = [25]string{
+func getCardColors(cards map[string]string) {
+	var cardColors = [25]string{
 		"red", "red", "red", "red", "red", "red", "red", "red", "red",
 	    "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue",
-	    "assassin",
+	    "black",
 	    "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"}
 	i := 0
 	/* iteration over the map happens in random order,
-	   so we are effectively randomizing the alignments */
+	   so we are effectively randomizing the colors */
 	for word := range cards {
-		cards[word] = alignments[i]
+		cards[word] = cardColors[i]
 		i++
 	}
 }

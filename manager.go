@@ -67,7 +67,7 @@ func NewGameHandler(event Event, c *Client) error {
 	cards := getGameWords()
 
 	var guesserMessage NewGameEvent
-	guesserMessage.Words = cards
+	guesserMessage.Cards = cards
 	guesserMessage.SentTime  = time.Now()
 
 	guesserData, err := json.Marshal(guesserMessage)
@@ -75,10 +75,10 @@ func NewGameHandler(event Event, c *Client) error {
 		return fmt.Errorf("failed to marshal guesser message: %v", err)
 	}
 
-	getAlignments(cards)
+	getCardColors(cards)
 
 	var cluegiverMessage NewGameEvent
-	cluegiverMessage.Words = cards
+	cluegiverMessage.Cards = cards
 	cluegiverMessage.SentTime  = guesserMessage.SentTime
 
 	cluegiverData, err := json.Marshal(cluegiverMessage)
@@ -98,12 +98,12 @@ func NewGameHandler(event Event, c *Client) error {
 
 	game := c.manager.games[c.chatroom]
 	game.cards = cards
-	game.teamTurn = defaultTeam  // red
-	game.roleTurn = otherRole    // start with the cluegiver's turn
+	game.teamTurn = redTeam
+	game.roleTurn = cluegiverRole
 	c.manager.games[c.chatroom] = game
 
 	for _, client := range game.players {
-		if client.role == "cluegiver" {
+		if client.role == cluegiverRole {
 			client.egress <- cluegiverEvent
 		} else {
 			client.egress <- guesserEvent
@@ -121,7 +121,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 
 	game := c.manager.games[c.chatroom]
 	card := guessResponse.Guess
-	alignment := game.cards[guessResponse.Guess]
+	cardColor := game.cards[guessResponse.Guess]
 	if (c.team != game.teamTurn) {
 		return errors.New("It is not this player's team turn")
 	}
@@ -130,26 +130,26 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	}
 
 	guessResponse.GuesserTeam = c.team
-	guessResponse.CardAlignment = alignment
-	if (c.team == alignment) {
+	guessResponse.CardColor = cardColor
+	if (c.team == cardColor) {
 		// Correct guess. Guessers on this team may continue guessing.
 		guessResponse.Correct = true
 		guessResponse.TeamTurn = c.team
-		guessResponse.RoleTurn = defaultRole
-	} else if (alignment != "assassin") {
-		if (c.team == defaultTeam) {
-			guessResponse.TeamTurn = otherTeam
-			game.teamTurn = otherTeam
+		guessResponse.RoleTurn = guesserRole
+	} else if (cardColor != deathCard) {
+		if (c.team == redTeam) {
+			guessResponse.TeamTurn = blueTeam
+			game.teamTurn = blueTeam
 		} else {
-			guessResponse.TeamTurn = defaultTeam
-			game.teamTurn = defaultTeam
+			guessResponse.TeamTurn = redTeam
+			game.teamTurn = redTeam
 		}
 		// Cluegiver always starts
-		guessResponse.RoleTurn = otherRole
-		game.roleTurn = otherRole
+		guessResponse.RoleTurn = cluegiverRole
+		game.roleTurn = cluegiverRole
 	}
 
-	game.cards[card] = "guessed-" + alignment
+	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
 
 	data, err := json.Marshal(guessResponse)
@@ -173,7 +173,7 @@ func ClueHandler (event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 
 	// if we're here, a clue was given; now it's the guesser's turn
-	game.roleTurn = defaultRole
+	game.roleTurn = guesserRole
 	c.manager.games[c.chatroom] = game
 	fmt.Println("in ClueHandler with game.roleTurn = ", game.roleTurn)
 
@@ -210,19 +210,19 @@ func ChatRoomHandler(event Event, c *Client) error {
 }
 
 func TeamChangeHandler(event Event, c *Client) error {
-	if c.team == defaultTeam {
-		c.team = otherTeam
+	if c.team == redTeam {
+		c.team = blueTeam
 	} else {
-		c.team = defaultTeam
+		c.team = redTeam
 	}
 	return nil
 }
 
 func RoleChangeHandler(event Event, c *Client) error {
-	if c.role == defaultRole {
-		c.role = otherRole
+	if c.role == guesserRole {
+		c.role = cluegiverRole
 	} else {
-		c.role = defaultRole
+		c.role = guesserRole
 	}
 	return nil
 }

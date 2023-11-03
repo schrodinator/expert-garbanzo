@@ -30,9 +30,9 @@ class ChangeChatRoomEvent {
 }
 
 class NewGameEvent {
-    constructor(wordsToAlignment, sentTime) {
+    constructor(cards, sentTime) {
         this.sentTime = sentTime;
-        this.wordsToAlignment = wordsToAlignment;
+        this.cards = cards;
     }
 }
 
@@ -61,6 +61,7 @@ const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
 const defaultRoom = "General";
 const defaultRole = "guesser";
 const defaultTeam = "red";
+const deathCard = "black";
 
 var selectedChat = defaultRoom;
 var username;
@@ -120,8 +121,8 @@ function setupBoard(payload) {
     currentGame = Object.assign(new NewGameEvent, payload);
 
     let i = 0;
-    for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
-        setupCard(i, word, alignment);
+    for (const [word, color] of Object.entries(currentGame.cards)) {
+        setupCard(i, word, color);
         i += 1;
     }
 
@@ -147,28 +148,28 @@ function sortCards(how) {
     let i = 0;
     switch (how) {
         case "alphabetical":
-            for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment).sort()) {
-                setupCard(i, word, alignment);
+            for (const [word, color] of Object.entries(currentGame.cards).sort()) {
+                setupCard(i, word, color);
                 i++;
             }
             break;
 
         case "keep-sorted":
-        case "alignment":
+        case "color":
             var align = new Object();
-            for (const [word, alignment] of Object.entries(currentGame.wordsToAlignment)) {
-                if (alignment in align) {
-                    align[alignment].push(word);
+            for (const [word, color] of Object.entries(currentGame.cards)) {
+                if (color in align) {
+                    align[color].push(word);
                 } else {
-                    align[alignment] = [word];
+                    align[color] = [word];
                 }
             }
-            const alignmentOrder = ["white", "red", "blue", "assassin", "neutral",
-                                    "guessed", "guessed-red", "guessed-blue", "guessed-neutral"];
-            alignmentOrder.forEach(function (alignment) {
-                if (align.hasOwnProperty(alignment)) {
-                    align[alignment].forEach(function (word) {
-                        setupCard(i, word, alignment);
+            const colorOrder = ["white", "red", "blue", deathCard, "neutral",
+                                "guessed", "guessed-red", "guessed-blue", "guessed-neutral"];
+            colorOrder.forEach(function (color) {
+                if (align.hasOwnProperty(color)) {
+                    align[color].forEach(function (word) {
+                        setupCard(i, word, color);
                         i++;
                     })
                 }
@@ -177,12 +178,12 @@ function sortCards(how) {
     }
 }
 
-function setupCard(cardNum, word, alignment) {
+function setupCard(cardNum, word, color) {
     const card = document.getElementById(`card-${cardNum}`);
     card.innerText = word;
-    card.className = `card ${alignment}`;
+    card.className = `card ${color}`;
     if (userRole === defaultRole) {
-        if (alignment.includes("guessed")) {
+        if (color.includes("guessed")) {
             card.removeEventListener("click", this.makeGuess, false);
         } else {
             card.addEventListener("click", this.makeGuess, false);
@@ -269,7 +270,7 @@ function guessResponseHandler(payload) {
     const guesser = guessResponse.guesser;
     const guessWord = guessResponse.guess;
     const guesserColor = guessResponse.guesserTeamColor;
-    const cardColor = guessResponse.cardAlignment;
+    const cardColor = guessResponse.cardColor;
     const teamTurn = guessResponse.teamTurn;
     const roleTurn = guessResponse.roleTurn;
 
@@ -277,7 +278,7 @@ function guessResponseHandler(payload) {
     notifyChatroom(guessWord, guesser, guesserColor, cardColor);
     updateScoreboard(guesserColor, cardColor);
     if (document.getElementById("sort-cards").value === "keep-sorted") {
-        sortCards("alignment");
+        sortCards("color");
     }
     console.log("guessResponseHandler: teamTurn: " + teamTurn + ", roleTurn: " + roleTurn);
     whoseTurn(teamTurn, roleTurn);
@@ -322,9 +323,9 @@ function notifyChatroom(guess, guesser, guesserColor, cardColor) {
 }
 
 function updateScoreboard(guesserColor, cardColor) {
-    if (cardColor == "assassin") {
+    if (cardColor == deathCard) {
         const teamName = capitalize(guesserColor);
-        alert(`${teamName} Team uncovers the Assassin. ${teamName} Team loses!`)
+        alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`)
         disableAllCardEvents();
         return false;
     }
@@ -368,7 +369,7 @@ function enableCardEvents() {
 }
 
 function markGuessedCard(guessWord, cardColor) {
-    currentGame.wordsToAlignment[guessWord] = `guessed-${cardColor}`;
+    currentGame.cards[guessWord] = `guessed-${cardColor}`;
 
     for (var i = 0; i < numCards; i++) {
         const card = document.getElementById(`card-${i}`);

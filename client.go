@@ -33,8 +33,8 @@ func NewClient(username string, conn *websocket.Conn, manager *Manager) *Client 
 		manager:    manager,
 		username:   username,
 		chatroom:   defaultChatroom,
-		role:       defaultRole,
-		team:       defaultTeam,
+		role:       guesserRole,
+		team:       redTeam,
 		egress:     make(chan Event),
 	}
 }
