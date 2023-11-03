@@ -45,9 +45,16 @@ type NewGameEvent struct {
 	SentTime   time.Time          `json:"sentTime"`
 }
 
+type GiveClueEvent struct {
+	Clue      string `json:"clue"`
+	NumCards  int    `json:"numCards"`
+	From      string `json:"from"`
+	TeamColor string `json:"teamColor"`
+}
+
 type GuessEvent struct {
-	Guess   string `json:"guess"`
-	Guesser string `json:"guesser"`
+	Guess    string `json:"guess"`
+	Guesser  string `json:"guesser"`
 }
 
 type GuessResponseEvent struct {

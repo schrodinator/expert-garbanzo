@@ -36,17 +36,28 @@ class NewGameEvent {
     }
 }
 
+class GiveClueEvent {
+    constructor(clue, numCards) {
+        this.clue = clue;
+        this.numCards = numCards;
+        this.from = username;
+        this.teamColor = userTeam;
+    }
+}
+
 class GuessEvent {
-    constructor(guess) {
+    constructor(guess, numCards) {
         this.guess = guess;
+        this.numCards = numCards;
         this.guesser = username;
     }
 }
 
 class GuessResponseEvent {
-    constructor(guess, guesserTeamColor, correctColor, correct,
-                teamTurn, roleTurn) {
+    constructor(guess, numCards, guesserTeamColor, correctColor,
+                correct, teamTurn, roleTurn) {
         this.guess = guess;
+        this.numCards = numCards;
         this.guesserTeamColor = guesserTeamColor;
         this.correctColor = correctColor;
         this.correct = correct;
@@ -442,8 +453,9 @@ function sendMessage() {
 
 function giveClue() {
     var clue = document.getElementById("clue-input");
+    const numCards = document.getElementById("number-input").value;
     if (clue != null) {
-        let outgoingEvent = new SendMessageEvent(clue.value, username, userTeam);
+        let outgoingEvent = new GiveClueEvent(clue.value, numCards);
         sendEvent("give_clue", outgoingEvent);
         clue.value = "";
     }
@@ -453,13 +465,21 @@ function giveClue() {
 }
 
 function clueHandler(payload) {
-    const messageEvent = Object.assign(new SendMessageEvent, payload);
-    const senderName = messageEvent.from;
-    const teamColor = messageEvent.color;
+    const clueEvent = Object.assign(new GiveClueEvent, payload);
+    const senderName = clueEvent.from;
+    const teamColor = clueEvent.teamColor;
     const teamName = capitalize(teamColor);
-    const clue = messageEvent.message;
-    const clueheader = document.getElementById("clueheader");
-    clueheader.innerHTML = `${senderName} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}`;
+    const clue = clueEvent.clue;
+    const numCards = clueEvent.numCards;
+
+    var msg = `${senderName} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}<br>`;
+    if (numCards > 0) {
+        msg += `Applies to ${numCards} cards.`
+    } else {
+        msg += `${senderName} did not specify the number of cards. ${teamName} has unlimited guesses.`
+    }
+
+    document.getElementById("clueheader").innerHTML = msg;
 
     whoseTurn(teamColor, defaultRole);
 }
