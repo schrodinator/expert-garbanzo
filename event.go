@@ -32,7 +32,7 @@ type SendMessageEvent struct {
 
 type NewMessageEvent struct {
 	SendMessageEvent
-	Sent time.Time `json:"sentTime"`
+	SentTime  time.Time `json:"sentTime"`
 }
 
 type ChangeRoomEvent struct {
@@ -41,8 +41,8 @@ type ChangeRoomEvent struct {
 }
 
 type NewGameEvent struct {
-	Words map[string]string  `json:"wordsToAlignment"`
-	Sent  time.Time          `json:"sentTime"`
+	Words     map[string]string  `json:"wordsToAlignment"`
+	SentTime  time.Time          `json:"sentTime"`
 }
 
 type GuessEvent struct {
@@ -55,4 +55,6 @@ type GuessResponseEvent struct {
 	GuesserTeam    string `json:"guesserTeamColor"`
 	CardAlignment  string `json:"cardAlignment"`
 	Correct        bool   `json:"correct"`
+	TeamTurn       string `json:"teamTurn"`
+	RoleTurn       string `json:"roleTurn"`
 }

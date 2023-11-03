@@ -44,11 +44,14 @@ class GuessEvent {
 }
 
 class GuessResponseEvent {
-    constructor(guess, guesserTeamColor, correctColor, correct) {
+    constructor(guess, guesserTeamColor, correctColor, correct,
+                teamTurn, roleTurn) {
         this.guess = guess;
         this.guesserTeamColor = guesserTeamColor;
         this.correctColor = correctColor;
         this.correct = correct;
+        this.teamTurn = teamTurn;
+        this.roleTurn = roleTurn;
     }
 }
 
@@ -136,6 +139,8 @@ function setupBoard(payload) {
     document.getElementById("team").disabled = true;
     document.getElementById("newgame-button").hidden = true;
     document.getElementById("abort-button").hidden = false;
+
+    whoseTurn(defaultTeam, "cluegiver");
 }
 
 function sortCards(how) {
@@ -265,6 +270,8 @@ function guessResponseHandler(payload) {
     const guessWord = guessResponse.guess;
     const guesserColor = guessResponse.guesserTeamColor;
     const cardColor = guessResponse.cardAlignment;
+    const teamTurn = guessResponse.teamTurn;
+    const roleTurn = guessResponse.roleTurn;
 
     markGuessedCard(guessWord, cardColor);
     notifyChatroom(guessWord, guesser, guesserColor, cardColor);
@@ -272,6 +279,29 @@ function guessResponseHandler(payload) {
     if (document.getElementById("sort-cards").value === "keep-sorted") {
         sortCards("alignment");
     }
+    console.log("guessResponseHandler: teamTurn: " + teamTurn + ", roleTurn: " + roleTurn);
+    whoseTurn(teamTurn, roleTurn);
+}
+
+function whoseTurn(teamTurn, roleTurn) {
+    console.log("in whoseTurn");
+    console.log("userTeam: " + userTeam + ", teamTurn: " + teamTurn + 
+        ", userRole: " + userRole + ", roleTurn: " + roleTurn + ", defaultRole: " + defaultRole)
+
+    if (userTeam !== teamTurn) {
+        disableAllCardEvents();
+        return;
+    }
+    if (roleTurn !== defaultRole) {
+        // cluegiver turn
+        document.getElementById("clue-input").disabled = false;
+        document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
+    }
+    if (userRole === defaultRole) {
+        console.log("about to enable card events");
+        enableCardEvents();
+    }
+    return;
 }
 
 function capitalize(word) {
@@ -312,7 +342,7 @@ function updateScoreboard(guesserColor, cardColor) {
 
 function disableCardEvents(word) {
     for (var i = 0; i < numCards; i++) {
-        const card = document.getElementById(`card-${i}`)
+        const card = document.getElementById(`card-${i}`);
         if (card.innerText === word) {
             card.removeEventListener("click", this.makeGuess, false);
             return false;
@@ -325,6 +355,16 @@ function disableAllCardEvents() {
     for (var i = 0; i < numCards; i++) {
         document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess, false);
     }
+}
+
+function enableCardEvents() {
+    for (var i = 0; i < numCards; i++) {
+        const card = document.getElementById(`card-${i}`);
+        if (!card.className.includes("guessed")) {
+            card.addEventListener("click", this.makeGuess, false);
+        }
+    }
+    return false;
 }
 
 function markGuessedCard(guessWord, cardColor) {
@@ -412,17 +452,23 @@ function giveClue() {
         sendEvent("give_clue", outgoingEvent);
         clue.value = "";
     }
+    clue.disabled = true;
+    document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
     return false;
 }
 
 function clueHandler(payload) {
     const messageEvent = Object.assign(new SendMessageEvent, payload);
     const senderName = messageEvent.from;
-    const color = messageEvent.color;
-    const senderTeam = capitalize(color);
+    const teamColor = messageEvent.color;
+    const teamName = capitalize(teamColor);
     const clue = messageEvent.message;
     const clueheader = document.getElementById("clueheader");
-    clueheader.innerHTML = `${senderName} gives clue for <span style="color:${color};">${senderTeam}</span>: ${clue}`;
+    clueheader.innerHTML = `${senderName} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}`;
+
+    console.log("in clueHandler");
+
+    whoseTurn(teamColor, defaultRole);
 }
 
 function login() {

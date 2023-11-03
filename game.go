@@ -15,8 +15,10 @@ var (
 type GameMap map[string]Game
 
 type Game struct {
-	players ClientList
-	cards   map[string]string
+	players   ClientList
+	cards     map[string]string
+	teamTurn  string
+	roleTurn  string
 }
 
 const numCards = 25
