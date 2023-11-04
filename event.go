@@ -22,6 +22,7 @@ const (
 	EventNewGame     = "new_game"
 	EventMakeGuess   = "guess_event"
 	EventGiveClue    = "give_clue"
+	EventAbortGame   = "abort_game"
 )
 
 type SendMessageEvent struct {
@@ -43,6 +44,11 @@ type ChangeRoomEvent struct {
 type NewGameEvent struct {
 	Cards      map[string]string  `json:"cards"`
 	SentTime   time.Time          `json:"sentTime"`
+}
+
+type AbortGameEvent struct {
+	UserName  string `json:"username"`
+	TeamColor string `json:"teamColor"`
 }
 
 type GiveClueEvent struct {

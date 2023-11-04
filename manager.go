@@ -61,6 +61,7 @@ func (m *Manager) setupEventHandlers() {
 	m.handlers[EventNewGame]     = NewGameHandler
 	m.handlers[EventMakeGuess]   = GuessEvaluationHandler
 	m.handlers[EventGiveClue]    = ClueHandler
+	m.handlers[EventAbortGame]   = AbortGameHandler
 }
 
 func NewGameHandler(event Event, c *Client) error {
@@ -110,6 +111,33 @@ func NewGameHandler(event Event, c *Client) error {
 		}
 	}
 	return nil	
+}
+
+func AbortGameHandler(event Event, c *Client) error {
+	m := c.manager
+	if _, exists := m.games[c.chatroom]; exists {
+		delete(m.games[c.chatroom].players, c.username)
+	}
+
+	var abortGame AbortGameEvent
+	abortGame.UserName = c.username
+	abortGame.TeamColor = c.team
+
+	data, err := json.Marshal(abortGame)
+	if err != nil {
+		return fmt.Errorf("failed to marshal broadcast message: %v", err)
+	}
+
+	outgoingEvent := Event {
+		Type:    EventAbortGame,
+		Payload: data,
+	}
+
+	for _, client := range m.games[c.chatroom].players {
+		client.egress <- outgoingEvent
+	}
+
+	return nil
 }
 
 func GuessEvaluationHandler(event Event, c *Client) error {

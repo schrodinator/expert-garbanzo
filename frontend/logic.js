@@ -36,6 +36,13 @@ class NewGameEvent {
     }
 }
 
+class AbortGameEvent {
+    constructor(name, color) {
+        this.username = name;
+        this.teamColor = color; 
+    }
+}
+
 class GiveClueEvent {
     constructor(clue, numCards) {
         this.clue = clue;
@@ -105,6 +112,8 @@ for (let i = 0; i < numCards; i++) {
 
 function abortGame() {
     currentGame = null;
+
+    sendEvent("abort_game", null);
 
     resetCards();
 
@@ -276,6 +285,12 @@ function notifyRoomEntry(payload) {
     textarea.scrollTop = textarea.scrollHeight;
 }
 
+function notifyAbortGame(payload) {
+    abortGame = Object.assign(new AbortGameEvent, payload);
+    const textarea = document.getElementById("chatmessages");
+    textarea.innerHTML += `<br><span style="font-weight:bold;color:${abortGame.teamColor}">${abortGame.username} has left the game.</span><br>`
+}
+
 function guessResponseHandler(payload) {
     guessResponse = Object.assign(new GuessResponseEvent, payload);
     const guesser = guessResponse.guesser;
@@ -409,6 +424,9 @@ function routeEvent(event) {
             break;
         case "give_clue":
             clueHandler(event.payload);
+            break;
+        case "abort_game":
+            notifyAbortGame(event.payload);
             break;
         default:
             alert("unsupported message type: " + event.type);
