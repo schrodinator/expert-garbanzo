@@ -152,7 +152,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 
 	if !guessResponse.Correct {
 		game.guessRemaining = 0;
-	} else if game.guessRemaining < numCards {
+	} else if game.guessRemaining < totalNumCards {
 		game.guessRemaining -= 1
 	}
 	if !guessResponse.Correct || game.guessRemaining <= 0 {
@@ -197,7 +197,7 @@ func ClueHandler (event Event, c *Client) error {
 		// Special case: if the cluegiver did not specify the number
 		// of cards, their team gets unlimited guesses. Set the
 		// number of guesses equal to the number of cards in the game.
-		game.guessRemaining = numCards
+		game.guessRemaining = totalNumCards
 	} else {
 		game.guessRemaining = clue.NumCards + 1
 	}

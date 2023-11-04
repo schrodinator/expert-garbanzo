@@ -22,7 +22,7 @@ type Game struct {
 	guessRemaining  int
 }
 
-const numCards = 25
+const totalNumCards = 25
 
 func readDictionary(filePath string) error {
 	if len(dictionary) == 0 {
@@ -50,9 +50,9 @@ func readDictionary(filePath string) error {
 }
 
 func getGameWords() map[string]string {
-	cards := make(map[string]string, numCards)
+	cards := make(map[string]string, totalNumCards)
 	i := 0
-	for i < numCards {
+	for i < totalNumCards {
 		word := dictionary[rand.Intn(dictLen)]
 		// ensure each word is unique
 		if _, exists := cards[word]; exists {

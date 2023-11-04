@@ -74,7 +74,7 @@ class GuessResponseEvent {
     }
 }
 
-const numCards = 25;
+const totalNumCards = 25;
 const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
                 "brown", "purple", "hotpink", "black", "gray"];
 const defaultRoom = "General";
@@ -102,7 +102,7 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 const gameBoard = document.getElementById("gameboard");
-for (let i = 0; i < numCards; i++) {
+for (let i = 0; i < totalNumCards; i++) {
     const cardItem = document.createElement("div");
     cardItem.className = "card";
     cardItem.id = `card-${i}`;
@@ -212,7 +212,7 @@ function setupCard(cardNum, word, color) {
 }
 
 function resetCards() {
-    for (let i = 0; i < numCards; i++) {
+    for (let i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`)
         card.className = "card";
         card.innerText = "";
@@ -330,7 +330,7 @@ function whoseTurn(teamTurn, roleTurn) {
 }
 
 function notifyGuessRemaining({guessRemaining}) {
-    if (guessRemaining < numCards) {
+    if (guessRemaining < totalNumCards) {
         document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${guessResponse.guessRemaining}`;
     }
 }
@@ -373,7 +373,7 @@ function updateScoreboard({teamColor, cardColor}) {
 }
 
 function disableCardEvents(word) {
-    for (var i = 0; i < numCards; i++) {
+    for (var i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (card.innerText === word) {
             card.removeEventListener("click", this.makeGuess, false);
@@ -384,13 +384,13 @@ function disableCardEvents(word) {
 }
 
 function disableAllCardEvents() {
-    for (var i = 0; i < numCards; i++) {
+    for (var i = 0; i < totalNumCards; i++) {
         document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess, false);
     }
 }
 
 function enableCardEvents() {
-    for (var i = 0; i < numCards; i++) {
+    for (var i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (!card.className.includes("guessed")) {
             card.addEventListener("click", this.makeGuess, false);
@@ -402,7 +402,7 @@ function enableCardEvents() {
 function markGuessedCard({guess, cardColor}) {
     currentGame.cards[guess] = `guessed-${cardColor}`;
 
-    for (var i = 0; i < numCards; i++) {
+    for (var i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (card.innerText === guess) {
             card.className = `card guessed-${cardColor}`;
