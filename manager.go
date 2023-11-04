@@ -147,29 +147,31 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 
 	guessResponse.GuesserTeam = c.team
 	guessResponse.CardColor = cardColor
+	guessResponse.Correct = false
 	if (c.team == cardColor) {
-		// Correct guess. Guessers on this team may continue guessing.
 		guessResponse.Correct = true
-		guessResponse.TeamTurn = c.team
-		guessResponse.RoleTurn = guesserRole
 	} else if (cardColor != deathCard) {
-		if (c.team == redTeam) {
-			guessResponse.TeamTurn = blueTeam
-			game.teamTurn = blueTeam
-		} else {
-			guessResponse.TeamTurn = redTeam
-			game.teamTurn = redTeam
-		}
-		// Cluegiver always starts
-		guessResponse.RoleTurn = cluegiverRole
-		game.roleTurn = cluegiverRole
+		changeTurn(&game)
 	}
+	guessResponse.TeamTurn = game.teamTurn
+	guessResponse.RoleTurn = game.roleTurn
 
 	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
 
 	err := notifyPlayers(game, EventMakeGuess, guessResponse)
 	return err
+}
+
+func changeTurn(game *Game) {
+	if game.roleTurn == cluegiverRole {
+		game.roleTurn = guesserRole
+	}
+	if game.teamTurn == "red" {
+		game.teamTurn = "blue"
+	} else {
+		game.teamTurn = "red"
+	}
 }
 
 func ClueHandler (event Event, c *Client) error {
