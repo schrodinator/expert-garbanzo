@@ -114,30 +114,18 @@ func NewGameHandler(event Event, c *Client) error {
 }
 
 func AbortGameHandler(event Event, c *Client) error {
-	m := c.manager
-	if _, exists := m.games[c.chatroom]; exists {
-		delete(m.games[c.chatroom].players, c.username)
+	game, exists := c.manager.games[c.chatroom]
+	if !exists {
+		return fmt.Errorf("Game %v not found", c.chatroom)
 	}
+	delete(game.players, c.username)
 
 	var abortGame AbortGameEvent
 	abortGame.UserName = c.username
 	abortGame.TeamColor = c.team
 
-	data, err := json.Marshal(abortGame)
-	if err != nil {
-		return fmt.Errorf("failed to marshal broadcast message: %v", err)
-	}
-
-	outgoingEvent := Event {
-		Type:    EventAbortGame,
-		Payload: data,
-	}
-
-	for _, client := range m.games[c.chatroom].players {
-		client.egress <- outgoingEvent
-	}
-
-	return nil
+	err := notifyPlayers(game, EventAbortGame, abortGame)
+	return err
 }
 
 func GuessEvaluationHandler(event Event, c *Client) error {
@@ -180,21 +168,8 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
 
-	data, err := json.Marshal(guessResponse)
-	if err != nil {
-		return fmt.Errorf("failed to marshal broadcast message: %v", err)
-	}
-
-	outgoingEvent := Event {
-		Type:    EventMakeGuess,
-		Payload: data,
-	}
-
-	for _, client := range game.players {
-		client.egress <- outgoingEvent
-	}
-
-	return nil
+	err := notifyPlayers(game, EventMakeGuess, guessResponse)
+	return err
 }
 
 func ClueHandler (event Event, c *Client) error {
@@ -204,10 +179,8 @@ func ClueHandler (event Event, c *Client) error {
 	game.roleTurn = guesserRole
 	c.manager.games[c.chatroom] = game
 
-	for _, client := range game.players {
-		client.egress <- event
-	}
-	return nil
+	err := notifyPlayers(game, EventGiveClue, event.Payload)
+	return err
 }
 
 func ChatRoomHandler(event Event, c *Client) error {
@@ -229,11 +202,8 @@ func ChatRoomHandler(event Event, c *Client) error {
 	c.manager.games[room] = game
 
 	// Report to everyone in the room that the new player has entered
-	for _, client := range game.players {
-		client.egress <- event
-	}
-
-	return nil
+	err := notifyPlayers(game, EventChangeRoom, event.Payload)
+	return err
 }
 
 func TeamChangeHandler(event Event, c *Client) error {
@@ -268,17 +238,23 @@ func SendMessage(event Event, c *Client) error {
 	broadMessage.From = chatevent.From
 	broadMessage.Color = chatevent.Color
 
-	data, err := json.Marshal(broadMessage)
+	game := c.manager.games[c.chatroom]
+	status := notifyPlayers(game, EventNewMessage, broadMessage)
+	return status
+}
+
+func notifyPlayers(game Game, messageType string, message any) error {
+	data, err := json.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("failed to marshal broadcast message: %v", err)
 	}
 
-	outgoingEvent := Event{
-		Type:    EventNewMessage,
+	outgoingEvent := Event {
+		Type:    messageType,
 		Payload: data,
 	}
 
-	for _, client := range c.manager.games[c.chatroom].players {
+	for _, client := range game.players {
 		client.egress <- outgoingEvent
 	}
 
