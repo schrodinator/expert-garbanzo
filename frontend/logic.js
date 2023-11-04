@@ -115,6 +115,7 @@ function abortGame() {
     sendEvent("abort_game", null);
 
     resetCards();
+    resetClueNotification();
 
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
@@ -219,6 +220,12 @@ function resetCards() {
     }
 }
 
+function resetClueNotification() {
+    document.getElementById("clueheader").innerHTML = "";
+    document.getElementById("guesses-remaining").innerText = "";
+    document.getElementById("number-input").value = 2;
+}
+
 function setupScoreboard() {
     document.getElementById("redscore").innerText = 9;
     document.getElementById("bluescore").innerText = 8;
@@ -296,6 +303,7 @@ function guessResponseHandler(payload) {
     markGuessedCard(guessResponse);
     notifyChatroom(guessResponse);
     updateScoreboard(guessResponse);
+    notifyGuessRemaining(guessResponse);
 
     if (document.getElementById("sort-cards").value === "keep-sorted") {
         sortCards("color");
@@ -319,6 +327,12 @@ function whoseTurn(teamTurn, roleTurn) {
         enableCardEvents();
     }
     return;
+}
+
+function notifyGuessRemaining({guessRemaining}) {
+    if (guessRemaining < numCards) {
+        document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${guessResponse.guessRemaining}`;
+    }
 }
 
 function capitalize(word) {
@@ -487,6 +501,7 @@ function clueHandler(payload) {
     var msg = `${from} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}<br>`;
     if (numCards > 0) {
         msg += `Applies to ${numCards} cards.`
+        document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${+numCards + 1}`;
     } else {
         msg += `${from} did not specify the number of cards. ${teamName} has unlimited guesses.`
     }

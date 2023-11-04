@@ -53,7 +53,7 @@ type AbortGameEvent struct {
 
 type GiveClueEvent struct {
 	Clue      string `json:"clue"`
-	NumCards  int    `json:"numCards"`
+	NumCards  int    `json:"numCards,string"`
 	From      string `json:"from"`
 	TeamColor string `json:"teamColor"`
 }
@@ -65,9 +65,10 @@ type GuessEvent struct {
 
 type GuessResponseEvent struct {
 	GuessEvent
-	TeamColor  string `json:"teamColor"`
-	CardColor  string `json:"cardColor"`
-	Correct    bool   `json:"correct"`
-	TeamTurn   string `json:"teamTurn"`
-	RoleTurn   string `json:"roleTurn"`
+	TeamColor      string `json:"teamColor"`
+	CardColor      string `json:"cardColor"`
+	Correct        bool   `json:"correct"`
+	TeamTurn       string `json:"teamTurn"`
+	RoleTurn       string `json:"roleTurn"`
+	GuessRemaining int    `json:"guessRemaining"`
 }

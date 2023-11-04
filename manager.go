@@ -138,23 +138,32 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 	card := guessResponse.Guess
 	cardColor := game.cards[guessResponse.Guess]
-	if (c.team != game.teamTurn) {
+	if c.team != game.teamTurn {
 		return errors.New("It is not this player's team turn")
 	}
-	if (c.role != game.roleTurn) {
+	if c.role != game.roleTurn {
 		return fmt.Errorf("It is not this player's role turn. Player role: %v, game role: %v", c.role, game.roleTurn)
 	}
 
-	guessResponse.TeamColor = c.team
-	guessResponse.CardColor = cardColor
 	guessResponse.Correct = false
-	if (c.team == cardColor) {
+	if c.team == cardColor {
 		guessResponse.Correct = true
-	} else if (cardColor != deathCard) {
+	}
+
+	if !guessResponse.Correct {
+		game.guessRemaining = 0;
+	} else if game.guessRemaining < numCards {
+		game.guessRemaining -= 1
+	}
+	if !guessResponse.Correct || game.guessRemaining <= 0 {
 		changeTurn(&game)
 	}
-	guessResponse.TeamTurn = game.teamTurn
-	guessResponse.RoleTurn = game.roleTurn
+
+	guessResponse.GuessRemaining = game.guessRemaining
+	guessResponse.TeamColor = c.team
+	guessResponse.CardColor = cardColor
+	guessResponse.TeamTurn  = game.teamTurn
+	guessResponse.RoleTurn  = game.roleTurn
 
 	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
@@ -179,8 +188,21 @@ func ClueHandler (event Event, c *Client) error {
 
 	// if we're here, a clue was given; now it's the guesser's turn
 	game.roleTurn = guesserRole
-	c.manager.games[c.chatroom] = game
 
+	var clue GiveClueEvent
+	if err := json.Unmarshal(event.Payload, &clue); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
+	if (clue.NumCards == 0) {
+		// Special case: if the cluegiver did not specify the number
+		// of cards, their team gets unlimited guesses. Set the
+		// number of guesses equal to the number of cards in the game.
+		game.guessRemaining = numCards
+	} else {
+		game.guessRemaining = clue.NumCards + 1
+	}
+
+	c.manager.games[c.chatroom] = game
 	err := notifyPlayers(game, EventGiveClue, event.Payload)
 	return err
 }
