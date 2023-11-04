@@ -145,7 +145,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		return fmt.Errorf("It is not this player's role turn. Player role: %v, game role: %v", c.role, game.roleTurn)
 	}
 
-	guessResponse.GuesserTeam = c.team
+	guessResponse.TeamColor = c.team
 	guessResponse.CardColor = cardColor
 	guessResponse.Correct = false
 	if (c.team == cardColor) {

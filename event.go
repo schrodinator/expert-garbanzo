@@ -65,9 +65,9 @@ type GuessEvent struct {
 
 type GuessResponseEvent struct {
 	GuessEvent
-	GuesserTeam  string `json:"guesserTeamColor"`
-	CardColor    string `json:"cardColor"`
-	Correct      bool   `json:"correct"`
-	TeamTurn     string `json:"teamTurn"`
-	RoleTurn     string `json:"roleTurn"`
+	TeamColor  string `json:"teamColor"`
+	CardColor  string `json:"cardColor"`
+	Correct    bool   `json:"correct"`
+	TeamTurn   string `json:"teamTurn"`
+	RoleTurn   string `json:"roleTurn"`
 }

@@ -54,19 +54,20 @@ class GiveClueEvent {
 
 class GuessEvent {
     constructor(guess, numCards) {
+        this.guesser = username;
         this.guess = guess;
         this.numCards = numCards;
-        this.guesser = username;
     }
 }
 
 class GuessResponseEvent {
-    constructor(guess, numCards, guesserTeamColor, correctColor,
+    constructor(guess, numCards, teamColor, cardColor,
                 correct, teamTurn, roleTurn) {
+        this.guesser = username;
         this.guess = guess;
         this.numCards = numCards;
-        this.guesserTeamColor = guesserTeamColor;
-        this.correctColor = correctColor;
+        this.teamColor = teamColor;
+        this.cardColor = cardColor;
         this.correct = correct;
         this.teamTurn = teamTurn;
         this.roleTurn = roleTurn;
@@ -83,13 +84,11 @@ const deathCard = "black";
 
 var selectedChat = defaultRoom;
 var username;
-var usercolor;
+var usercolor = colors[Math.floor(Math.random() * colors.length)];
 var userTeam = defaultTeam;
 var userRole = defaultRole;
 var currentGame;
 
-
-usercolor = colors[Math.floor(Math.random() * colors.length)];
 
 colorContainer = document.getElementById("color-container");
 for (let i = 0; i < colors.length; i++) {
@@ -293,19 +292,16 @@ function notifyAbortGame(payload) {
 
 function guessResponseHandler(payload) {
     guessResponse = Object.assign(new GuessResponseEvent, payload);
-    const guesser = guessResponse.guesser;
-    const guessWord = guessResponse.guess;
-    const guesserColor = guessResponse.guesserTeamColor;
-    const cardColor = guessResponse.cardColor;
-    const teamTurn = guessResponse.teamTurn;
-    const roleTurn = guessResponse.roleTurn;
 
-    markGuessedCard(guessWord, cardColor);
-    notifyChatroom(guessWord, guesser, guesserColor, cardColor);
-    updateScoreboard(guesserColor, cardColor);
+    markGuessedCard(guessResponse);
+    notifyChatroom(guessResponse);
+    updateScoreboard(guessResponse);
+
     if (document.getElementById("sort-cards").value === "keep-sorted") {
         sortCards("color");
     }
+
+    const {teamTurn, roleTurn} = guessResponse;
     whoseTurn(teamTurn, roleTurn);
 }
 
@@ -329,11 +325,11 @@ function capitalize(word) {
     return word.charAt(0).toUpperCase() + word.substring(1);
 }
 
-function notifyChatroom(guess, guesser, guesserColor, cardColor) {
-    const teamName = capitalize(guesserColor);
+function notifyChatroom({guess, guesser, teamColor, cardColor}) {
+    const teamName = capitalize(teamColor);
     const textarea = document.getElementById("chatmessages");
-    const msg = `<br><span style="font-weight:bold; color:${guesserColor}">${guesser} uncovers ${guess}: `;
-    if (guesserColor === cardColor) {
+    const msg = `<br><span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
+    if (teamColor === cardColor) {
         textarea.innerHTML += `${msg} CORRECT. A point for ${teamName}.</span><br>`;
     } else {
         textarea.innerHTML += `${msg} incorrect. Card is ${cardColor}.</span><br>`;
@@ -342,18 +338,19 @@ function notifyChatroom(guess, guesser, guesserColor, cardColor) {
     return false;
 }
 
-function updateScoreboard(guesserColor, cardColor) {
+function updateScoreboard({teamColor, cardColor}) {
+    const teamName = capitalize(teamColor);
+
     if (cardColor == deathCard) {
-        const teamName = capitalize(guesserColor);
         alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`)
         disableAllCardEvents();
         return false;
     }
+
     if (cardColor === "red" || cardColor === "blue") {
         const score = document.getElementById(`${cardColor}score`);
         score.innerText -= 1;
         if (score.innerText == 0) {
-            const teamName = capitalize(cardColor);
             alert(`${teamName} Team wins!`)
             disableAllCardEvents();
         }
@@ -388,12 +385,12 @@ function enableCardEvents() {
     return false;
 }
 
-function markGuessedCard(guessWord, cardColor) {
-    currentGame.cards[guessWord] = `guessed-${cardColor}`;
+function markGuessedCard({guess, cardColor}) {
+    currentGame.cards[guess] = `guessed-${cardColor}`;
 
     for (var i = 0; i < numCards; i++) {
         const card = document.getElementById(`card-${i}`);
-        if (card.innerText === guessWord) {
+        if (card.innerText === guess) {
             card.className = `card guessed-${cardColor}`;
             if (userRole === defaultRole) {
                 card.removeEventListener("click", this.makeGuess, false);
@@ -445,10 +442,10 @@ function htmlEscape(str) {
 
 function appendChatMessage(payload) {
     const messageEvent = Object.assign(new NewMessageEvent, payload);
-    var date = new Date(messageEvent.sentTime);
-    const senderName = messageEvent.from;
-    const senderColor = messageEvent.color;
-    const formattedMsg = `${fmtTimeFromDate(date)} <span style="font-weight:bold; color:${senderColor}">${senderName}</span>: ${htmlEscape(messageEvent.message)}<br>`;
+    const time = fmtTimeFromDate(new Date(messageEvent.sentTime));
+    const {from, color} = messageEvent;
+    const msg = htmlEscape(messageEvent.message);
+    const formattedMsg = `${time} <span style="font-weight:bold; color:${color}">${from}</span>: ${msg}<br>`;
     textarea = document.getElementById("chatmessages");
     textarea.innerHTML += formattedMsg;
     textarea.scrollTop = textarea.scrollHeight;
@@ -470,7 +467,7 @@ function sendMessage() {
 }
 
 function giveClue() {
-    var clue = document.getElementById("clue-input");
+    const clue = document.getElementById("clue-input");
     const numCards = document.getElementById("number-input").value;
     if (clue != null) {
         let outgoingEvent = new GiveClueEvent(clue.value, numCards);
@@ -484,17 +481,14 @@ function giveClue() {
 
 function clueHandler(payload) {
     const clueEvent = Object.assign(new GiveClueEvent, payload);
-    const senderName = clueEvent.from;
-    const teamColor = clueEvent.teamColor;
+    const {from, teamColor, clue, numCards} = clueEvent;
     const teamName = capitalize(teamColor);
-    const clue = clueEvent.clue;
-    const numCards = clueEvent.numCards;
 
-    var msg = `${senderName} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}<br>`;
+    var msg = `${from} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}<br>`;
     if (numCards > 0) {
         msg += `Applies to ${numCards} cards.`
     } else {
-        msg += `${senderName} did not specify the number of cards. ${teamName} has unlimited guesses.`
+        msg += `${from} did not specify the number of cards. ${teamName} has unlimited guesses.`
     }
 
     document.getElementById("clueheader").innerHTML = msg;
