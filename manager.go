@@ -78,6 +78,12 @@ func NewGameHandler(event Event, c *Client) error {
 
 	getCardColors(cards)
 
+	game := c.manager.games[c.chatroom]
+	game.cards = cards
+	game.teamTurn = redTeam
+	game.roleTurn = cluegiverRole
+	c.manager.games[c.chatroom] = game
+
 	var cluegiverMessage NewGameEvent
 	cluegiverMessage.Cards = cards
 	cluegiverMessage.SentTime  = guesserMessage.SentTime
@@ -96,12 +102,6 @@ func NewGameHandler(event Event, c *Client) error {
 		Type:    EventNewGame,
 		Payload: cluegiverData,
 	}
-
-	game := c.manager.games[c.chatroom]
-	game.cards = cards
-	game.teamTurn = redTeam
-	game.roleTurn = cluegiverRole
-	c.manager.games[c.chatroom] = game
 
 	for _, client := range game.players {
 		if client.role == cluegiverRole {
