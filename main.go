@@ -2,11 +2,24 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
+var masterPassword string
+
+const (
+	defaultChatroom = "general"
+	deathCard       = "black"
+)
+
+
 func main() {
+	masterPassword = getMasterPassword()
+
 	setupAPI()
 
 	log.Fatal(http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil))
@@ -26,4 +39,20 @@ func setupAPI() {
 	http.Handle("/", http.FileServer(http.Dir("./frontend")))
 	http.HandleFunc("/ws", manager.serveWS)
 	http.HandleFunc("/login", manager.loginHandler)
+}
+
+func getMasterPassword() string {
+	file, err := os.Open("password.txt")
+	if err != nil {
+		fmt.Println("Error opening password.txt:", err)
+		return ""
+	}
+	defer file.Close() // Close the file when we're done
+
+	pword, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println("Error reading password.txt:", err)
+		return ""
+	}
+	return string(pword)
 }
