@@ -185,13 +185,6 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	return err
 }
 
-func changeTurn(game *Game) {
-	game.roleTurn = game.roleTurn.Change()
-	if game.roleTurn == cluegiver {
-		game.teamTurn = game.teamTurn.Change()
-	}
-}
-
 func ClueHandler (event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 

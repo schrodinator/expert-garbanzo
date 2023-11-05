@@ -60,6 +60,14 @@ type Game struct {
 
 const totalNumCards = 25
 
+
+func changeTurn(game *Game) {
+	game.roleTurn = game.roleTurn.Change()
+	if game.roleTurn == cluegiver {
+		game.teamTurn = game.teamTurn.Change()
+	}
+}
+
 func readDictionary(filePath string) error {
 	if len(dictionary) == 0 {
 		file, err := os.Open(filePath)
