@@ -364,9 +364,9 @@ function notifyChatroom({guess, guesser, teamColor, cardColor}) {
     const teamName = capitalize(teamColor);
     let msg = `<br><span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
     if (teamColor === cardColor) {
-        msg += `${msg} CORRECT. A point for ${teamName}.</span><br>`;
+        msg += `CORRECT. A point for ${teamName}.</span><br>`;
     } else {
-        msg += `${msg} incorrect. Card is ${cardColor}.</span><br>`;
+        msg += `incorrect. Card is ${cardColor}.</span><br>`;
     }
     appendToChat(msg);
     return false;
