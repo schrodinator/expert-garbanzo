@@ -131,7 +131,7 @@ func AbortGameHandler(event Event, c *Client) error {
 
 func EndTurnHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
-	changeTurn(&game)
+	game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
 
 	var payload EndTurnEvent
 	payload.TeamTurn = game.teamTurn.String()
@@ -169,7 +169,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		game.guessRemaining -= 1
 	}
 	if !guessResponse.Correct || game.guessRemaining <= 0 {
-		changeTurn(&game)
+		game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
 	}
 
 	guessResponse.GuessRemaining = game.guessRemaining
