@@ -81,8 +81,8 @@ func NewGameHandler(event Event, c *Client) error {
 
 	game := c.manager.games[c.chatroom]
 	game.cards = cards
-	game.teamTurn = redTeam
-	game.roleTurn = cluegiverRole
+	game.teamTurn = red
+	game.roleTurn = cluegiver
 	c.manager.games[c.chatroom] = game
 
 	var cluegiverMessage NewGameEvent
@@ -134,8 +134,8 @@ func EndTurnHandler(event Event, c *Client) error {
 	changeTurn(&game)
 
 	var payload EndTurnEvent
-	payload.TeamTurn = game.teamTurn
-	payload.RoleTurn = game.roleTurn
+	payload.TeamTurn = game.teamTurn.String()
+	payload.RoleTurn = game.roleTurn.String()
 	notifyPlayers(game, "end_turn", payload)
 
 	return nil
@@ -151,10 +151,10 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 	card := guessResponse.Guess
 	cardColor := game.cards[guessResponse.Guess]
-	if c.team != game.teamTurn {
+	if c.team != game.teamTurn.String() {
 		return errors.New("It is not this player's team turn")
 	}
-	if c.role != game.roleTurn {
+	if c.role != game.roleTurn.String() {
 		return fmt.Errorf("It is not this player's role turn. Player role: %v, game role: %v", c.role, game.roleTurn)
 	}
 
@@ -175,8 +175,8 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	guessResponse.GuessRemaining = game.guessRemaining
 	guessResponse.TeamColor = c.team
 	guessResponse.CardColor = cardColor
-	guessResponse.TeamTurn  = game.teamTurn
-	guessResponse.RoleTurn  = game.roleTurn
+	guessResponse.TeamTurn  = game.teamTurn.String()
+	guessResponse.RoleTurn  = game.roleTurn.String()
 
 	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
@@ -186,15 +186,9 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 }
 
 func changeTurn(game *Game) {
-	if game.roleTurn == cluegiverRole {
-		game.roleTurn = guesserRole
-	} else {
-		game.roleTurn = cluegiverRole
-	}
-	if game.teamTurn == "red" {
-		game.teamTurn = "blue"
-	} else {
-		game.teamTurn = "red"
+	game.roleTurn = game.roleTurn.Change()
+	if game.roleTurn == cluegiver {
+		game.teamTurn = game.teamTurn.Change()
 	}
 }
 
@@ -202,7 +196,7 @@ func ClueHandler (event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 
 	// if we're here, a clue was given; now it's the guesser's turn
-	game.roleTurn = guesserRole
+	game.roleTurn = guesser
 
 	var clue GiveClueEvent
 	if err := json.Unmarshal(event.Payload, &clue); err != nil {
