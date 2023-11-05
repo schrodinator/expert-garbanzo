@@ -6,13 +6,10 @@ import (
 	"os"
 )
 
-var (
-	masterPassword  = getMasterPassword()
+var masterPassword = getMasterPassword()
+
+const (
 	defaultChatroom = "general"
-	guesserRole     = "guesser"
-	cluegiverRole   = "cluegiver"
-	redTeam         = "red"
-	blueTeam        = "blue"
 	deathCard       = "black"
 )
 
