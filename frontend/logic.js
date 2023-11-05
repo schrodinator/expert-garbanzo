@@ -322,6 +322,8 @@ function guessResponseHandler(payload) {
 function whoseTurn(teamTurn, roleTurn) {
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
+        document.getElementById("clue-input").disabled = true;
+        document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
         document.getElementById("end-turn").hidden = true;
         return;
     }
