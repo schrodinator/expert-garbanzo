@@ -131,7 +131,13 @@ func AbortGameHandler(event Event, c *Client) error {
 
 func EndTurnHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
-	notifyPlayers(game, "end_turn", nil)
+	changeTurn(&game)
+
+	var payload EndTurnEvent
+	payload.TeamTurn = game.teamTurn
+	payload.RoleTurn = game.roleTurn
+	notifyPlayers(game, "end_turn", payload)
+
 	return nil
 }
 
@@ -182,6 +188,8 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 func changeTurn(game *Game) {
 	if game.roleTurn == cluegiverRole {
 		game.roleTurn = guesserRole
+	} else {
+		game.roleTurn = cluegiverRole
 	}
 	if game.teamTurn == "red" {
 		game.teamTurn = "blue"
