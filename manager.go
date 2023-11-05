@@ -62,6 +62,7 @@ func (m *Manager) setupEventHandlers() {
 	m.handlers[EventMakeGuess]   = GuessEvaluationHandler
 	m.handlers[EventGiveClue]    = ClueHandler
 	m.handlers[EventAbortGame]   = AbortGameHandler
+	m.handlers[EventEndTurn]     = EndTurnHandler
 }
 
 func NewGameHandler(event Event, c *Client) error {
@@ -126,6 +127,12 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	err := notifyPlayers(game, EventAbortGame, abortGame)
 	return err
+}
+
+func EndTurnHandler(event Event, c *Client) error {
+	game := c.manager.games[c.chatroom]
+	notifyPlayers(game, "end_turn", nil)
+	return nil
 }
 
 func GuessEvaluationHandler(event Event, c *Client) error {

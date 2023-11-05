@@ -74,6 +74,13 @@ class GuessResponseEvent {
     }
 }
 
+class EndTurnEvent {
+    constructor(teamTurn, roleTurn) {
+        this.teamTurn = teamTurn;
+        this.roleTurn = roleTurn;
+    }
+}
+
 const totalNumCards = 25;
 const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
                 "brown", "purple", "hotpink", "black", "gray"];
@@ -286,15 +293,14 @@ function changeChatRoom() {
 
 function notifyRoomEntry(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
-    const textarea = document.getElementById("chatmessages");
-    textarea.innerHTML += `<br><span style="font-weight:bold;">${roomChange.username} has entered the room.</span><br>`;
-    textarea.scrollTop = textarea.scrollHeight;
+    const message = `<br><span style="font-weight:bold;">${roomChange.username} has entered the room.</span><br>`;
+    appendToChat(message);
 }
 
 function notifyAbortGame(payload) {
-    abortGame = Object.assign(new AbortGameEvent, payload);
-    const textarea = document.getElementById("chatmessages");
-    textarea.innerHTML += `<br><span style="font-weight:bold;color:${abortGame.teamColor}">${abortGame.username} has left the game.</span><br>`
+    const {teamColor, username} = Object.assign(new AbortGameEvent, payload);
+    message = `<br><span style="font-weight:bold;color:${teamColor}">${username} has left the game.</span><br>`;
+    appendToChat(message);
 }
 
 function guessResponseHandler(payload) {
@@ -316,6 +322,7 @@ function guessResponseHandler(payload) {
 function whoseTurn(teamTurn, roleTurn) {
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
+        document.getElementById("end-turn").hidden = true;
         return;
     }
     if (roleTurn !== defaultRole) {
@@ -325,6 +332,7 @@ function whoseTurn(teamTurn, roleTurn) {
     }
     if (userRole === defaultRole) {
         enableCardEvents();
+        document.getElementById("end-turn").hidden = false;
     }
     return;
 }
@@ -335,20 +343,30 @@ function notifyGuessRemaining({guessRemaining}) {
     }
 }
 
+function endTurn() {
+    sendEvent("end_turn", null);
+    return false;
+}
+
+function endTurnHandler(payload) {
+    const {teamTurn, roleTurn} = Object.assign(new EndTurnEvent, payload);
+    whoseTurn(teamTurn, roleTurn);
+    return false;
+}
+
 function capitalize(word) {
     return word.charAt(0).toUpperCase() + word.substring(1);
 }
 
 function notifyChatroom({guess, guesser, teamColor, cardColor}) {
     const teamName = capitalize(teamColor);
-    const textarea = document.getElementById("chatmessages");
-    const msg = `<br><span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
+    let msg = `<br><span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
     if (teamColor === cardColor) {
-        textarea.innerHTML += `${msg} CORRECT. A point for ${teamName}.</span><br>`;
+        msg += `${msg} CORRECT. A point for ${teamName}.</span><br>`;
     } else {
-        textarea.innerHTML += `${msg} incorrect. Card is ${cardColor}.</span><br>`;
+        msg += `${msg} incorrect. Card is ${cardColor}.</span><br>`;
     }
-    textarea.scrollTop = textarea.scrollHeight;
+    appendToChat(msg);
     return false;
 }
 
@@ -436,6 +454,9 @@ function routeEvent(event) {
         case "give_clue":
             clueHandler(event.payload);
             break;
+        case "end_turn":
+            endTurnHandler(event.payload);
+            break;
         case "abort_game":
             notifyAbortGame(event.payload);
             break;
@@ -460,8 +481,12 @@ function appendChatMessage(payload) {
     const {from, color} = messageEvent;
     const msg = htmlEscape(messageEvent.message);
     const formattedMsg = `${time} <span style="font-weight:bold; color:${color}">${from}</span>: ${msg}<br>`;
-    textarea = document.getElementById("chatmessages");
-    textarea.innerHTML += formattedMsg;
+    appendToChat(formattedMsg);
+}
+
+function appendToChat(message) {
+    const textarea = document.getElementById("chatmessages");
+    textarea.innerHTML += message;
     textarea.scrollTop = textarea.scrollHeight;
 }
 
@@ -585,4 +610,5 @@ window.onload = function() {
     document.getElementById("newgame-button").onclick = requestNewGame;
     document.getElementById("abort-button").onclick = abortGame;
     document.getElementById("cluebox").onsubmit = giveClue;
+    document.getElementById("end-turn").onclick = endTurn;
 }

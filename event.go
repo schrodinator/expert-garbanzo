@@ -23,6 +23,7 @@ const (
 	EventMakeGuess   = "guess_event"
 	EventGiveClue    = "give_clue"
 	EventAbortGame   = "abort_game"
+	EventEndTurn     = "end_turn"
 )
 
 type SendMessageEvent struct {
@@ -63,12 +64,16 @@ type GuessEvent struct {
 	Guesser  string `json:"guesser"`
 }
 
+type EndTurnEvent struct {
+	TeamTurn       string `json:"teamTurn"`
+	RoleTurn       string `json:"roleTurn"`
+}
+
 type GuessResponseEvent struct {
 	GuessEvent
+	EndTurnEvent
 	TeamColor      string `json:"teamColor"`
 	CardColor      string `json:"cardColor"`
 	Correct        bool   `json:"correct"`
-	TeamTurn       string `json:"teamTurn"`
-	RoleTurn       string `json:"roleTurn"`
 	GuessRemaining int    `json:"guessRemaining"`
 }
