@@ -105,7 +105,7 @@ func NewGameHandler(event Event, c *Client) error {
 	}
 
 	for _, client := range game.players {
-		if client.role == cluegiverRole {
+		if client.role == cluegiver {
 			client.egress <- cluegiverEvent
 		} else {
 			client.egress <- guesserEvent
@@ -123,7 +123,7 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	var abortGame AbortGameEvent
 	abortGame.UserName = c.username
-	abortGame.TeamColor = c.team
+	abortGame.TeamColor = c.team.String()
 
 	err := notifyPlayers(game, EventAbortGame, abortGame)
 	return err
@@ -151,15 +151,15 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 	card := guessResponse.Guess
 	cardColor := game.cards[guessResponse.Guess]
-	if c.team != game.teamTurn.String() {
+	if c.team != game.teamTurn {
 		return errors.New("It is not this player's team turn")
 	}
-	if c.role != game.roleTurn.String() {
+	if c.role != game.roleTurn {
 		return fmt.Errorf("It is not this player's role turn. Player role: %v, game role: %v", c.role, game.roleTurn)
 	}
 
 	guessResponse.Correct = false
-	if c.team == cardColor {
+	if c.team.String() == cardColor {
 		guessResponse.Correct = true
 	}
 
@@ -173,7 +173,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	}
 
 	guessResponse.GuessRemaining = game.guessRemaining
-	guessResponse.TeamColor = c.team
+	guessResponse.TeamColor = c.team.String()
 	guessResponse.CardColor = cardColor
 	guessResponse.TeamTurn  = game.teamTurn.String()
 	guessResponse.RoleTurn  = game.roleTurn.String()
@@ -233,20 +233,12 @@ func ChatRoomHandler(event Event, c *Client) error {
 }
 
 func TeamChangeHandler(event Event, c *Client) error {
-	if c.team == redTeam {
-		c.team = blueTeam
-	} else {
-		c.team = redTeam
-	}
+	c.team = c.team.Change()
 	return nil
 }
 
 func RoleChangeHandler(event Event, c *Client) error {
-	if c.role == guesserRole {
-		c.role = cluegiverRole
-	} else {
-		c.role = guesserRole
-	}
+	c.role = c.role.Change()
 	return nil
 }
 
