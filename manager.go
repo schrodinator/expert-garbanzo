@@ -23,6 +23,7 @@ var (
 
 type Manager struct {
 	clients  ClientList
+	chats    ChatRooms
 	games    GameMap
 	handlers EventHandlerList
 
@@ -34,21 +35,15 @@ type Manager struct {
 func NewManager(ctx context.Context) *Manager {
 	m := &Manager{
 		clients:  make(ClientList),
+		chats:    make(ChatRooms),
 		games:    make(GameMap),
 		handlers: make(map[string]EventHandler),
 		otps:     NewRetentionMap(ctx, 5*time.Second),
 	}
+
 	m.setupEventHandlers()
 
-	// TODO: May prefer to disable "New Game" button in default chatroom
-	// and remove the lines below. Doing so would treat the default chatroom
-	// as a lobby; players must switch to a new chatroom to play games.
-	// Otherwise, creating this empty Game object at the outset is necessary
-	// to give new clients a place to be appended to. This is otherwise
-	// handled in ChatRoomHandler when changing rooms.
-	m.games[defaultChatroom] = Game{
-		players: make(ClientList),
-	}
+	m.makeChatRoom(defaultChatRoom)
 
 	return m
 }
@@ -66,51 +61,37 @@ func (m *Manager) setupEventHandlers() {
 }
 
 func NewGameHandler(event Event, c *Client) error {
-	cards := getGameWords()
-
-	var guesserMessage NewGameEvent
-	guesserMessage.Cards = cards
-	guesserMessage.SentTime  = time.Now()
-
-	guesserData, err := json.Marshal(guesserMessage)
-	if err != nil {
-		return fmt.Errorf("failed to marshal guesser message: %v", err)
-	}
-
-	getCardColors(cards)
-
-	game := c.manager.games[c.chatroom]
-	game.cards = cards
-	game.teamTurn = red
-	game.roleTurn = cluegiver
-	c.manager.games[c.chatroom] = game
+	game := c.manager.makeGame(c.chatroom)
 
 	var cluegiverMessage NewGameEvent
-	cluegiverMessage.Cards = cards
-	cluegiverMessage.SentTime  = guesserMessage.SentTime
-
-	cluegiverData, err := json.Marshal(cluegiverMessage)
+	cluegiverMessage.Cards = game.cards
+	cluegiverMessage.SentTime = time.Now()
+	cluegiverEvent, err := packageMessage(EventNewGame, cluegiverMessage)
 	if err != nil {
-		return fmt.Errorf("failed to marshal cluegiver message: %v", err)
+		return err
 	}
 
-	guesserEvent := Event {
-		Type:    EventNewGame,
-		Payload: guesserData,
+	var guesserMessage NewGameEvent
+	guesserMessage.Cards = whiteCards(game.cards)
+	guesserMessage.SentTime  = cluegiverMessage.SentTime
+	guesserEvent, err := packageMessage(EventNewGame, guesserMessage)
+	if err != nil {
+		return err
 	}
 
-	cluegiverEvent := Event {
-		Type:    EventNewGame,
-		Payload: cluegiverData,
-	}
+	for _, client := range c.manager.chats[c.chatroom] {
+		/* All clients in the chat room at the time of
+	       game creation are added as players */
+		game.players[client.username] = client
 
-	for _, client := range game.players {
 		if client.role == cluegiver {
 			client.egress <- cluegiverEvent
 		} else {
 			client.egress <- guesserEvent
 		}
 	}
+	c.manager.games[c.chatroom] = game
+
 	return nil	
 }
 
@@ -125,7 +106,7 @@ func AbortGameHandler(event Event, c *Client) error {
 	abortGame.UserName = c.username
 	abortGame.TeamColor = c.team.String()
 
-	err := notifyPlayers(game, EventAbortGame, abortGame)
+	err := c.manager.notifyPlayers(c.chatroom, EventAbortGame, abortGame)
 	return err
 }
 
@@ -136,7 +117,7 @@ func EndTurnHandler(event Event, c *Client) error {
 	var payload EndTurnEvent
 	payload.TeamTurn = game.teamTurn.String()
 	payload.RoleTurn = game.roleTurn.String()
-	notifyPlayers(game, "end_turn", payload)
+	c.manager.notifyPlayers(c.chatroom, "end_turn", payload)
 
 	return nil
 }
@@ -155,7 +136,9 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		return errors.New("It is not this player's team turn")
 	}
 	if c.role != game.roleTurn {
-		return fmt.Errorf("It is not this player's role turn. Player role: %v, game role: %v", c.role, game.roleTurn)
+		return fmt.Errorf(
+			"It is not this player's role turn. Player role: %v, game role: %v",
+			c.role, game.roleTurn)
 	}
 
 	guessResponse.Correct = false
@@ -181,11 +164,11 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
 
-	err := notifyPlayers(game, EventMakeGuess, guessResponse)
+	err := c.manager.notifyPlayers(c.chatroom, EventMakeGuess, guessResponse)
 	return err
 }
 
-func ClueHandler (event Event, c *Client) error {
+func ClueHandler(event Event, c *Client) error {
 	game := c.manager.games[c.chatroom]
 
 	// if we're here, a clue was given; now it's the guesser's turn
@@ -196,16 +179,16 @@ func ClueHandler (event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 	if (clue.NumCards == 0) {
-		// Special case: if the cluegiver did not specify the number
-		// of cards, their team gets unlimited guesses. Set the
-		// number of guesses equal to the number of cards in the game.
+		/* Special case: if the cluegiver did not specify the number
+		   of cards, their team gets unlimited guesses. Set the
+		   number of guesses equal to the number of cards in the game. */
 		game.guessRemaining = totalNumCards
 	} else {
 		game.guessRemaining = clue.NumCards + 1
 	}
 
 	c.manager.games[c.chatroom] = game
-	err := notifyPlayers(game, EventGiveClue, event.Payload)
+	err := c.manager.notifyPlayers(c.chatroom, EventGiveClue, event.Payload)
 	return err
 }
 
@@ -216,19 +199,16 @@ func ChatRoomHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	room := changeroom.RoomName
-	c.chatroom = room
-	game, exists := c.manager.games[room]
-	if !exists {
-		game = Game {
-			players: make(ClientList),
-		}
-	}
-	game.players[c.username] = c
-	c.manager.games[room] = game
+	// remove client from old chat room
+	delete(c.manager.chats[c.chatroom], c.username)
+
+	// enter client into new chat room
+	c.chatroom = changeroom.RoomName
+	c.manager.makeChatRoom(c.chatroom)
+	c.manager.chats[c.chatroom][c.username] = c
 
 	// Report to everyone in the room that the new player has entered
-	err := notifyPlayers(game, EventChangeRoom, event.Payload)
+	err := c.manager.notifyClients(c.chatroom, EventChangeRoom, event.Payload)
 	return err
 }
 
@@ -250,33 +230,72 @@ func SendMessage(event Event, c *Client) error {
 	}
 
 	var broadMessage NewMessageEvent
-
 	broadMessage.SentTime = time.Now()
 	broadMessage.Message = chatevent.Message
 	broadMessage.From = chatevent.From
 	broadMessage.Color = chatevent.Color
 
-	game := c.manager.games[c.chatroom]
-	status := notifyPlayers(game, EventNewMessage, broadMessage)
+	status := c.manager.notifyClients(c.chatroom, EventNewMessage, broadMessage)
 	return status
 }
 
-func notifyPlayers(game Game, messageType string, message any) error {
-	data, err := json.Marshal(message)
+func (m *Manager) notifyPlayers(room string, messageType string, message any) error {
+	outgoingEvent, err := packageMessage(messageType, message)
 	if err != nil {
-		return fmt.Errorf("failed to marshal broadcast message: %v", err)
+		return err
 	}
 
-	outgoingEvent := Event {
-		Type:    messageType,
-		Payload: data,
+	for _, client := range m.games[room].players {
+		client.egress <- outgoingEvent
 	}
 
-	for _, client := range game.players {
+	return nil}
+
+func (m *Manager) notifyClients(room string, messageType string, message any) error {
+	outgoingEvent, err := packageMessage(messageType, message)
+	if err != nil {
+		return err
+	}
+
+	for _, client := range m.chats[room] {
 		client.egress <- outgoingEvent
 	}
 
 	return nil
+}
+
+func packageMessage(messageType string, message any) (Event, error) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		return Event{}, fmt.Errorf(
+			"failed to marshal broadcast message of type %v: %v", messageType, err)
+	}
+
+	return Event {
+		Type:    messageType,
+		Payload: data,
+	}, nil
+}
+
+func (m *Manager) makeChatRoom(name string) {
+	if _, exists := m.chats[name]; exists {
+		return
+	}
+	m.chats[name] = make(ClientList)
+}
+
+func (m *Manager) makeGame(name string) Game {
+	game, exists := m.games[name]
+	if !exists {
+		game = Game {
+			players: make(ClientList),
+		}
+	}
+	game.cards = getCards()
+	game.teamTurn = red
+	game.roleTurn = cluegiver
+	m.games[name] = game
+	return game
 }
 
 func (m *Manager) routeEvent(event Event, c *Client) error {
@@ -372,22 +391,23 @@ func (m *Manager) addClient(client *Client) {
 	defer m.Unlock()
 
 	m.clients[client.username] = client
-	// TODO: May prefer to disable "New Game" button in default chatroom
-	// and remove the line below. This would treat the default chatroom as a
-	// lobby; players would have to switch to a new chatroom to play games.
-	m.games[defaultChatroom].players[client.username] = client
+	m.chats[defaultChatRoom][client.username] = client
 }
 
 func (m *Manager) removeClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
+	// TODO: delete empty games / chatrooms
+	if _, exists := m.games[client.chatroom]; exists {
+		delete(m.games[client.chatroom].players, client.username)
+	}
+	if _, exists := m.chats[client.chatroom]; exists {
+		delete(m.chats[client.chatroom], client.username)
+	}
 	if _, exists := m.clients[client.username]; exists {
 		client.connection.Close()
 		delete(m.clients, client.username)
-	}
-	if _, exists := m.games[client.chatroom]; exists {
-		delete(m.games[client.chatroom].players, client.username)
 	}
 }
 

@@ -84,7 +84,7 @@ class EndTurnEvent {
 const totalNumCards = 25;
 const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
                 "brown", "purple", "hotpink", "black", "gray"];
-const defaultRoom = "General";
+const defaultRoom = "lobby";
 const defaultRole = "guesser";
 const defaultTeam = "red";
 const deathCard = "black";
@@ -287,12 +287,21 @@ function changeChatRoom() {
         let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
         sendEvent("change_room", changeEvent);
     }
+    newchat.value = "";
     // if you don't return false, it will redirect
     return false;
 }
 
 function notifyRoomEntry(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+    if (roomChange.roomname == defaultRoom) {
+        document.getElementById("game-setup").hidden = true;
+        document.getElementById("gameboard-container").hidden = true;
+    } else {
+        document.getElementById("game-setup").hidden = false;
+        document.getElementById("end-turn").hidden = true;
+        document.getElementById("gameboard-container").hidden = false;
+    }
     const message = `<br><span style="font-weight:bold;">${roomChange.username} has entered the room.</span><br>`;
     appendToChat(message);
 }
@@ -307,7 +316,7 @@ function guessResponseHandler(payload) {
     guessResponse = Object.assign(new GuessResponseEvent, payload);
 
     markGuessedCard(guessResponse);
-    notifyChatroom(guessResponse);
+    notifyChatRoom(guessResponse);
     updateScoreboard(guessResponse);
     notifyGuessRemaining(guessResponse);
 
@@ -360,7 +369,7 @@ function capitalize(word) {
     return word.charAt(0).toUpperCase() + word.substring(1);
 }
 
-function notifyChatroom({guess, guesser, teamColor, cardColor}) {
+function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
     const teamName = capitalize(teamColor);
     let msg = `<br><span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
     if (teamColor === cardColor) {

@@ -49,10 +49,11 @@ func (r Role) Change() Role {
 }
 
 type GameMap map[string]Game
+type Deck    map[string]string
 
 type Game struct {
 	players         ClientList
-	cards           map[string]string
+	cards           Deck
 	teamTurn        Team
 	roleTurn        Role
 	guessRemaining  int
@@ -95,32 +96,29 @@ func readDictionary(filePath string) error {
 	return nil
 }
 
-func getGameWords() map[string]string {
-	cards := make(map[string]string, totalNumCards)
-	i := 0
-	for i < totalNumCards {
+
+func getCards() Deck {
+	var colors = [25]string{
+		"red", "red", "red", "red", "red", "red", "red", "red", "red",
+	    "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue",
+	    "black",
+	    "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"}
+	cards := make(Deck, totalNumCards)
+	for i := 0; i < totalNumCards; i++ {
 		word := dictionary[rand.Intn(dictLen)]
 		// ensure each word is unique
 		if _, exists := cards[word]; exists {
 			continue
 		}
-		cards[word] = "white"
-		i++
+		cards[word] = colors[i]
 	}
 	return cards
 }
 
-func getCardColors(cards map[string]string) {
-	var cardColors = [25]string{
-		"red", "red", "red", "red", "red", "red", "red", "red", "red",
-	    "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue",
-	    "black",
-	    "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"}
-	i := 0
-	/* iteration over the map happens in random order,
-	   so we are effectively randomizing the colors */
-	for word := range cards {
-		cards[word] = cardColors[i]
-		i++
+func whiteCards(deck Deck) Deck {
+	whiteDeck := make(Deck, totalNumCards)
+	for card := range deck {
+		whiteDeck[card] = "white"
 	}
+	return whiteDeck
 }

@@ -14,10 +14,12 @@ var (
 )
 
 type ClientList map[string]*Client
+type ChatRooms  map[string]ClientList
 
 type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
+	game       *Game
 	username   string
 	chatroom   string
 	team       Team
@@ -32,7 +34,8 @@ func NewClient(username string, conn *websocket.Conn, manager *Manager) *Client 
 		connection: conn,
 		manager:    manager,
 		username:   username,
-		chatroom:   defaultChatroom,
+		chatroom:   defaultChatRoom,
+		game:       nil,
 		role:       guesser,
 		team:       red,
 		egress:     make(chan Event),

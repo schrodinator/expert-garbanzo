@@ -10,6 +10,6 @@ Install third-party Go libraries:
 
 Generate a self-signed certificate by running `gencert.bash`
 
-Start the server: `go run *go`
+Start the server: `go run !(*_test).go`
 
 In a browser, navigate to: `https://localhost:8080`

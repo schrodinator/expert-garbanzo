@@ -12,7 +12,7 @@ import (
 var masterPassword string
 
 const (
-	defaultChatroom = "general"
+	defaultChatRoom = "lobby"
 	deathCard       = "black"
 )
 

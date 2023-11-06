@@ -24,7 +24,7 @@
                 <h3 id="chat-header"></h3>
 
                 <form id="chatroom-selection">
-                    <label for="chatroom">Chatroom:</label>
+                    <label for="chatroom">Chat Room:</label>
                     <input type="text" id="chatroom" name="chatroom">
                     <input type="submit" value="Change chatroom">
                 </form>
@@ -46,22 +46,24 @@
 
                 <br>
 
-                <label for="team">Team: </label>
-                <select name="team" id="team" onchange="changeTeam();" disabled>
-                    <option value="red" selected>Red</option>
-                    <option value="blue">Blue</option>
-                </select>
-                <label for="role">Role: </label>
-                <select name="role" id="role" onchange="changeRole();" disabled>
-                    <option value="guesser" selected>Guesser</option>
-                    <option value="cluegiver">Clue Giver</option>
-                </select>
-                <input type="submit" value="New Game" id="newgame-button">
-                <input type="submit" value="Abort Game" id="abort-button" hidden>
+                <div class="game-setup" id="game-setup" hidden>
+                    <label for="team">Team: </label>
+                    <select name="team" id="team" onchange="changeTeam();" disabled>
+                        <option value="red" selected>Red</option>
+                        <option value="blue">Blue</option>
+                    </select>
+                    <label for="role">Role: </label>
+                    <select name="role" id="role" onchange="changeRole();" disabled>
+                        <option value="guesser" selected>Guesser</option>
+                        <option value="cluegiver">Clue Giver</option>
+                    </select>
+                    <input type="submit" value="New Game" id="newgame-button">
+                    <input type="submit" value="Abort Game" id="abort-button" hidden>
+                </div>
 
                 <br><br>
 
-                <div class="gameboard-container" id="gameboard-container">
+                <div class="gameboard-container" id="gameboard-container" hidden>
                     <div class="scoreboard" id="scoreboard">
                         <div class="scoretitle" id="scoretitle">Cards Remaining</div>
                         <div class="scoreheader redteam" id="redheader">Red</div>
