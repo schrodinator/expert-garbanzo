@@ -145,6 +145,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	if c.team.String() == cardColor {
 		guessResponse.Correct = true
 	}
+	game.updateScore(cardColor)
 
 	if !guessResponse.Correct {
 		game.guessRemaining = 0;
@@ -160,6 +161,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	guessResponse.CardColor = cardColor
 	guessResponse.TeamTurn  = game.teamTurn.String()
 	guessResponse.RoleTurn  = game.roleTurn.String()
+	guessResponse.Score     = game.score
 
 	game.cards[card] = "guessed-" + cardColor
 	c.manager.games[c.chatroom] = game
@@ -294,6 +296,9 @@ func (m *Manager) makeGame(name string) Game {
 	game.cards = getCards()
 	game.teamTurn = red
 	game.roleTurn = cluegiver
+	game.score = make(Score)
+	game.score[red] = 9
+	game.score[blue] = 8
 	m.games[name] = game
 	return game
 }

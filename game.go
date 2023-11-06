@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
@@ -29,6 +30,14 @@ func (t Team) Change() Team {
 	}
 	return Team(0)
 }
+func GetTeam(s string) (Team, error) {
+	for _, team := range([2]Team{red, blue}) {
+		if s == team.String() {
+			return team, nil
+		}
+	}
+	return -1, fmt.Errorf("no Team match for input %v", s)
+}
 
 type Role int
 const (
@@ -48,6 +57,15 @@ func (r Role) Change() Role {
 	return Role(0)
 }
 
+type Score   map[Team]int
+func (score Score) MarshalJSON() ([]byte, error) {
+	s := make(map[string]int)
+	for t, i := range score {
+		s[t.String()] = i
+	}
+	return json.Marshal(s)
+}
+
 type GameMap map[string]Game
 type Deck    map[string]string
 
@@ -57,6 +75,7 @@ type Game struct {
 	teamTurn        Team
 	roleTurn        Role
 	guessRemaining  int
+	score           Score
 }
 
 const totalNumCards = 25
@@ -96,7 +115,6 @@ func readDictionary(filePath string) error {
 	return nil
 }
 
-
 func getCards() Deck {
 	var colors = [25]string{
 		"red", "red", "red", "red", "red", "red", "red", "red", "red",
@@ -104,6 +122,7 @@ func getCards() Deck {
 	    "black",
 	    "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"}
 	cards := make(Deck, totalNumCards)
+	fmt.Printf("dictLen: %v", dictLen)
 	for i := 0; i < totalNumCards; i++ {
 		word := dictionary[rand.Intn(dictLen)]
 		// ensure each word is unique
@@ -122,4 +141,13 @@ func whiteCards(deck Deck) Deck {
 		whiteDeck[card] = "white"
 	}
 	return whiteDeck
+}
+
+func (game Game) updateScore(cardColor string) {
+	team, err := GetTeam(cardColor)
+	if err != nil {
+		// a neutral card or the death card
+		return
+	}
+	game.score[team] -= 1
 }

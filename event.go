@@ -76,4 +76,5 @@ type GuessResponseEvent struct {
 	CardColor      string `json:"cardColor"`
 	Correct        bool   `json:"correct"`
 	GuessRemaining int    `json:"guessRemaining"`
+	Score          Score  `json:"score"`
 }

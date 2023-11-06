@@ -100,3 +100,33 @@ func TestGetCards(t *testing.T) {
 		t.Errorf("not dealing with a full deck: %v cards", len(cards))
 	}
 }
+
+func TestUpdateScore(t *testing.T) {
+	manager := setupGame(t)
+	game := manager.games["test"]
+
+	if game.score[red] != 9 || game.score[blue] != 8 {
+		t.Errorf("problem in setup: red score is %v and blue score is %v",
+	             game.score[red], game.score[blue])
+	}
+
+	type test struct {
+		cardColor   string
+		expectScore Score
+	}
+	tests := []test{
+		{ cardColor: "red", expectScore: Score{red: 8, blue: 8} },
+		{ cardColor: "blue", expectScore: Score{red: 8, blue: 7} },
+		{ cardColor: "neutral", expectScore: Score{red: 8, blue: 7} },
+		{ cardColor: deathCard, expectScore: Score{red: 8, blue: 7} },
+		{ cardColor: "red", expectScore: Score{red: 7, blue: 7} },
+	}
+
+	for _, tt := range tests {
+		game.updateScore(tt.cardColor)
+		if !reflect.DeepEqual(game.score, tt.expectScore) {
+			t.Fatalf("test %v: expected: %v, got: %v",
+			         tt.cardColor, tt.expectScore, game.score)
+		}
+	}
+}
