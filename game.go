@@ -108,6 +108,7 @@ func getCards() Deck {
 		word := dictionary[rand.Intn(dictLen)]
 		// ensure each word is unique
 		if _, exists := cards[word]; exists {
+			i--
 			continue
 		}
 		cards[word] = colors[i]

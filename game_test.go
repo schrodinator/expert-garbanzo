@@ -15,8 +15,8 @@ func TestRoleChangeType(t *testing.T) {
 	}
 }
 
-// Calling Change() on a cluegiver Role should return
-// the guesser Role.
+/* Calling Change() on a cluegiver Role should return
+   the guesser Role. */
 func TestRoleChangeValue0(t *testing.T) {
 	myRole := cluegiver
 	roleChange := myRole.Change()
@@ -25,8 +25,8 @@ func TestRoleChangeValue0(t *testing.T) {
 	}
 }
 
-// Calling Change() on a guesser Role should return
-// the cluegiver Role.
+/* Calling Change() on a guesser Role should return
+   the cluegiver Role. */
 func TestRoleChangeValue1(t *testing.T) {
 	myRole := guesser
 	roleChange := myRole.Change()
@@ -88,5 +88,15 @@ func TestChangeTurnRedGuesser(t *testing.T) {
 	}
 	if game.teamTurn != blue {
 		t.Errorf("team after changeTurn is %v", game.teamTurn)
+	}
+}
+
+/* Calling getCards() returns 25 cards.
+   The function is nondeterministic so this is not a perfect test. */
+func TestGetCards(t *testing.T) {
+	readDictionary("./codenames-wordlist.txt")
+	cards := getCards()
+	if len(cards) != totalNumCards {
+		t.Errorf("not dealing with a full deck: %v cards", len(cards))
 	}
 }
