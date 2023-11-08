@@ -34,13 +34,12 @@ func (t Team) Change() Team {
 func (t Team) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(t))
 }
-func (t *Team) UnmarshalJSON(data []byte) error {
+func (t Team) UnmarshalJSON(data []byte) error {
 	var teamString string
 	if err := json.Unmarshal(data, &teamString); err != nil {
 		return err
 	}
-	team, err := NewTeam(teamString)
-	t = &team
+	t, err := NewTeam(teamString)
 	return err
 }
 func NewTeam(s string) (Team, error) {
@@ -75,13 +74,12 @@ func (r Role) Change() Role {
 func (r Role) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(r))
 }
-func (r *Role) UnmarshalJSON(data []byte) error {
+func (r Role) UnmarshalJSON(data []byte) error {
 	var roleString string
 	if err := json.Unmarshal(data, &roleString); err != nil {
 		return err
 	}
-	role, err := NewRole(roleString)
-	r = &role
+	r, err := NewRole(roleString)
 	return err
 }
 func NewRole(r string) (Role, error) {
