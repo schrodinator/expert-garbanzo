@@ -13,60 +13,90 @@ var (
 	dictLen    int
 )
 
-type Team int
+type Team string
 const (
-	red  Team = iota
-	blue
+	red  Team = "red"
+	blue Team = "blue"
 )
 func (t Team) String() string {
-	return [...]string{"red", "blue"}[t]
-}
-func (t Team) EnumIndex() int {
-	return int(t)
+	return string(t)
 }
 func (t Team) Change() Team {
-	if t == 0 {
-		return Team(1)
+	switch t {
+	case red:
+		return blue
+	case blue:
+		return red
+	default:
+		return t
 	}
-	return Team(0)
 }
-func GetTeam(s string) (Team, error) {
-	for _, team := range([2]Team{red, blue}) {
-		if s == team.String() {
-			return team, nil
-		}
+func (t Team) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(t))
+}
+func (t *Team) UnmarshalJSON(data []byte) error {
+	var teamString string
+	if err := json.Unmarshal(data, &teamString); err != nil {
+		return err
 	}
-	return -1, fmt.Errorf("no Team match for input %v", s)
+	team, err := NewTeam(teamString)
+	t = &team
+	return err
+}
+func NewTeam(s string) (Team, error) {
+	switch s {
+	case "red":
+		return red, nil
+	case "blue":
+		return blue, nil
+	default:
+		return "", fmt.Errorf("invalid team: %s", s)
+	}
 }
 
-type Role int
+type Role string
 const (
-	cluegiver Role = iota
-	guesser
+	cluegiver Role = "cluegiver"
+	guesser   Role = "guesser"
 )
 func (r Role) String() string {
-	return [...]string{"cluegiver", "guesser"}[r]
-}
-func (r Role) EnumIndex() int {
-	return int(r)
+	return string(r)
 }
 func (r Role) Change() Role {
-	if r == 0 {
-		return Role(1)
+	switch r {
+	case guesser:
+		return cluegiver
+	case cluegiver:
+		return guesser
+	default:
+		return r
 	}
-	return Role(0)
 }
-
-type Score   map[Team]int
-func (score Score) MarshalJSON() ([]byte, error) {
-	s := make(map[string]int)
-	for t, i := range score {
-		s[t.String()] = i
+func (r Role) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(r))
+}
+func (r *Role) UnmarshalJSON(data []byte) error {
+	var roleString string
+	if err := json.Unmarshal(data, &roleString); err != nil {
+		return err
 	}
-	return json.Marshal(s)
+	role, err := NewRole(roleString)
+	r = &role
+	return err
+}
+func NewRole(r string) (Role, error) {
+	switch r {
+	case "cluegiver":
+		return cluegiver, nil
+	case "guesser":
+		return guesser, nil
+	default:
+		return "", fmt.Errorf("invalid role: %s", r)
+	}
 }
 
 type GameMap map[string]Game
+type Score   map[Team]int
 type Deck    map[string]string
 
 type Game struct {
@@ -122,7 +152,6 @@ func getCards() Deck {
 	    "black",
 	    "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"}
 	cards := make(Deck, totalNumCards)
-	fmt.Printf("dictLen: %v", dictLen)
 	for i := 0; i < totalNumCards; i++ {
 		word := dictionary[rand.Intn(dictLen)]
 		// ensure each word is unique
@@ -144,9 +173,9 @@ func whiteCards(deck Deck) Deck {
 }
 
 func (game Game) updateScore(cardColor string) {
-	team, err := GetTeam(cardColor)
+	team, err := NewTeam(cardColor)
 	if err != nil {
-		// a neutral card or the death card
+		// cardColor is not red or blue
 		return
 	}
 	game.score[team] -= 1
