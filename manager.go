@@ -104,7 +104,7 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	var abortGame AbortGameEvent
 	abortGame.UserName = c.username
-	abortGame.TeamColor = c.team.String()
+	abortGame.TeamColor = c.team
 
 	err := c.manager.notifyPlayers(c.chatroom, EventAbortGame, abortGame)
 	return err
@@ -157,7 +157,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	}
 
 	guessResponse.GuessRemaining = game.guessRemaining
-	guessResponse.TeamColor = c.team.String()
+	guessResponse.TeamColor = c.team
 	guessResponse.CardColor = cardColor
 	guessResponse.TeamTurn  = game.teamTurn
 	guessResponse.RoleTurn  = game.roleTurn

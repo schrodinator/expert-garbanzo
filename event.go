@@ -49,14 +49,14 @@ type NewGameEvent struct {
 
 type AbortGameEvent struct {
 	UserName  string `json:"username"`
-	TeamColor string `json:"teamColor"`
+	TeamColor Team   `json:"teamColor"`
 }
 
 type GiveClueEvent struct {
 	Clue      string `json:"clue"`
 	NumCards  int    `json:"numCards,string"`
 	From      string `json:"from"`
-	TeamColor string `json:"teamColor"`
+	TeamColor Team   `json:"teamColor"`
 }
 
 type GuessEvent struct {
@@ -72,7 +72,7 @@ type EndTurnEvent struct {
 type GuessResponseEvent struct {
 	GuessEvent
 	EndTurnEvent
-	TeamColor      string `json:"teamColor"`
+	TeamColor      Team   `json:"teamColor"`
 	CardColor      string `json:"cardColor"`
 	Correct        bool   `json:"correct"`
 	GuessRemaining int    `json:"guessRemaining"`
