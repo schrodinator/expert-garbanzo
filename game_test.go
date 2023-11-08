@@ -102,7 +102,7 @@ func TestGetCards(t *testing.T) {
 }
 
 func TestUpdateScore(t *testing.T) {
-	manager := setupGame(t)
+	manager := setupGame(t, nil)
 	game := manager.games["test"]
 
 	if game.score[red] != 9 || game.score[blue] != 8 {

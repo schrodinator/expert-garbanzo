@@ -129,7 +129,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	game := c.manager.games[c.chatroom]
+	game := c.game
 	card := guessResponse.Guess
 	cardColor := game.cards[guessResponse.Guess]
 	if c.team != game.teamTurn {
@@ -164,7 +164,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	guessResponse.Score     = game.score
 
 	game.cards[card] = "guessed-" + cardColor
-	c.manager.games[c.chatroom] = game
+	c.manager.games[c.chatroom] = *game
 
 	err := c.manager.notifyPlayers(c.chatroom, EventMakeGuess, guessResponse)
 	return err
