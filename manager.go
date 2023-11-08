@@ -115,8 +115,8 @@ func EndTurnHandler(event Event, c *Client) error {
 	game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
 
 	var payload EndTurnEvent
-	payload.TeamTurn = game.teamTurn.String()
-	payload.RoleTurn = game.roleTurn.String()
+	payload.TeamTurn = game.teamTurn
+	payload.RoleTurn = game.roleTurn
 	c.manager.notifyPlayers(c.chatroom, "end_turn", payload)
 
 	return nil
@@ -159,8 +159,8 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	guessResponse.GuessRemaining = game.guessRemaining
 	guessResponse.TeamColor = c.team.String()
 	guessResponse.CardColor = cardColor
-	guessResponse.TeamTurn  = game.teamTurn.String()
-	guessResponse.RoleTurn  = game.roleTurn.String()
+	guessResponse.TeamTurn  = game.teamTurn
+	guessResponse.RoleTurn  = game.roleTurn
 	guessResponse.Score     = game.score
 
 	game.cards[card] = "guessed-" + cardColor
@@ -251,7 +251,8 @@ func (m *Manager) notifyPlayers(room string, messageType string, message any) er
 		client.egress <- outgoingEvent
 	}
 
-	return nil}
+	return nil
+}
 
 func (m *Manager) notifyClients(room string, messageType string, message any) error {
 	outgoingEvent, err := packageMessage(messageType, message)

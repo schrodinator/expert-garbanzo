@@ -65,8 +65,8 @@ type GuessEvent struct {
 }
 
 type EndTurnEvent struct {
-	TeamTurn       string `json:"teamTurn"`
-	RoleTurn       string `json:"roleTurn"`
+	TeamTurn  Team `json:"teamTurn"`
+	RoleTurn  Role `json:"roleTurn"`
 }
 
 type GuessResponseEvent struct {
