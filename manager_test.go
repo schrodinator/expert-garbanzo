@@ -31,7 +31,6 @@ func setupGame(t *testing.T, ws *websocket.Conn) *Manager {
 	game := manager.makeGame("test")
 	client := manager.clients["testClient"]
 	client.chatroom = "test"
-	client.game = &game
 	game.players["testClient"] = client
 	manager.games["test"] = game
 	
@@ -40,7 +39,7 @@ func setupGame(t *testing.T, ws *websocket.Conn) *Manager {
 
 func setupDeck(t *testing.T, ws *websocket.Conn) *Manager {
 	t.Helper()
-	
+
 	manager := setupGame(t, ws)
 	game := manager.games["test"]
 	game.cards = Deck{"redword": "red",
@@ -48,7 +47,6 @@ func setupDeck(t *testing.T, ws *websocket.Conn) *Manager {
 					  "neutralword": "neutral",
 					  "deathword": deathCard}
 	manager.games["test"] = game
-	manager.clients["testClient"].game = &game
 	return manager
 }
 
@@ -137,7 +135,6 @@ func TestGuessEvaluationHandler(t *testing.T) {
 	game.guessRemaining = totalNumCards
 	manager.games["test"] = game
 	client := manager.clients["testClient"]
-	client.game = &game
 
 	go client.writeMessages()
 

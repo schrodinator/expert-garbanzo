@@ -19,7 +19,6 @@ type ChatRooms  map[string]ClientList
 type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
-	game       *Game
 	username   string
 	chatroom   string
 	team       Team
@@ -35,7 +34,6 @@ func NewClient(username string, conn *websocket.Conn, manager *Manager) *Client 
 		manager:    manager,
 		username:   username,
 		chatroom:   defaultChatRoom,
-		game:       nil,
 		role:       guesser,
 		team:       red,
 		egress:     make(chan Event),

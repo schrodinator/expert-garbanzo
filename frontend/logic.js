@@ -166,6 +166,7 @@ function setupBoard(payload) {
     document.getElementById("role").disabled = true;
     document.getElementById("team").disabled = true;
     document.getElementById("newgame-button").hidden = true;
+    document.getElementById("abort-button").value = "Abort Game";
     document.getElementById("abort-button").hidden = false;
 
     whoseTurn(defaultTeam, "cluegiver");
@@ -317,6 +318,7 @@ function guessResponseHandler(payload) {
 
     markGuessedCard(guessResponse);
     notifyChatRoom(guessResponse);
+    checkDeathCard(guessResponse);
     updateScoreboard(guessResponse);
     notifyGuessRemaining(guessResponse);
 
@@ -381,21 +383,24 @@ function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
     return false;
 }
 
-function updateScoreboard({teamColor, cardColor}) {
-    const teamName = capitalize(teamColor);
-
+function checkDeathCard({cardColor, teamColor}) {
     if (cardColor == deathCard) {
+        const teamName = capitalize(teamColor);
         alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`)
         disableAllCardEvents();
-        return false;
+        document.getElementById("abort-button").value = "End Game";
     }
+    return false;
+}
 
-    if (cardColor === "red" || cardColor === "blue") {
-        const score = document.getElementById(`${cardColor}score`);
-        score.innerText -= 1;
-        if (score.innerText == 0) {
-            alert(`${teamName} Team wins!`)
+function updateScoreboard(score) {
+    for (const color in ["red", "blue"]) {
+        const loc = document.getElementById(`${cardColor}score`);
+        loc.innerText = score.color;
+        if (score.color == 0) {
+            alert(`${capitalize(color)} Team wins!`)
             disableAllCardEvents();
+            document.getElementById("abort-button").value = "End Game";
         }
     }
     return false;
