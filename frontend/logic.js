@@ -352,7 +352,7 @@ function whoseTurn(teamTurn, roleTurn) {
 
 function notifyGuessRemaining({guessRemaining}) {
     if (guessRemaining < totalNumCards) {
-        document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${guessResponse.guessRemaining}`;
+        document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${guessRemaining}`;
     }
 }
 
@@ -393,10 +393,10 @@ function checkDeathCard({cardColor, teamColor}) {
     return false;
 }
 
-function updateScoreboard(score) {
-    for (const color in ["red", "blue"]) {
+function updateScoreboard({cardColor, score}) {
+    for (const color of ["red", "blue"]) {
         const loc = document.getElementById(`${cardColor}score`);
-        loc.innerText = score.color;
+        loc.innerText = score[color];
         if (score.color == 0) {
             alert(`${capitalize(color)} Team wins!`)
             disableAllCardEvents();
