@@ -393,14 +393,15 @@ function checkDeathCard({cardColor, teamColor}) {
     return false;
 }
 
-function updateScoreboard({cardColor, score}) {
+function updateScoreboard({score}) {
     for (const color of ["red", "blue"]) {
-        const loc = document.getElementById(`${cardColor}score`);
+        const loc = document.getElementById(`${color}score`);
         loc.innerText = score[color];
         if (score.color == 0) {
             alert(`${capitalize(color)} Team wins!`)
             disableAllCardEvents();
             document.getElementById("abort-button").value = "End Game";
+            return false;
         }
     }
     return false;
