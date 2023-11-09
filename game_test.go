@@ -105,3 +105,221 @@ func TestUpdateScore(t *testing.T) {
 		}
 	}
 }
+
+type guesstest struct {
+	name           string
+	cardColor      string
+	expectCorrect  bool
+	expectScore    Score
+	expectGuess    int
+	expectTeamTurn Team
+	expectRoleTurn Role
+}
+
+func TestEvaluateGuess1(t *testing.T) {
+	manager := setupDeck(t, nil)
+	game := manager.games["test"]
+	game.roleTurn = guesser
+	game.guessRemaining = 3
+
+	var guesses = []guesstest {
+		{
+			name: "red1",
+			cardColor: "red",
+			expectCorrect: true,
+			expectScore: Score{red: 8, blue: 8},
+			expectGuess: 2,
+			expectTeamTurn: red,
+			expectRoleTurn: guesser,
+		},
+		{
+			name: "red2",
+			cardColor: "red",
+			expectCorrect: true,
+			expectScore: Score{red: 7, blue: 8},
+			expectGuess: 1,
+			expectTeamTurn: red,
+			expectRoleTurn: guesser,
+		},
+		{
+			name: "red3",
+			cardColor: "red",
+			expectCorrect: true,
+			expectScore: Score{red: 6, blue: 8},
+			expectGuess: 0,
+			expectTeamTurn: blue,
+			expectRoleTurn: cluegiver,
+		},
+	}
+
+	for _, tt := range guesses {
+		correct := game.evaluateGuess(tt.cardColor)
+		if correct != tt.expectCorrect {
+			t.Errorf("test %v, correct: expected: %v, got: %v",
+					 tt.name, tt.expectCorrect, correct)
+		}
+		if !reflect.DeepEqual(game.score, tt.expectScore) {
+			t.Errorf("test %v, score: expected: %v, got: %v",
+			         tt.name, tt.expectScore, game.score)
+		}
+		if game.guessRemaining != tt.expectGuess {
+			t.Errorf("test %v, guesses remaining: expected: %v, got: %v",
+			         tt.name, tt.expectGuess, game.guessRemaining)
+		}
+		if game.teamTurn != tt.expectTeamTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectTeamTurn, game.teamTurn)
+		}
+		if game.roleTurn != tt.expectRoleTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectRoleTurn, game.roleTurn)
+		}
+	}
+}
+
+func TestEvaluateGuess2(t *testing.T) {
+	manager := setupDeck(t, nil)
+	game := manager.games["test"]
+	game.roleTurn = guesser
+	game.guessRemaining = 3
+
+	var guesses = []guesstest {
+		{
+			name: "red1",
+			cardColor: "red",
+			expectCorrect: true,
+			expectScore: Score{red: 8, blue: 8},
+			expectGuess: 2,
+			expectTeamTurn: red,
+			expectRoleTurn: guesser,
+		},
+		{
+			name: "blue2",
+			cardColor: "blue",
+			expectCorrect: false,
+			expectScore: Score{red: 8, blue: 7},
+			expectGuess: 0,
+			expectTeamTurn: blue,
+			expectRoleTurn: cluegiver,
+		},
+	}
+
+	for _, tt := range guesses {
+		correct := game.evaluateGuess(tt.cardColor)
+		if correct != tt.expectCorrect {
+			t.Errorf("test %v, correct: expected: %v, got: %v",
+					 tt.name, tt.expectCorrect, correct)
+		}
+		if !reflect.DeepEqual(game.score, tt.expectScore) {
+			t.Errorf("test %v, score: expected: %v, got: %v",
+			         tt.name, tt.expectScore, game.score)
+		}
+		if game.guessRemaining != tt.expectGuess {
+			t.Errorf("test %v, guesses remaining: expected: %v, got: %v",
+			         tt.name, tt.expectGuess, game.guessRemaining)
+		}
+		if game.teamTurn != tt.expectTeamTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectTeamTurn, game.teamTurn)
+		}
+		if game.roleTurn != tt.expectRoleTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectRoleTurn, game.roleTurn)
+		}
+	}
+}
+
+func TestEvaluateGuess3(t *testing.T) {
+	manager := setupDeck(t, nil)
+	game := manager.games["test"]
+	game.roleTurn = guesser
+	game.guessRemaining = 25
+
+	var guesses = []guesstest {
+		{
+			name: "red1",
+			cardColor: "red",
+			expectCorrect: true,
+			expectScore: Score{red: 8, blue: 8},
+			expectGuess: 25,
+			expectTeamTurn: red,
+			expectRoleTurn: guesser,
+		},
+		{
+			name: "neutral2",
+			cardColor: "neutral",
+			expectCorrect: false,
+			expectScore: Score{red: 8, blue: 8},
+			expectGuess: 0,
+			expectTeamTurn: blue,
+			expectRoleTurn: cluegiver,
+		},
+	}
+
+	for _, tt := range guesses {
+		correct := game.evaluateGuess(tt.cardColor)
+		if correct != tt.expectCorrect {
+			t.Errorf("test %v, correct: expected: %v, got: %v",
+					 tt.name, tt.expectCorrect, correct)
+		}
+		if !reflect.DeepEqual(game.score, tt.expectScore) {
+			t.Errorf("test %v, score: expected: %v, got: %v",
+			         tt.name, tt.expectScore, game.score)
+		}
+		if game.guessRemaining != tt.expectGuess {
+			t.Errorf("test %v, guesses remaining: expected: %v, got: %v",
+			         tt.name, tt.expectGuess, game.guessRemaining)
+		}
+		if game.teamTurn != tt.expectTeamTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectTeamTurn, game.teamTurn)
+		}
+		if game.roleTurn != tt.expectRoleTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectRoleTurn, game.roleTurn)
+		}
+	}
+}
+
+func TestEvaluateGuess4(t *testing.T) {
+	manager := setupDeck(t, nil)
+	game := manager.games["test"]
+	game.roleTurn = guesser
+	game.guessRemaining = 25
+
+	var guesses = []guesstest {
+		{
+			name: "death card",
+			cardColor: deathCard,
+			expectCorrect: false,
+			expectScore: Score{red: 9, blue: 8},
+			expectGuess: 0,
+			expectTeamTurn: blue,
+			expectRoleTurn: cluegiver,
+		},
+	}
+
+	for _, tt := range guesses {
+		correct := game.evaluateGuess(tt.cardColor)
+		if correct != tt.expectCorrect {
+			t.Errorf("test %v, correct: expected: %v, got: %v",
+					 tt.name, tt.expectCorrect, correct)
+		}
+		if !reflect.DeepEqual(game.score, tt.expectScore) {
+			t.Errorf("test %v, score: expected: %v, got: %v",
+			         tt.name, tt.expectScore, game.score)
+		}
+		if game.guessRemaining != tt.expectGuess {
+			t.Errorf("test %v, guesses remaining: expected: %v, got: %v",
+			         tt.name, tt.expectGuess, game.guessRemaining)
+		}
+		if game.teamTurn != tt.expectTeamTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectTeamTurn, game.teamTurn)
+		}
+		if game.roleTurn != tt.expectRoleTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectRoleTurn, game.roleTurn)
+		}
+	}
+}

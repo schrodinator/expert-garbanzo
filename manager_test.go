@@ -32,7 +32,7 @@ func setupGame(t *testing.T, ws *websocket.Conn) *Manager {
 	client := manager.clients["testClient"]
 	client.chatroom = "test"
 	game.players["testClient"] = client
-	manager.games["test"] = game
+	client.game = game
 	
 	return manager
 }

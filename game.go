@@ -124,7 +124,11 @@ func (game *Game) updateScore(cardColor string) {
 	game.score[team] -= 1
 }
 
-func (game *Game) updateGuessesRemaining() {
+func (game *Game) updateGuessesRemaining(correct bool) {
+	if !correct {
+		game.guessRemaining = 0
+		return
+	}
 	if game.guessRemaining < totalNumCards {
 		game.guessRemaining -= 1
 	}
@@ -132,9 +136,9 @@ func (game *Game) updateGuessesRemaining() {
 
 func (game *Game) evaluateGuess(cardColor string) bool {
 	game.updateScore(cardColor)
-	game.updateGuessesRemaining()
 	correct := cardColor == game.teamTurn.String()
-	if !correct || game.guessRemaining <= 0 {
+	game.updateGuessesRemaining(correct)
+	if game.guessRemaining <= 0 {
 		game.changeTurn()
 	}
 	return correct
