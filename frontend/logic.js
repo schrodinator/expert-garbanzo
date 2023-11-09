@@ -303,7 +303,12 @@ function notifyRoomEntry(payload) {
         document.getElementById("end-turn").hidden = true;
         document.getElementById("gameboard-container").hidden = false;
     }
-    const message = `<br><span style="font-weight:bold;">${roomChange.username} has entered the room.</span><br>`;
+    let message = `<br><span style="font-weight:bold;">${roomChange.username} has entered `;
+    if (username === roomChange.username) {
+        message += `${roomChange.roomname}</span><br>`;
+    } else {
+        message += `the room.</span><br>`;
+    }
     appendToChat(message);
 }
 
@@ -331,28 +336,31 @@ function guessResponseHandler(payload) {
 }
 
 function whoseTurn(teamTurn, roleTurn) {
-    if (userTeam !== teamTurn) {
+    if (userTeam != teamTurn) {
         disableAllCardEvents();
         document.getElementById("clue-input").disabled = true;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
         document.getElementById("end-turn").hidden = true;
         return;
     }
-    if (roleTurn !== defaultRole) {
+    if (roleTurn != defaultRole) {
         // cluegiver turn
         document.getElementById("clue-input").disabled = false;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
     }
-    if (userRole === defaultRole) {
+    if (userRole == defaultRole) {
         enableCardEvents();
         document.getElementById("end-turn").hidden = false;
     }
-    return;
 }
 
-function notifyGuessRemaining({guessRemaining}) {
+function notifyGuessRemaining({guessRemaining, teamTurn, roleTurn}) {
+    const remaining = document.getElementById("guesses-remaining");
+    if (guessRemaining == 0) {
+        remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn} turn`
+    }
     if (guessRemaining < totalNumCards) {
-        document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${guessRemaining}`;
+        remaining.innerText = `Guesses Remaining: ${guessRemaining}`;
     }
 }
 
