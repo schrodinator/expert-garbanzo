@@ -119,6 +119,8 @@ type guesstest struct {
 func TestEvaluateGuess1(t *testing.T) {
 	manager := setupDeck(t, nil)
 	game := manager.games["test"]
+	game.teamCounts[red] = 2
+	game.teamCounts[blue] = 2
 	game.roleTurn = guesser
 	game.guessRemaining = 3
 
@@ -180,6 +182,8 @@ func TestEvaluateGuess1(t *testing.T) {
 func TestEvaluateGuess2(t *testing.T) {
 	manager := setupDeck(t, nil)
 	game := manager.games["test"]
+	game.teamCounts[red] = 2
+	game.teamCounts[blue] = 2
 	game.roleTurn = guesser
 	game.guessRemaining = 3
 
@@ -232,6 +236,8 @@ func TestEvaluateGuess2(t *testing.T) {
 func TestEvaluateGuess3(t *testing.T) {
 	manager := setupDeck(t, nil)
 	game := manager.games["test"]
+	game.teamCounts[red] = 2
+	game.teamCounts[blue] = 2
 	game.roleTurn = guesser
 	game.guessRemaining = 25
 
@@ -284,6 +290,8 @@ func TestEvaluateGuess3(t *testing.T) {
 func TestEvaluateGuess4(t *testing.T) {
 	manager := setupDeck(t, nil)
 	game := manager.games["test"]
+	game.teamCounts[red] = 2
+	game.teamCounts[blue] = 2
 	game.roleTurn = guesser
 	game.guessRemaining = 25
 
@@ -295,6 +303,51 @@ func TestEvaluateGuess4(t *testing.T) {
 			expectScore: Score{red: 9, blue: 8},
 			expectGuess: 0,
 			expectTeamTurn: blue,
+			expectRoleTurn: cluegiver,
+		},
+	}
+
+	for _, tt := range guesses {
+		correct := game.evaluateGuess(tt.cardColor)
+		if correct != tt.expectCorrect {
+			t.Errorf("test %v, correct: expected: %v, got: %v",
+					 tt.name, tt.expectCorrect, correct)
+		}
+		if !reflect.DeepEqual(game.score, tt.expectScore) {
+			t.Errorf("test %v, score: expected: %v, got: %v",
+			         tt.name, tt.expectScore, game.score)
+		}
+		if game.guessRemaining != tt.expectGuess {
+			t.Errorf("test %v, guesses remaining: expected: %v, got: %v",
+			         tt.name, tt.expectGuess, game.guessRemaining)
+		}
+		if game.teamTurn != tt.expectTeamTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectTeamTurn, game.teamTurn)
+		}
+		if game.roleTurn != tt.expectRoleTurn {
+			t.Errorf("test %v, team turn: expected: %v, got: %v",
+			         tt.name, tt.expectRoleTurn, game.roleTurn)
+		}
+	}
+}
+
+// Simulate a game with only one team
+func TestEvaluateGuess5(t *testing.T) {
+	manager := setupDeck(t, nil)
+	game := manager.games["test"]
+	game.teamCounts[red] = 2
+	game.roleTurn = guesser
+	game.guessRemaining = 25
+
+	var guesses = []guesstest {
+		{
+			name: "blue1",
+			cardColor: "blue",
+			expectCorrect: false,
+			expectScore: Score{red: 9, blue: 7},
+			expectGuess: 0,
+			expectTeamTurn: red,
 			expectRoleTurn: cluegiver,
 		},
 	}

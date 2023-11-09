@@ -103,6 +103,7 @@ type Game struct {
 	players         ClientList
 	cards           Deck
 	teamTurn        Team
+	teamCounts      map[Team]int
 	roleTurn        Role
 	guessRemaining  int
 	score           Score
@@ -110,6 +111,9 @@ type Game struct {
 
 func (game *Game) changeTurn() {
 	game.roleTurn = game.roleTurn.Change()
+	if len(game.teamCounts) == 1 {
+		return
+	}
 	if game.roleTurn == cluegiver {
 		game.teamTurn = game.teamTurn.Change()
 	}
