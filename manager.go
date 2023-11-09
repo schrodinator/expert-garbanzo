@@ -24,7 +24,7 @@ var (
 type Manager struct {
 	clients  ClientList
 	chats    ChatRooms
-	games    GameMap
+	games    GameList
 	handlers EventHandlerList
 
 	sync.RWMutex
@@ -36,7 +36,7 @@ func NewManager(ctx context.Context) *Manager {
 	m := &Manager{
 		clients:  make(ClientList),
 		chats:    make(ChatRooms),
-		games:    make(GameMap),
+		games:    make(GameList),
 		handlers: make(map[string]EventHandler),
 		otps:     NewRetentionMap(ctx, 5*time.Second),
 	}
@@ -83,6 +83,7 @@ func NewGameHandler(event Event, c *Client) error {
 		/* All clients in the chat room at the time of
 	       game creation are added as players */
 		game.players[client.username] = client
+		client.game = game
 
 		if client.role == cluegiver {
 			client.egress <- cluegiverEvent
@@ -90,12 +91,12 @@ func NewGameHandler(event Event, c *Client) error {
 			client.egress <- guesserEvent
 		}
 	}
-	c.manager.games[c.chatroom] = game
 
 	return nil	
 }
 
 func AbortGameHandler(event Event, c *Client) error {
+	c.game = nil
 	game, exists := c.manager.games[c.chatroom]
 	if !exists {
 		return fmt.Errorf("Game %v not found", c.chatroom)
@@ -111,8 +112,8 @@ func AbortGameHandler(event Event, c *Client) error {
 }
 
 func EndTurnHandler(event Event, c *Client) error {
-	game := c.manager.games[c.chatroom]
-	game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
+	game := c.game
+	game.changeTurn()
 
 	var payload EndTurnEvent
 	payload.TeamTurn = game.teamTurn
@@ -129,7 +130,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	game := c.manager.games[c.chatroom]
+	game := c.game
 	card := guessResponse.Guess
 	cardColor := game.cards[guessResponse.Guess]
 	if c.team != game.teamTurn {
@@ -141,21 +142,7 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 			c.role, game.roleTurn)
 	}
 
-	guessResponse.Correct = false
-	if c.team.String() == cardColor {
-		guessResponse.Correct = true
-	}
-	game.updateScore(cardColor)
-
-	if !guessResponse.Correct {
-		game.guessRemaining = 0;
-	} else if game.guessRemaining < totalNumCards {
-		game.guessRemaining -= 1
-	}
-	if !guessResponse.Correct || game.guessRemaining <= 0 {
-		game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
-	}
-
+	guessResponse.Correct = game.evaluateGuess(cardColor)
 	guessResponse.GuessRemaining = game.guessRemaining
 	guessResponse.TeamColor = c.team
 	guessResponse.CardColor = cardColor
@@ -164,14 +151,13 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	guessResponse.Score     = game.score
 
 	game.cards[card] = "guessed-" + cardColor
-	c.manager.games[c.chatroom] = game
 
 	err := c.manager.notifyPlayers(c.chatroom, EventMakeGuess, guessResponse)
 	return err
 }
 
 func ClueHandler(event Event, c *Client) error {
-	game := c.manager.games[c.chatroom]
+	game := c.game
 
 	// if we're here, a clue was given; now it's the guesser's turn
 	game.roleTurn = guesser
@@ -189,7 +175,6 @@ func ClueHandler(event Event, c *Client) error {
 		game.guessRemaining = clue.NumCards + 1
 	}
 
-	c.manager.games[c.chatroom] = game
 	err := c.manager.notifyPlayers(c.chatroom, EventGiveClue, event.Payload)
 	return err
 }
@@ -287,10 +272,10 @@ func (m *Manager) makeChatRoom(name string) {
 	m.chats[name] = make(ClientList)
 }
 
-func (m *Manager) makeGame(name string) Game {
+func (m *Manager) makeGame(name string) *Game {
 	game, exists := m.games[name]
 	if !exists {
-		game = Game {
+		game = &Game {
 			players: make(ClientList),
 		}
 	}

@@ -93,9 +93,11 @@ func NewRole(r string) (Role, error) {
 	}
 }
 
-type GameMap map[string]Game
-type Score   map[Team]int
-type Deck    map[string]string
+const totalNumCards = 25
+
+type GameList map[string]*Game
+type Score    map[Team]int
+type Deck     map[string]string
 
 type Game struct {
 	players         ClientList
@@ -106,16 +108,36 @@ type Game struct {
 	score           Score
 }
 
-const totalNumCards = 25
-
-
-func changeTurn(team Team, role Role) (Team, Role) {
-	newTeam := team
-	newRole := role.Change()
-	if newRole == cluegiver {
-		newTeam = team.Change()
+func (game *Game) changeTurn() {
+	game.roleTurn = game.roleTurn.Change()
+	if game.roleTurn == cluegiver {
+		game.teamTurn = game.teamTurn.Change()
 	}
-	return newTeam, newRole
+}
+
+func (game *Game) updateScore(cardColor string) {
+	team, err := NewTeam(cardColor)
+	if err != nil {
+		// cardColor is not red or blue
+		return
+	}
+	game.score[team] -= 1
+}
+
+func (game *Game) updateGuessesRemaining() {
+	if game.guessRemaining < totalNumCards {
+		game.guessRemaining -= 1
+	}
+}
+
+func (game *Game) evaluateGuess(cardColor string) bool {
+	game.updateScore(cardColor)
+	game.updateGuessesRemaining()
+	correct := cardColor == game.teamTurn.String()
+	if !correct || game.guessRemaining <= 0 {
+		game.changeTurn()
+	}
+	return correct
 }
 
 func readDictionary(filePath string) error {
@@ -168,13 +190,4 @@ func whiteCards(deck Deck) Deck {
 		whiteDeck[card] = "white"
 	}
 	return whiteDeck
-}
-
-func (game Game) updateScore(cardColor string) {
-	team, err := NewTeam(cardColor)
-	if err != nil {
-		// cardColor is not red or blue
-		return
-	}
-	game.score[team] -= 1
 }

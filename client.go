@@ -19,6 +19,7 @@ type ChatRooms  map[string]ClientList
 type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
+	game       *Game
 	username   string
 	chatroom   string
 	team       Team

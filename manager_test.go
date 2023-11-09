@@ -135,6 +135,7 @@ func TestGuessEvaluationHandler(t *testing.T) {
 	game.guessRemaining = totalNumCards
 	manager.games["test"] = game
 	client := manager.clients["testClient"]
+	client.game = game
 
 	go client.writeMessages()
 

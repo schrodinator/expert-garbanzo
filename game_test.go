@@ -48,7 +48,7 @@ func TestChangeTurn(t *testing.T) {
 	game.roleTurn = cluegiver
 	game.teamTurn = red
 
-	game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
+	game.changeTurn()
 	if game.roleTurn != guesser {
 		t.Errorf("role after first changeTurn is %v", game.roleTurn)
 	}
@@ -56,7 +56,7 @@ func TestChangeTurn(t *testing.T) {
 		t.Errorf("team after first changeTurn is %v", game.teamTurn)
 	}
 
-	game.teamTurn, game.roleTurn = changeTurn(game.teamTurn, game.roleTurn)
+	game.changeTurn()
 	if game.roleTurn != cluegiver {
 		t.Errorf("role after second changeTurn is %v", game.roleTurn)
 	}
