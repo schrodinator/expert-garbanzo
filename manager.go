@@ -83,6 +83,11 @@ func NewGameHandler(event Event, c *Client) error {
 		/* All clients in the chat room at the time of
 	       game creation are added as players */
 		game.players[client.username] = client
+		if _, exists := game.teamCounts[client.team]; exists {
+			game.teamCounts[client.team] += 1
+		} else {
+			game.teamCounts[client.team] = 1
+		}
 		client.game = game
 
 		if client.role == cluegiver {
@@ -102,6 +107,11 @@ func AbortGameHandler(event Event, c *Client) error {
 		return fmt.Errorf("Game %v not found", c.chatroom)
 	}
 	delete(game.players, c.username)
+
+	game.teamCounts[c.team] -= 1
+	if (game.teamCounts[c.team] <= 0) {
+		delete(game.teamCounts, c.team)
+	}
 
 	var abortGame AbortGameEvent
 	abortGame.UserName = c.username
@@ -277,6 +287,7 @@ func (m *Manager) makeGame(name string) *Game {
 	if !exists {
 		game = &Game {
 			players: make(ClientList),
+			teamCounts: make(map[Team]int),
 		}
 	}
 	game.cards = getCards()
