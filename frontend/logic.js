@@ -124,6 +124,7 @@ function abortGame() {
     resetCards();
     resetClueNotification();
 
+    document.getElementById("cluebox").hidden = true;
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
     document.getElementById("sort-cards").disabled = true;
@@ -336,19 +337,20 @@ function guessResponseHandler(payload) {
 }
 
 function whoseTurn(teamTurn, roleTurn) {
-    if (userTeam != teamTurn) {
+    document.getElementById("end-turn").hidden = true;
+    if (userTeam !== teamTurn) {
         disableAllCardEvents();
         document.getElementById("clue-input").disabled = true;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
-        document.getElementById("end-turn").hidden = true;
         return;
     }
-    if (roleTurn != defaultRole) {
+    if (roleTurn !== defaultRole) {
         // cluegiver turn
         document.getElementById("clue-input").disabled = false;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
+        return;
     }
-    if (userRole == defaultRole) {
+    if (userRole === defaultRole) {
         enableCardEvents();
         document.getElementById("end-turn").hidden = false;
     }
@@ -358,8 +360,7 @@ function notifyGuessRemaining({guessRemaining, teamTurn, roleTurn}) {
     const remaining = document.getElementById("guesses-remaining");
     if (guessRemaining == 0) {
         remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn} turn`
-    }
-    if (guessRemaining < totalNumCards) {
+    } else if (guessRemaining < totalNumCards) {
         remaining.innerText = `Guesses Remaining: ${guessRemaining}`;
     }
 }
