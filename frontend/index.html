@@ -11,9 +11,9 @@
             <div class="login" id="login-div">
                 <form class="login" id="login-form">
                     <label for="username">username:</label>
-                    <input type="text" id="username" name="username"><br>
+                    <input type="text" id="username" name="username" data-test="username"><br>
                     <label for="password">password:</label>
-                    <input type="password" id="password" name="password"><br>
+                    <input type="password" id="password" name="password" data-test="password"><br>
                     <input type="submit" value="login">
                 </form>
             </div>
@@ -25,14 +25,14 @@
 
                 <form id="chatroom-selection">
                     <label for="chatroom">Chat Room:</label>
-                    <input type="text" id="chatroom" name="chatroom">
+                    <input type="text" id="chatroom" name="chatroom" data-test="chatroom">
                     <input type="submit" value="Change chatroom">
                 </form>
 
                 <br>
 
                 <div id="msg-color-container">
-                    <div class="messagearea" id="chatmessages" name="chatmessages"></div>
+                    <div class="messagearea" id="chatmessages" name="chatmessages" data-test="chatlog"></div>
                     <div class="color-container" id="color-container"></div>
                 </div>
 
@@ -40,7 +40,7 @@
 
                 <form id="chatroom-message">
                     <label for="message">Message:</label>
-                    <input type="text" id="message" name="message">
+                    <input type="text" id="message" name="message" data-test="message">
                     <input type="submit" value="Send message">
                 </form>
 
@@ -48,17 +48,17 @@
 
                 <div class="game-setup" id="game-setup" hidden>
                     <label for="team">Team: </label>
-                    <select name="team" id="team" onchange="changeTeam();" disabled>
+                    <select name="team" id="team" onchange="changeTeam();" data-test="team" disabled>
                         <option value="red" selected>Red</option>
                         <option value="blue">Blue</option>
                     </select>
                     <label for="role">Role: </label>
-                    <select name="role" id="role" onchange="changeRole();" disabled>
+                    <select name="role" id="role" onchange="changeRole();" data-test="role" disabled>
                         <option value="guesser" selected>Guesser</option>
                         <option value="cluegiver">Clue Giver</option>
                     </select>
-                    <input type="submit" value="New Game" id="newgame-button">
-                    <input type="submit" value="Abort Game" id="abort-button" hidden>
+                    <input type="submit" value="New Game" id="newgame-button" data-test="newgame">
+                    <input type="submit" value="Abort Game" id="abort-button" data-test="abort" hidden>
                 </div>
 
                 <br><br>
@@ -68,17 +68,17 @@
                         <div class="scoretitle" id="scoretitle">Cards Remaining</div>
                         <div class="scoreheader redteam" id="redheader">Red</div>
                         <div class="scoreheader blueteam" id="blueheader">Blue</div>
-                        <div class="score redteam" id="redscore">9</div>
-                        <div class="score blueteam" id="bluescore">8</div>
+                        <div class="score redteam" id="redscore" data-test="redscore">9</div>
+                        <div class="score blueteam" id="bluescore" data-test="bluescore">8</div>
                     </div>
                     
-                    <h3 id="clueheader"></h3>
-                    <h3 id="guesses-remaining"></h3>
+                    <h3 id="clueheader" data-test="clueheader"></h3>
+                    <h3 id="guesses-remaining" data-test="numguess"></h3>
                     <form id="cluebox" hidden>
                         <label for="clue-input">Clue:</label>
-                        <input type="text" id="clue-input">
+                        <input type="text" id="clue-input" data-test="giveclue">
                         <label for="number-input">Number of Cards:</label>
-                        <input id="number-input" type="number" min="0" max="9" value="2">
+                        <input id="number-input" type="number" min="0" max="9" value="2" data-test="number">
                         <input type="submit" value="Give Clue">
                     </form>
                     <input id="end-turn" type="submit" value="End Turn" hidden>
@@ -87,7 +87,7 @@
                     <div class="gameboard" id="gameboard"></div>
                     <br>
 
-                    <select name="sort-cards" id="sort-cards" onchange="sortCards(this.value);" disabled>
+                    <select name="sort-cards" id="sort-cards" onchange="sortCards(this.value);" data-test="sort" disabled>
                         <label for="sort-cards">Sort: </label>
                         <option value="alphabetical" selected>Alphabetical</option>
                         <option value="color">Color</option>
