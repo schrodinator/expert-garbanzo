@@ -22,7 +22,7 @@ Cypress.Commands.add('becomecluegiver', () => {
 })
 
 Cypress.Commands.add('startgame', () => {
-    cy.get('input[data-test="newgame"]').should('not.be.hidden')
+    cy.get('input[data-test="newgame"]').should('be.visible')
     cy.get('input[data-test="abort"]').should('be.hidden')
     cy.get('[data-test="team"]').should('not.be.disabled')
     cy.get('[data-test="role"]').should('not.be.disabled')
@@ -30,7 +30,7 @@ Cypress.Commands.add('startgame', () => {
     cy.get('input[data-test="newgame"]').click()
 
     cy.get('input[data-test="newgame"]').should('be.hidden')
-    cy.get('input[data-test="abort"]').should('not.be.hidden')
+    cy.get('input[data-test="abort"]').should('be.visible')
     cy.get('[data-test="team"]').should('be.disabled')
     cy.get('[data-test="role"]').should('be.disabled')
 })

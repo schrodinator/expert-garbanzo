@@ -5,6 +5,24 @@ describe('example to-do app', () => {
       cy.visit('/')
     })
 
+    it('starts a game as the guesser', () => {
+        const username = 'redguess'
+        const room = 'redroom'
+        let i = 0
+
+        cy.login(username)
+        cy.sendmessage('meet me in ' + room)
+        cy.changeroom(room)
+
+        cy.get('input[data-test="endturn"]').should('be.hidden')
+
+        cy.startgame()
+
+        for (i = 0; i < 25; i++) {
+            cy.get(`#card-${i}`).should('have.class', 'white')
+        }
+    })
+
     it('starts a game as the cluegiver', () => {
         const username = 'redclue'
         const room = 'roomy'
@@ -28,6 +46,6 @@ describe('example to-do app', () => {
             cy.get(`#card-${i}`).should('have.class', 'neutral')
         }
 
-        cy.giveclue('clue', 0)
+        cy.giveclue('avocado', 1)
     })
 })
