@@ -51,3 +51,15 @@ Cypress.Commands.add('giveclue', (clue, num) => {
     }
     cy.get('input[data-test="giveclue"').should('be.disabled')
 })
+
+Cypress.Commands.add('abortgame', () => {
+    cy.get('input[data-test="abort"]').click()
+
+    cy.get('input[data-test="newgame"]').should('be.visible')
+    cy.get('input[data-test="abort"]').should('be.hidden')
+    cy.get('[data-test="team"]').should('not.be.disabled')
+    cy.get('[data-test="role"]').should('not.be.disabled')
+    cy.get('input[data-test="endturn"]').should('be.hidden')
+    cy.get('[data-test="clueheader"]').should('not.be.visible')
+    cy.get('[data-test="numguess"]').should('not.be.visible')
+})

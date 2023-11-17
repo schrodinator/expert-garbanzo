@@ -21,6 +21,8 @@ describe('example to-do app', () => {
         for (i = 0; i < 25; i++) {
             cy.get(`#card-${i}`).should('have.class', 'white')
         }
+
+        cy.abortgame()
     })
 
     it('starts a game as the cluegiver', () => {
