@@ -282,7 +282,8 @@ function fmtTimeFromDate(date) {
 
 function changeChatRoom() {
     var newchat = document.getElementById("chatroom");
-    if (newchat != null && newchat.value != selectedChat) {
+    const whitespace = new RegExp(/^\s*$/);
+    if (newchat.value != null && !whitespace.test(newchat.value) && newchat.value != selectedChat) {
         selectedChat = newchat.value;
         header = document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
 
@@ -538,10 +539,10 @@ function giveClue() {
     if (!(clue.value == null || whitespace.test(clue.value))) {
         let outgoingEvent = new GiveClueEvent(clue.value, numCards);
         sendEvent("give_clue", outgoingEvent);
-        clue.value = "";
         clue.disabled = true;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
     }
+    clue.value = "";
     return false;
 }
 
