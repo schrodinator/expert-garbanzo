@@ -159,7 +159,7 @@ function setupBoard(payload) {
 
     document.getElementById("clueheader").innerHTML = "";
     document.getElementById("cluebox").hidden = true;
-    if (userRole !== guesserRole) {
+    if (userRole === cluegiverRole) {
         document.getElementById("cluebox").hidden = false;
     }
 
@@ -171,7 +171,11 @@ function setupBoard(payload) {
     document.getElementById("abort-button").value = "Abort Game";
     document.getElementById("abort-button").hidden = false;
 
-    whoseTurn(defaultTeam, cluegiverRole);
+    teamTurn = defaultTeam;
+    roleTurn = cluegiverRole;
+    whoseTurn(teamTurn, roleTurn);
+    const remaining = document.getElementById("guesses-remaining");
+    remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn}'s turn`;
 }
 
 function sortCards(how) {
@@ -361,7 +365,7 @@ function whoseTurn(teamTurn, roleTurn) {
 function notifyGuessRemaining({guessRemaining, teamTurn, roleTurn}) {
     const remaining = document.getElementById("guesses-remaining");
     if (guessRemaining == 0) {
-        remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn} turn`
+        remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn}'s turn`;
     } else if (guessRemaining < totalNumCards) {
         remaining.innerText = `Guesses Remaining: ${guessRemaining}`;
     }

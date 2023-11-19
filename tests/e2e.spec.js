@@ -1,4 +1,5 @@
 const { test, expect, chromium } = require('@playwright/test');
+const exp = require('constants');
 var fs = require('fs');
 
 const chatroom = 'gameroom';
@@ -82,12 +83,13 @@ test('play two-player game', async () => {
     await expect(page_guess.getByTestId('team')).toBeDisabled();
     await expect(page_guess.getByTestId('role')).toBeDisabled();
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
+    await expect(page_guess.getByTestId('numguess')).toContainText("It's red cluegiver's turn");
 
     await expect(page_clue.getByTestId('giveclue')).toBeVisible();
     await expect(page_clue.getByTestId('giveclue')).toBeEnabled();
     await expect(page_clue.getByTestId('endturn')).toBeHidden();
 
-    // Sort cards
+    // Sort cards and check colors
     await page_clue.getByTestId('sort').selectOption('Color - Keep Sorted');
     let i = 0;
     for (i = 0; i < 9; i++) {
