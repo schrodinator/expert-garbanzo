@@ -2,3 +2,7 @@ server.crt
 server.key
 password.txt
 node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

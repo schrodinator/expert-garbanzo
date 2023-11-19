@@ -1,5 +1,7 @@
 {
   "devDependencies": {
-    "cypress": "^13.5.1"
-  }
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.9.1"
+  },
+  "scripts": {}
 }
