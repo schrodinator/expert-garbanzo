@@ -85,7 +85,8 @@ const totalNumCards = 25;
 const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
                 "brown", "purple", "hotpink", "black", "gray"];
 const defaultRoom = "lobby";
-const defaultRole = "guesser";
+const guesserRole = "guesser";
+const cluegiverRole = "cluegiver";
 const defaultTeam = "red";
 const deathCard = "black";
 
@@ -93,7 +94,7 @@ var selectedChat = defaultRoom;
 var username;
 var usercolor = colors[Math.floor(Math.random() * colors.length)];
 var userTeam = defaultTeam;
-var userRole = defaultRole;
+var userRole = guesserRole;
 var currentGame;
 
 
@@ -137,8 +138,8 @@ function abortGame() {
     team.disabled = false;
     
     const role = document.getElementById("role");
-    role.value = defaultRole;
-    if (userRole !== defaultRole) {
+    role.value = guesserRole;
+    if (userRole !== guesserRole) {
         changeRole();
     }
     role.disabled = false;
@@ -158,7 +159,7 @@ function setupBoard(payload) {
 
     document.getElementById("clueheader").innerHTML = "";
     document.getElementById("cluebox").hidden = true;
-    if (userRole !== defaultRole) {
+    if (userRole !== guesserRole) {
         document.getElementById("cluebox").hidden = false;
     }
 
@@ -170,7 +171,7 @@ function setupBoard(payload) {
     document.getElementById("abort-button").value = "Abort Game";
     document.getElementById("abort-button").hidden = false;
 
-    whoseTurn(defaultTeam, "cluegiver");
+    whoseTurn(defaultTeam, cluegiverRole);
 }
 
 function sortCards(how) {
@@ -211,7 +212,7 @@ function setupCard(cardNum, word, color) {
     const card = document.getElementById(`card-${cardNum}`);
     card.innerText = word;
     card.className = `card ${color}`;
-    if (userRole === defaultRole) {
+    if (userRole === guesserRole) {
         if (color.includes("guessed")) {
             card.removeEventListener("click", this.makeGuess, false);
         } else {
@@ -345,13 +346,13 @@ function whoseTurn(teamTurn, roleTurn) {
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
         return;
     }
-    if (roleTurn !== defaultRole) {
+    if (roleTurn !== guesserRole) {
         // cluegiver turn
         document.getElementById("clue-input").disabled = false;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
         return;
     }
-    if (userRole === defaultRole) {
+    if (userRole === guesserRole) {
         enableCardEvents();
         document.getElementById("end-turn").hidden = false;
     }
@@ -451,7 +452,7 @@ function markGuessedCard({guess, cardColor}) {
         const card = document.getElementById(`card-${i}`);
         if (card.innerText === guess) {
             card.className = `card guessed-${cardColor}`;
-            if (userRole === defaultRole) {
+            if (userRole === guesserRole) {
                 card.removeEventListener("click", this.makeGuess, false);
             }
             break;
@@ -561,7 +562,7 @@ function clueHandler(payload) {
 
     document.getElementById("clueheader").innerHTML = msg;
 
-    whoseTurn(teamColor, defaultRole);
+    whoseTurn(teamColor, guesserRole);
 }
 
 function login() {
