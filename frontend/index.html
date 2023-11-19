@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>Websockets in Go</title>
+        <title>Expert Garbanzo</title>
         <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
         <div class="center">
-            <h1>Amazing Chat Application</h1>
+            <h1>Expert Garbanzo</h1>
 
             <div class="login" id="login-div">
                 <form class="login" id="login-form">
                     <label for="username">username:</label>
-                    <input type="text" id="username" name="username" data-testid="username"><br>
+                    <input type="text" id="username" name="username" maxlength="64" data-testid="username"><br>
                     <label for="password">password:</label>
-                    <input type="password" id="password" name="password" data-testid="password"><br>
+                    <input type="password" id="password" name="password" maxlength="128" data-testid="password"><br>
                     <input type="submit" value="login">
                 </form>
             </div>
@@ -25,7 +25,7 @@
 
                 <form id="chatroom-selection">
                     <label for="chatroom">Chat Room:</label>
-                    <input type="text" id="chatroom" name="chatroom" data-testid="chatroom">
+                    <input type="text" id="chatroom" name="chatroom" maxlength="255" data-testid="chatroom">
                     <input type="submit" value="Change chatroom">
                 </form>
 
@@ -40,7 +40,7 @@
 
                 <form id="chatroom-message">
                     <label for="message">Message:</label>
-                    <input type="text" id="message" name="message" data-testid="message">
+                    <input type="text" id="message" maxlength="512" name="message" data-testid="message">
                     <input type="submit" value="Send message">
                 </form>
 
@@ -76,7 +76,7 @@
                     <h3 id="guesses-remaining" data-testid="numguess"></h3>
                     <form id="cluebox" hidden>
                         <label for="clue-input">Clue:</label>
-                        <input type="text" id="clue-input" data-testid="giveclue">
+                        <input type="text" id="clue-input" maxlength="255" data-testid="giveclue">
                         <label for="number-input">Number of Cards:</label>
                         <input id="number-input" type="number" min="0" max="9" value="2" data-testid="number">
                         <input type="submit" value="Give Clue">
