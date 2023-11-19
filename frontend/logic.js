@@ -534,13 +534,14 @@ function sendMessage() {
 function giveClue() {
     const clue = document.getElementById("clue-input");
     const numCards = document.getElementById("number-input").value;
-    if (clue != null) {
+    const whitespace = new RegExp(/^\s*$/);
+    if (!(clue.value == null || whitespace.test(clue.value))) {
         let outgoingEvent = new GiveClueEvent(clue.value, numCards);
         sendEvent("give_clue", outgoingEvent);
         clue.value = "";
+        clue.disabled = true;
+        document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
     }
-    clue.disabled = true;
-    document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
     return false;
 }
 
