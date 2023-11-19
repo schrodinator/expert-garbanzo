@@ -4,7 +4,7 @@ var fs = require('fs');
 const chatroom = 'gameroom';
 const password = fs.readFileSync('./password.txt', { encoding: 'utf8', flag: 'r' });
 
-test('chat', async () => {
+test('play two-player game', async () => {
     // Cluegiver login
     const context_clue = await chromium.launch({ headless: false, slowMo: 100 });
     const page_clue = await context_clue.newPage();
@@ -44,8 +44,78 @@ test('chat', async () => {
     await page_clue.getByTestId('message').fill(msg);
     await page_clue.getByTestId('message').press('Enter');
 
-    // Assert that the message is received in the guesser's chat view
+    // Assert that the message is received by the guesser
     await expect(page_guess.getByTestId('chatlog')).toContainText(msg);
+
+    // Assert the new game button is hidden in the lobby
+    await expect(page_guess.getByTestId('newgame')).toBeHidden();
+
+    // Move into the new chat room
+    await page_clue.getByTestId('chatroom').fill(chatroom);
+    await page_clue.getByTestId('chatroom').press('Enter');
+    await page_guess.getByTestId('chatroom').fill(chatroom);
+    await page_guess.getByTestId('chatroom').press('Enter');
+
+    // Assert a change room notification is printed in the chat log
+    await expect(page_clue.getByTestId('chatlog')).toContainText('cluegiver has entered ' + chatroom);
+    await expect(page_clue.getByTestId('chatlog')).toContainText('guesser has entered ');
+
+    // Assert button / field visibilities and states
+    await expect(page_guess.getByTestId('newgame')).toBeVisible();
+    await expect(page_guess.getByTestId('abort')).toBeHidden();
+    await expect(page_guess.getByTestId('team')).toBeEnabled();
+    await expect(page_guess.getByTestId('role')).toBeEnabled();
+    await expect(page_guess.getByTestId('clueheader')).toBeHidden();
+    await expect(page_guess.getByTestId('numguess')).toBeHidden();
+    await expect(page_guess.getByTestId('giveclue')).toBeHidden();
+    await expect(page_guess.getByTestId('endturn')).toBeHidden();
+
+    // Cluegiver assumes the clue giver role
+    await page_clue.getByTestId('role').selectOption('Clue Giver');
+
+    // Cluegiver starts new game
+    await page_clue.getByTestId('newgame').click()
+
+    // Assert button / field visibilities and states
+    await expect(page_guess.getByTestId('newgame')).toBeHidden();
+    await expect(page_guess.getByTestId('abort')).toBeVisible();
+    await expect(page_guess.getByTestId('team')).toBeDisabled();
+    await expect(page_guess.getByTestId('role')).toBeDisabled();
+    await expect(page_guess.getByTestId('endturn')).toBeHidden();
+
+    await expect(page_clue.getByTestId('giveclue')).toBeVisible();
+    await expect(page_clue.getByTestId('giveclue')).toBeEnabled();
+    await expect(page_clue.getByTestId('endturn')).toBeHidden();
+
+    // Sort cards
+    await page_clue.getByTestId('sort').selectOption('Color - Keep Sorted');
+    let i = 0;
+    for (i = 0; i < 9; i++) {
+        await expect(page_clue.locator(`#card-${i}`)).toHaveClass(/red/);
+    }
+    for (i = 9; i < 17; i++) {
+        await expect(page_clue.locator(`#card-${i}`)).toHaveClass(/blue/);
+    }
+    await expect(page_clue.locator(`#card-17`)).toHaveClass(/black/);
+    for (i = 18; i < 25; i++) {
+        await expect(page_clue.locator(`#card-${i}`)).toHaveClass(/neutral/);
+    }
+
+    for (i = 0; i < 25; i++) {
+        await expect(page_guess.locator(`#card-${i}`)).toHaveClass(/white/);
+    }
+
+    // Give clue
+    await page_clue.getByTestId('giveclue').fill('avocado');
+    await page_clue.getByTestId('number').press('Backspace');
+    await page_clue.getByTestId('number').fill('1');
+    await page_clue.getByTestId('number').press('Enter');
+    await expect(page_clue.getByTestId('giveclue')).toBeDisabled();
+
+    // Guesser's turn
+    await expect(page_guess.getByTestId('clueheader')).toContainText('avocado');
+    await expect(page_guess.getByTestId('numguess')).toContainText('2');
+    await expect(page_guess.getByTestId('endturn')).toBeVisible();
 
     // Close all pages and contexts
     await page_clue.close();
