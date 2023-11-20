@@ -88,6 +88,8 @@ test('play two-player game', async () => {
     await expect(page_guess.getByTestId('numguess')).toBeHidden();
     await expect(page_guess.getByTestId('giveclue')).toBeHidden();
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
+    await expect(page_guess.getByTestId('redscore')).toBeEmpty();
+    await expect(page_guess.getByTestId('bluescore')).toBeEmpty();
 
     // Cluegiver assumes the clue giver role
     await page_clue.getByTestId('role').selectOption('Clue Giver');

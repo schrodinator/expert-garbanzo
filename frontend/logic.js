@@ -129,6 +129,8 @@ function abortGame() {
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
     document.getElementById("sort-cards").disabled = true;
+    document.getElementById("redscore").value = "";
+    document.getElementById("bluescore").value = "";
 
     const team = document.getElementById("team");
     team.value = defaultTeam;
@@ -293,8 +295,6 @@ function changeChatRoom() {
         let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
         sendEvent("change_room", changeEvent);
     }
-    newchat.value = "";
-    // if you don't return false, it will redirect
     return false;
 }
 
@@ -604,11 +604,9 @@ function login() {
         username = formData.username;
         const loginForm = document.getElementById("login-form");
         loginForm.reset();
-        const submitButton = loginForm.querySelector("input[type=submit]");
-        submitButton.disabled = true;
+        loginForm.querySelector("input[type=submit]").disabled = true;
         document.getElementById("login-div").style.display = "none";
         document.getElementById("welcome-header").innerHTML = "Welcome, " + username;
-        document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
         document.getElementById("team").disabled = false;
         document.getElementById("role").disabled = false;
     }).catch((e) => { alert(e) });
