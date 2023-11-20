@@ -174,8 +174,6 @@ function setupBoard(payload) {
     teamTurn = defaultTeam;
     roleTurn = cluegiverRole;
     whoseTurn(teamTurn, roleTurn);
-    const remaining = document.getElementById("guesses-remaining");
-    remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn}'s turn`;
 }
 
 function sortCards(how) {
@@ -330,7 +328,9 @@ function guessResponseHandler(payload) {
 
     markGuessedCard(guessResponse);
     notifyChatRoom(guessResponse);
-    checkDeathCard(guessResponse);
+    if (checkDeathCard(guessResponse)) {
+        return;
+    }
     updateScoreboard(guessResponse);
     notifyGuessRemaining(guessResponse);
 
@@ -343,6 +343,8 @@ function guessResponseHandler(payload) {
 }
 
 function whoseTurn(teamTurn, roleTurn) {
+    const msg = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn}'s turn`;
+    document.getElementById("whoseturn").innerHTML = msg;
     document.getElementById("end-turn").hidden = true;
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
@@ -350,8 +352,7 @@ function whoseTurn(teamTurn, roleTurn) {
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = true;
         return;
     }
-    if (roleTurn !== guesserRole) {
-        // cluegiver turn
+    if (roleTurn === cluegiverRole) {
         document.getElementById("clue-input").disabled = false;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
         return;
@@ -365,7 +366,7 @@ function whoseTurn(teamTurn, roleTurn) {
 function notifyGuessRemaining({guessRemaining, teamTurn, roleTurn}) {
     const remaining = document.getElementById("guesses-remaining");
     if (guessRemaining == 0) {
-        remaining.innerHTML = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn}'s turn`;
+        remaining.innerText = "";
     } else if (guessRemaining < totalNumCards) {
         remaining.innerText = `Guesses Remaining: ${guessRemaining}`;
     }
@@ -378,6 +379,7 @@ function endTurn() {
 
 function endTurnHandler(payload) {
     const {teamTurn, roleTurn} = Object.assign(new EndTurnEvent, payload);
+    document.getElementById("guesses-remaining").innerText = "";
     whoseTurn(teamTurn, roleTurn);
     return false;
 }
@@ -401,9 +403,13 @@ function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
 function checkDeathCard({cardColor, teamColor}) {
     if (cardColor == deathCard) {
         const teamName = capitalize(teamColor);
-        alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`)
+        alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`);
         disableAllCardEvents();
+        document.getElementById("guesses-remaining").innerText = "";
+        document.getElementById("whoseturn").innerText = "";
+        document.getElementById("clueheader").innerText = "";
         document.getElementById("abort-button").value = "End Game";
+        return true;
     }
     return false;
 }
@@ -413,7 +419,7 @@ function updateScoreboard({score}) {
         const loc = document.getElementById(`${color}score`);
         loc.innerText = score[color];
         if (score.color == 0) {
-            alert(`${capitalize(color)} Team wins!`)
+            alert(`${capitalize(color)} Team wins!`);
             disableAllCardEvents();
             document.getElementById("abort-button").value = "End Game";
             return false;
@@ -561,7 +567,8 @@ function clueHandler(payload) {
         msg += `Applies to ${numCards} cards.`
         document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${+numCards + 1}`;
     } else {
-        msg += `${from} did not specify the number of cards. ${teamName} has unlimited guesses.`
+        msg += `${from} did not specify the number of cards.`;
+        document.getElementById("guesses-remaining").innerText = "Unlimited Guesses";
     }
 
     document.getElementById("clueheader").innerHTML = msg;
