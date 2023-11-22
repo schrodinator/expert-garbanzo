@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 )
+
+const totalNumCards = 25
 
 var (
 	dictionary []string
@@ -93,11 +96,40 @@ func NewRole(r string) (Role, error) {
 	}
 }
 
-const totalNumCards = 25
+type Deck map[string]string
+
+type clueWords struct {
+	myTeam string
+	others string
+}
+func (d *Deck) getClueWords(team string) *clueWords {
+	var myTeam []string
+	var others []string
+	for card, color := range *d {
+		if color == team {
+			myTeam = append(myTeam, card)
+		} else if !strings.HasPrefix(color, "guess") {
+			others = append(others, card)
+		}
+	}
+	return &clueWords {
+		myTeam: strings.Join(myTeam, ", "),
+		others: strings.Join(others, ", "),
+	}
+}
+
+func (d *Deck) getGuessWords() string {
+	var words []string
+	for card, color := range *d {
+		if !strings.HasPrefix(color, "guess") {
+			words = append(words, card)
+		}
+	}
+	return strings.Join(words, ", ")
+}
 
 type GameList map[string]*Game
 type Score    map[Team]int
-type Deck     map[string]string
 
 type Game struct {
 	players         ClientList
@@ -107,6 +139,7 @@ type Game struct {
 	roleTurn        Role
 	guessRemaining  int
 	score           Score
+	bot             *Bot
 }
 
 func (game *Game) changeTurn() {

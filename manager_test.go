@@ -42,10 +42,12 @@ func setupDeck(t *testing.T, ws *websocket.Conn) *Manager {
 
 	manager := setupGame(t, ws)
 	game := manager.games["test"]
-	game.cards = Deck{"redword": "red",
-					  "blueword": "blue",
-					  "neutralword": "neutral",
-					  "deathword": deathCard}
+	game.cards = Deck{
+		"redword": "red",
+		"blueword": "blue",
+		"neutralword": "neutral",
+		"deathword": deathCard,
+	}
 	manager.games["test"] = game
 	return manager
 }

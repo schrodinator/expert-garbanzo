@@ -26,6 +26,7 @@ type Manager struct {
 	chats    ChatRooms
 	games    GameList
 	handlers EventHandlerList
+	bot      *Bot
 
 	sync.RWMutex
 

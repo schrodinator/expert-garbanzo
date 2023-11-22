@@ -1,6 +1,7 @@
 server.crt
 server.key
 password.txt
+gpt-secretkey.txt
 node_modules/
 /test-results/
 /playwright-report/

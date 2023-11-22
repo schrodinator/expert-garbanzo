@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -72,6 +73,77 @@ func TestGetCards(t *testing.T) {
 	cards := getCards()
 	if len(cards) != totalNumCards {
 		t.Errorf("not dealing with a full deck: %v cards", len(cards))
+	}
+}
+
+func TestGetClueWords(t *testing.T) {
+	deck := Deck{
+		"word1": "red",
+		"word2": "blue",
+		"word3": "red",
+		"word4": "blue",
+		"word5": "neutral",
+		"word6": deathCard,
+		"word7": "guessed-blue",
+		"word8": "guessed-red",
+	}
+
+	w := deck.getClueWords("blue")
+
+	if len(w.myTeam) == 0 {
+		t.Error("myTeam has length 0")
+	}
+	if len(w.others) == 0 {
+		t.Error("others has length 0")
+	}
+
+	/* map keys can be returned in any order */
+	if !(w.myTeam == "word2, word4" || w.myTeam == "word4, word2") {
+		t.Errorf("myTeam word list: %v", w.myTeam)
+	}
+
+	for _, e := range [3]string{"word2", "word7", "word8"} {
+		if strings.Contains(w.others, e) {
+			t.Errorf("others should not contain %v: got %v", e, w.others)
+		}
+	}
+
+	for _, e := range [4]string{"word1", "word3", "word5", "word6"} {
+		if !strings.Contains(w.others, e) {
+			t.Errorf("missing word %v: got %v", e, w.others)
+		}
+	}
+}
+
+func TestGetGuessWords(t *testing.T) {
+	deck := Deck{
+		"word1": "red",
+		"word2": "blue",
+		"word3": "red",
+		"word4": "blue",
+		"word5": "neutral",
+		"word6": deathCard,
+		"word7": "guessed-blue",
+		"word8": "guessed-red",
+	}
+
+	w := deck.getGuessWords()
+
+	if len(w) == 0 {
+		t.Error("Guess words has length 0")
+	}
+
+	/* map keys can be returned in any order */
+	for _, e := range [2]string{"word7", "word8"} {
+		if strings.Contains(w, e) {
+			t.Errorf("word list should not contain %v: got %v", e, w)
+		}
+	}
+
+	for _, e := range [6]string{"word1", "word2", "word3", "word4", "word5", "word6"} {
+		if !strings.Contains(w, e) {
+			t.Errorf("missing word %v: got %v", e, w)
+		}
 	}
 }
 

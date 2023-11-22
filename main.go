@@ -10,6 +10,7 @@ import (
 )
 
 var masterPassword string
+var token string
 
 const (
 	defaultChatRoom = "lobby"
@@ -18,7 +19,8 @@ const (
 
 
 func main() {
-	masterPassword = getMasterPassword()
+	masterPassword = getMasterPassword("password.txt")
+	token = getMasterPassword("gpt-secretkey.txt")
 
 	setupAPI()
 
@@ -41,8 +43,8 @@ func setupAPI() {
 	http.HandleFunc("/login", manager.loginHandler)
 }
 
-func getMasterPassword() string {
-	file, err := os.Open("password.txt")
+func getMasterPassword(path string) string {
+	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println("Error opening password.txt:", err)
 		return ""
