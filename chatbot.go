@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,50 +14,26 @@ type ClueStruct struct {
 	numGuess int
 	word     string
 	log      string
+	err      error
 }
 
 type Bot struct {
-	ctx       context.Context
-	client    *openai.Client
-	game      *Game
-	clue_in   chan string
-	clue_out  chan ClueStruct
-	guess_in  chan ClueStruct
-	guess_out chan string
+	ctx        context.Context
+	client     *openai.Client
+	game       *Game
+	clue_chan  chan *ClueStruct
+	guess_chan chan *ClueStruct
 }
 
 func NewBot(game *Game) *Bot {
-	return &Bot{
-		ctx:       context.TODO(),
-		client:    openai.NewClient(token),
-		game:      game,
-	}
-}
-
-func ClueBot(game *Game) *Bot {
 	b := &Bot{
 		ctx:       context.TODO(),
 		client:    openai.NewClient(token),
 		game:      game,
-		clue_in:   make(chan string),
-		clue_out:  make(chan ClueStruct),
 	}
 
-	go b.makeClue()
-
-	return b
-}
-
-func GuessBot(game *Game) *Bot {
-	b := &Bot{
-		ctx:       context.TODO(),
-		client:    openai.NewClient(token),
-		game:      game,
-		guess_in:  make(chan ClueStruct),
-		guess_out: make(chan string),
-	}
-
-	go b.makeGuess()
+	b.clue_chan = b.makeClue()
+	b.guess_chan = b.makeGuess()
 
 	return b
 }
@@ -82,76 +57,81 @@ func (bot *Bot) askGPT3Dot5(system string, user string) (openai.ChatCompletionRe
 	)
 }
 
-func (bot *Bot) makeClue() {
-	prompt := "You are playing a word game. In this game, " +
-		"your objective is to give a one-word clue that will " +
-		"help your team guess as many words as possible " +
-		"from your team's word list, while NOT guessing words " +
-		"from the opposing team's word list. The clue must not " +
-		"exactly match any of the words on the lists, nor may it " +
-		"be a direct derivative of any of the words (for example, " +
-		"it may not be a plural of any of the words). Instead, a " +
-		"good clue is a synonym or a related word that evokes as " +
-		"many words on your team's word list as possible, without " +
-		"also evoking the opposing team's words. When prompted, " +
-		"state ONLY the following: " +
-		"your clue, the number of words from your team's list " +
-		"that match your clue, and the specific words " +
-		"that match your clue."
+func (bot *Bot) makeClue() chan *ClueStruct {
+	c := make(chan *ClueStruct)
 
-	for {
-		select {
-		case team, ok := <-bot.clue_in:
-			if !ok {
-				log.Println("Clue egress error")
-				return
+	go func(bot *Bot) () {
+		prompt := "You are playing a word game. In this game, " +
+			"your objective is to give a one-word clue that will " +
+			"help your team guess as many words as possible " +
+			"from your team's word list, while NOT guessing words " +
+			"from the opposing team's word list. The clue must not " +
+			"exactly match any of the words on the lists, nor may it " +
+			"be a direct derivative of any of the words (for example, " +
+			"it may not be a plural of any of the words). Instead, a " +
+			"good clue is a synonym or a related word that evokes as " +
+			"many words on your team's word list as possible, without " +
+			"also evoking the opposing team's words. When prompted, " +
+			"state ONLY the following: " +
+			"your clue, the number of words from your team's list " +
+			"that match your clue, and the specific words " +
+			"that match your clue."
+
+		for {
+			var clue *ClueStruct
+			var ok bool
+			select {
+			case clue, ok = <-c:
+				if !ok {
+					clue.err = fmt.Errorf("Clue channel error")
+					break
+				}
+
+				w := bot.game.cards.getClueWords(clue.word)
+				if len(w.myTeam) == 0 || len(w.others) == 0 {
+					clue.err = fmt.Errorf("makeClue error: got zero-length word list")
+					break
+				}
+
+				message := fmt.Sprintf("Your team's list: %s. Opposing team's list: %s.",
+					w.myTeam, w.others)
+
+				resp, err := bot.askGPT3Dot5(prompt, message)
+				if err != nil {
+					clue.err = fmt.Errorf("ChatCompletion error: %v", err)
+					break
+				}
+
+				respStr := resp.Choices[0].Message.Content
+
+				parseGPTResponse(respStr, clue)
+				break
 			}
-
-			w := bot.game.cards.getClueWords(team)
-			if len(w.myTeam) == 0 || len(w.others) == 0 {
-				log.Println("makeClue error: got zero-length word list")
-				return
-			}
-
-			message := fmt.Sprintf("Your team's list: %s. Opposing team's list: %s.",
-				w.myTeam, w.others)
-
-			resp, err := bot.askGPT3Dot5(prompt, message)
-			if err != nil {
-				log.Printf("ChatCompletion error: %v", err)
-				return
-			}
-
-			respStr := resp.Choices[0].Message.Content
-
-			var clue ClueStruct
-			err = parseGPTResponse(respStr, &clue)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			bot.clue_out <- clue
-
+			c <- clue
 		}
-	}
+	}(bot)
+
+	return c
 }
 
-func parseGPTResponse(respStr string, clue *ClueStruct) error {
+func parseGPTResponse(respStr string, clue *ClueStruct) {
 	/* Chat Bot 3.5 replies in an inconsistent format, despite
 	   my attempts at prompt engineering. */
-	i, err := parseGPTResponseNumber(respStr)
-	if err != nil {
-		return err
-	}
 	word := parseGPTResponseClue(respStr)
-	remaining := parseGPTResponseMatches(respStr, i)
+	remaining := parseGPTResponseMatches(respStr)
+	i, err := parseGPTResponseNumber(respStr)
+	/* If we didn't find a number but did find a list of words,
+	   count the number of words and use that value. */
+	if err != nil && remaining != respStr {
+		/* The words might be separated by spaces and/or commas */
+		i = max(len(strings.Split(remaining, " ")),
+		        len(strings.Split(remaining, ",")))
+	}
 
 	clue.numGuess = i
 	clue.word = word
 	clue.log = remaining
-
-	return nil
+	clue.err = err
 }
 
 func parseGPTResponseNumber(respStr string) (int, error) {
@@ -179,57 +159,61 @@ func parseGPTResponseClue(respStr string) string {
 	return word
 }
 
-func parseGPTResponseMatches(respStr string, num int) string {
+func parseGPTResponseMatches(respStr string) string {
 	/* If we can't find "num" matching words,
 	   return the original response string. */
 	remaining := respStr
-	s := make([]string, num)
-	for i := 0; i < num; i++ {
-		// Words are uppercase and at least 2 letters long
-		s[i] = "[[:upper:]]{2,}"
-	}
-	// Words could be separated by a comma and/or a space
-	multi := strings.Join(s, "[, ]{1,2}")
-	re := regexp.MustCompile(multi)
-	matches := re.FindString(respStr)
-	if matches != "" {
-		remaining = matches
+	// Words are upper case and at least 2 letters long.
+	// Words could be separated by a comma and/or a space.
+	re := regexp.MustCompile("([[:upper:]]{2,}[, ]{1,2})*[[:upper:]]{2,}")
+	match := re.FindString(respStr)
+	if match != "" {
+		remaining = match
 	}
 	return remaining
 }
 
-func (bot *Bot) makeGuess() {
-	prompt := "You are playing a word game. Your teammate " +
-	"will give you a clue and a number. " +
-	"Choose that number of words from your word list that " +
-	"best match the clue."
+func (bot *Bot) makeGuess() chan *ClueStruct {
+	c := make(chan *ClueStruct)
 
-	for {
-		select {
-		case clue, ok := <-bot.guess_in:
-			if !ok {
-				log.Println("Guess egress error")
-				return
+	go func(bot *Bot) () {
+		prompt := "You are playing a word game. Your teammate " +
+		"will give you a clue and a number. " +
+		"Choose that number of words from your word list that " +
+		"best match the clue."
+
+		for {
+			var clue *ClueStruct
+			var ok bool
+			select {
+			case clue, ok = <-c:
+				if !ok {
+					clue.err = fmt.Errorf("Guess channel error")
+					break
+				}
+
+				words := bot.game.cards.getGuessWords()
+				if len(words) == 0 {
+					clue.err = fmt.Errorf("makeGuess error: got zero-length word list")
+					break
+				}
+
+				// TODO: handle case of infinite guesses / unspecified number of cards
+				message := fmt.Sprintf(
+					"The word list is: %s. The clue is: %s. The number is: %d",
+					words, clue.word, clue.numGuess-1)
+
+				resp, err := bot.askGPT3Dot5(prompt, message)
+				if err != nil {
+					clue.err = fmt.Errorf("ChatCompletion error: %v", err)
+					break
+				}
+				clue.word = resp.Choices[0].Message.Content
+				break
 			}
-
-			words := bot.game.cards.getGuessWords()
-			if len(words) == 0 {
-				log.Println("makeGuess error: got zero-length word list")
-				return
-			}
-
-			// TODO: handle case of infinite guesses / unspecified number of cards
-			message := fmt.Sprintf(
-				"The word list is: %s. The clue is: %s. The number is: %d",
-				words, clue.word, clue.numGuess-1)
-
-			resp, err := bot.askGPT3Dot5(prompt, message)
-			if err != nil {
-				log.Printf("ChatCompletion error: %v", err)
-				return
-			}
-
-			bot.guess_out <- resp.Choices[0].Message.Content
+			c <- clue
 		}
-	}
+	}(bot)
+
+	return c
 }

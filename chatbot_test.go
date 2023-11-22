@@ -54,22 +54,17 @@ func TestParseGPTResponseMatches(t *testing.T) {
 	respStr := "Clue: Measure\nNumber of words that " +
 	"match the clue: 3\nWords that match the clue: " +
 	"SCALE, WATCH, MAPLE"
-	match := parseGPTResponseMatches(respStr, 3)
+	match := parseGPTResponseMatches(respStr)
 	if match != "SCALE, WATCH, MAPLE" {
 		t.Errorf("Expected SCALE, WATCH, MAPLE. Got %v", match)
 	}
 
-	respStr = "If it can't match # NUM OF WORDS, it " +
-	"returns the input string"
-	match = parseGPTResponseMatches(respStr, 4)
-	if match != respStr {
-		t.Errorf("Expected %v. Got %v", respStr, match)
-	}
-
-	respStr = "IT MATCHES THE FIRST NUM ALL CAPS WORDS"
-	match = parseGPTResponseMatches(respStr, 2)
-	if match != "IT MATCHES" {
-		t.Errorf("Expected IT MATCHES. Got %v", match)
+	respStr = "IT MATCHES, THE, FIRST, GROUP, OF ALL CAPS WORDS, "+ 
+		"possibly separated by commas, " +
+		"BUT NOT THE LAST COMMA IN THE SET"
+	match = parseGPTResponseMatches(respStr)
+	if match != "IT MATCHES, THE, FIRST, GROUP, OF ALL CAPS WORDS" {
+		t.Errorf("Expected IT MATCHES, THE, FIRST, GROUP, OF ALL CAPS WORDS. Got %v", match)
 	}
 }
 
@@ -121,14 +116,16 @@ func TestMakeClue(t *testing.T) {
 		"WATCH":"red",
 	}
 	token = getMasterPassword("gpt-secretkey.txt")
-	bot := ClueBot(game)	
-	bot.clue_in <-"red"
-	clue := <-bot.clue_out
+	bot := NewBot(game)
+	clue := &ClueStruct{word: "red"}	
+	bot.clue_chan <-clue
+	clue = <-bot.clue_chan
 	fmt.Printf("%#v", clue)
-	close(bot.clue_in)
-	close(bot.clue_out)
 
 	// Weak tests for a nondeterministic response
+	if clue.err != nil {
+		t.Errorf("Error: %v", clue.err)
+	}
 	if (clue.numGuess > 9 || clue.numGuess < 1) {
 		t.Errorf("numGuess out of range: %v", clue.numGuess)
 	}
