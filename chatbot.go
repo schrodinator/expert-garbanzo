@@ -38,7 +38,7 @@ func NewBot(game *Game) *Bot {
 	return b
 }
 
-func (bot *Bot) askGPT3Dot5(system string, user string) (openai.ChatCompletionResponse, error) {
+var askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
 	return bot.client.CreateChatCompletion(
 		bot.ctx,
 		openai.ChatCompletionRequest{
@@ -55,6 +55,10 @@ func (bot *Bot) askGPT3Dot5(system string, user string) (openai.ChatCompletionRe
 			},
 		},
 	)
+}
+
+func (bot *Bot) askGPT3Dot5(system string, user string) (openai.ChatCompletionResponse, error) {
+	return askGPT3Dot5Bot(bot, system, user)
 }
 
 func (bot *Bot) makeClue() chan *ClueStruct {
@@ -105,7 +109,6 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 				respStr := resp.Choices[0].Message.Content
 
 				parseGPTResponse(respStr, clue)
-				break
 			}
 			c <- clue
 		}
@@ -209,7 +212,6 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 					break
 				}
 				clue.word = resp.Choices[0].Message.Content
-				break
 			}
 			c <- clue
 		}

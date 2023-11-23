@@ -2,8 +2,25 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+
+	"github.com/sashabaranov/go-openai"
 )
+
+/* Check if the error message in "out" contains the
+   error message in "want" */
+   func ErrorContains(t *testing.T, out error, want error) bool {
+	t.Helper()
+
+    if out == nil {
+        return want == nil
+    }
+    if want == nil {
+        return false
+    }
+    return strings.Contains(out.Error(), want.Error())
+}
 
 func TestParseGPTResponseNumber(t *testing.T) {
 	respStr := "Clue: Based\nMatches: 3\nTo kids these days, " +
@@ -85,9 +102,8 @@ func TestParseGPTResponse(t *testing.T) {
 	}
 }
 
-func TestMakeClue(t *testing.T) {
-	manager := setupGame(t, nil)
-	game := manager.games["test"]
+func TestMakeClueReal(t *testing.T) {
+	game := &Game{}
 	game.cards = Deck{
 		"AMAZON": "blue",
 		"BOOT": "blue",
@@ -123,9 +139,6 @@ func TestMakeClue(t *testing.T) {
 	fmt.Printf("%#v", clue)
 
 	// Weak tests for a nondeterministic response
-	if clue.err != nil {
-		t.Errorf("Error: %v", clue.err)
-	}
 	if (clue.numGuess > 9 || clue.numGuess < 1) {
 		t.Errorf("numGuess out of range: %v", clue.numGuess)
 	}
@@ -134,5 +147,108 @@ func TestMakeClue(t *testing.T) {
 	}
 	if clue.log == "" {
 		t.Errorf("clue log not present")
+	}
+}
+
+func TestMakeClueMock(t *testing.T) {
+	game := &Game{}
+	game.cards = Deck{
+		"AMAZON": "blue",
+		"BOOT": "blue",
+		"BOX": "blue",
+		"CLUB": "neutral",
+		"FILE": "red",
+		"HORSE": "red",
+		"ICE": "red",
+		"LOG": "neutral",
+		"MAPLE": "red",
+		"MOUSE": "red",
+		"NEEDLE": "blue",
+		"OIL": "neutral",
+		"OLIVE": "black",
+		"PILOT": "neutral",
+		"POINT": "blue",
+		"ROCKET": "blue",
+		"SCALE": "red",
+		"SHADOW": "neutral",
+		"SHOE": "neutral",
+		"SLIP": "blue",
+		"SPIDER": "blue",
+		"STAR": "neutral",
+		"TAP": "red",
+		"VACUUM": "red",
+		"WATCH":"red",
+	}
+	bot := NewBot(game)
+
+	type testStruct struct {
+		name       string
+		botResp    string
+		expectNum  int
+		expectWord string
+		expectLog  string
+		expectErr  error
+	}
+	tests := []testStruct{
+		{
+			name: "A straightforward response",
+			botResp: "Clue: Measure\nNumber of words that " +
+				"match the clue: 3\nWords that match the clue: " +
+				"SCALE, WATCH, MAPLE",
+			expectNum: 3,
+			expectWord: "Measure",
+			expectLog: "SCALE, WATCH, MAPLE",
+			expectErr: nil,
+		},
+		{
+			name: "Response with no number",
+			botResp: "Clue: My\nWords that evoke the clue: " +
+				"SHADOW SHOW SLIP VACUUM WATCH WITCH",
+			expectNum: 6,
+			expectWord: "My",
+			expectLog: "SHADOW SHOW SLIP VACUUM WATCH WITCH",
+			expectErr: fmt.Errorf("Could not parse number in ChatCompletion response"),
+		},
+		{
+			/* If we can't find all-caps words in the input string,
+			   the log should be the entire input string */
+			name: "Response with no matched explanation words",
+			botResp: "Encoding 2",
+			expectNum: 2,
+			expectWord: "Encoding",
+			expectLog: "Encoding 2",
+			expectErr: nil,
+		},
+	}
+
+	for _, test := range tests {
+		askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
+			return openai.ChatCompletionResponse{
+				Choices: []openai.ChatCompletionChoice{
+					{
+						Index: 0,
+						Message: openai.ChatCompletionMessage{
+							Content: test.botResp,
+						},
+					},
+				},
+			}, nil
+		}
+		clue := &ClueStruct{word: "red"}
+		bot.clue_chan <-clue
+		clue = <-bot.clue_chan
+
+		if !ErrorContains(t, clue.err, test.expectErr) {
+			t.Errorf("%v Error: expected \"%v\", got \"%v\"", test.name, test.expectErr, clue.err)
+		}
+		if clue.numGuess != test.expectNum {
+			t.Errorf("%v numGuess: expected %v, got %v", test.name, test.expectNum, clue.numGuess)
+		}
+		if clue.word != test.expectWord {
+			t.Errorf("%v clue word: expected %v, got %v", test.name, test.expectWord, clue.word)
+		}
+		if clue.log != test.expectLog {
+			t.Errorf("%v clue log: expected %v, got %v", test.name, test.expectLog, clue.log)
+		}
 	}
 }
