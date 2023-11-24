@@ -159,7 +159,7 @@ function setupBoard(payload) {
 
     setupScoreboard();
 
-    document.getElementById("clueheader").innerHTML = "";
+    document.getElementById("clue").innerHTML = "";
     document.getElementById("cluebox").hidden = true;
     if (userRole === cluegiverRole) {
         document.getElementById("cluebox").hidden = false;
@@ -235,8 +235,8 @@ function resetCards() {
 }
 
 function resetClueNotification() {
-    document.getElementById("clueheader").innerHTML = "";
-    document.getElementById("guesses-remaining").innerText = "";
+    document.getElementById("clue").innerHTML = "";
+    document.getElementById("numguess").innerText = "";
     document.getElementById("number-input").value = 2;
 }
 
@@ -294,6 +294,8 @@ function changeChatRoom() {
 
         let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
         sendEvent("change_room", changeEvent);
+    } else {
+        newchat.value = selectedChat;
     }
     return false;
 }
@@ -343,8 +345,8 @@ function guessResponseHandler(payload) {
 }
 
 function whoseTurn(teamTurn, roleTurn) {
-    const msg = `It's <span style="color:${teamTurn.toLowerCase()};">${teamTurn}</span> ${roleTurn}'s turn`;
-    document.getElementById("whoseturn").innerHTML = msg;
+    document.getElementById("turn").innerHTML = `${capitalize(teamTurn)}<br>${capitalize(roleTurn)}`;
+    document.getElementById("turn").style.color = teamTurn;
     document.getElementById("end-turn").hidden = true;
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
@@ -363,12 +365,12 @@ function whoseTurn(teamTurn, roleTurn) {
     }
 }
 
-function notifyGuessRemaining({guessRemaining, teamTurn, roleTurn}) {
-    const remaining = document.getElementById("guesses-remaining");
+function notifyGuessRemaining({guessRemaining}) {
+    const remaining = document.getElementById("numguess");
     if (guessRemaining == 0) {
         remaining.innerText = "";
     } else if (guessRemaining < totalNumCards) {
-        remaining.innerText = `Guesses Remaining: ${guessRemaining}`;
+        remaining.innerText = guessRemaining;
     }
 }
 
@@ -379,7 +381,7 @@ function endTurn() {
 
 function endTurnHandler(payload) {
     const {teamTurn, roleTurn} = Object.assign(new EndTurnEvent, payload);
-    document.getElementById("guesses-remaining").innerText = "";
+    document.getElementById("numguess").innerText = "";
     whoseTurn(teamTurn, roleTurn);
     return false;
 }
@@ -405,9 +407,9 @@ function checkDeathCard({cardColor, teamColor}) {
         const teamName = capitalize(teamColor);
         alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`);
         disableAllCardEvents();
-        document.getElementById("guesses-remaining").innerText = "";
-        document.getElementById("whoseturn").innerText = "";
-        document.getElementById("clueheader").innerText = "";
+        document.getElementById("numguess").innerText = "";
+        document.getElementById("turn").innerText = "";
+        document.getElementById("clue").innerText = "";
         document.getElementById("abort-button").value = "End Game";
         return true;
     }
@@ -559,19 +561,18 @@ function giveClue() {
 
 function clueHandler(payload) {
     const clueEvent = Object.assign(new GiveClueEvent, payload);
-    const {from, teamColor, clue, numCards} = clueEvent;
-    const teamName = capitalize(teamColor);
+    const {teamColor, clue, numCards} = clueEvent;
+    const numguess = document.getElementById("numguess");
 
-    var msg = `${from} gives clue for <span style="color:${teamColor};">${teamName}</span>: ${clue}<br>`;
+    var msg = clue;
     if (numCards > 0) {
-        msg += `Applies to ${numCards} cards.`
-        document.getElementById("guesses-remaining").innerText = `Guesses Remaining: ${+numCards + 1}`;
+        msg += `<br>(applies to ${numCards} cards)`;
+        numguess.innerText = `${+numCards + 1}`;
     } else {
-        msg += `${from} did not specify the number of cards.`;
-        document.getElementById("guesses-remaining").innerText = "Unlimited Guesses";
+        numguess.innerText = `\u221E`;  /* infinity */
     }
 
-    document.getElementById("clueheader").innerHTML = msg;
+    document.getElementById("clue").innerHTML = msg;
 
     whoseTurn(teamColor, guesserRole);
 }

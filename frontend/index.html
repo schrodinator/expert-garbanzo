@@ -61,23 +61,34 @@
                     <input class="button" type="submit" value="Abort Game" id="abort-button" data-testid="abort" hidden>
                 </div>
 
-                <br><br>
+                <br>
 
                 <div class="gameboard-container" id="gameboard-container" hidden>
-                    <div class="scoreboard" id="scoreboard">
-                        <div class="scoretitle" id="scoretitle">Cards Remaining</div>
-                        <div class="scoreheader redteam" id="redheader">Red</div>
-                        <div class="scoreheader blueteam" id="blueheader">Blue</div>
-                        <div class="score redteam" id="redscore" data-testid="redscore"></div>
-                        <div class="score blueteam" id="bluescore" data-testid="bluescore"></div>
+                    <div class="gameinfo">
+                        <div class="infobox scoreboard" id="scoreboard">
+                            <div class="scoretitle" id="scoretitle">Cards Remaining</div>
+                            <div class="scoreheader redteam" id="redheader">Red</div>
+                            <div class="scoreheader blueteam" id="blueheader">Blue</div>
+                            <div class="score redteam" id="redscore" data-testid="redscore"></div>
+                            <div class="score blueteam" id="bluescore" data-testid="bluescore"></div>
+                        </div>
+                        <div class="infobox whoseturn" id="whoseturn">
+                            <div id="turntitle">Turn</div>
+                            <div class="boxitem" id="turn" data-testid="turn"></div>
+                        </div>
+                        <div class="infobox clueinfo" id="clueinfo">
+                            <div id="cluetitle">Clue</div>
+                            <div class="boxitem" id="clue" data-testid="clue"></div>
+                        </div>
+                        <div class="infobox guessinfo" id="guesses-remaining">
+                            <div id="guesstitle">Guesses<br>Remaining</div>
+                            <div id="numguess" data-testid="numguess"></div>
+                        </div>
                     </div>
-                    
-                    <h3 id="whoseturn" data-testid="whoseturn"></h3>
-                    <h3 id="clueheader" data-testid="clueheader"></h3>
-                    <h3 id="guesses-remaining" data-testid="numguess"></h3>
+                    <br>
                     <form id="cluebox" hidden>
                         <label for="clue-input">Clue:</label>
-                        <input class="txt" type="text" id="clue-input" maxlength="255" data-testid="giveclue">
+                        <input class="txt" type="text" id="clue-input" maxlength="99" data-testid="giveclue">
                         <label for="number-input">Number of Cards:</label>
                         <input class="txt" id="number-input" type="number" min="0" max="9" value="2" data-testid="number">
                         <input class="button" type="submit" value="Give Clue">

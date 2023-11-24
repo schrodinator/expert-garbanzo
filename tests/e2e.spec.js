@@ -84,8 +84,8 @@ test('play two-player game', async () => {
     await expect(page_guess.getByTestId('abort')).toBeHidden();
     await expect(page_guess.getByTestId('team')).toBeEnabled();
     await expect(page_guess.getByTestId('role')).toBeEnabled();
-    await expect(page_guess.getByTestId('clueheader')).toBeHidden();
-    await expect(page_guess.getByTestId('numguess')).toBeHidden();
+    await expect(page_guess.getByTestId('clue')).toBeEmpty();
+    await expect(page_guess.getByTestId('numguess')).toBeEmpty();
     await expect(page_guess.getByTestId('giveclue')).toBeHidden();
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
     await expect(page_guess.getByTestId('redscore')).toBeEmpty();
@@ -103,8 +103,9 @@ test('play two-player game', async () => {
     await expect(page_guess.getByTestId('team')).toBeDisabled();
     await expect(page_guess.getByTestId('role')).toBeDisabled();
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
-    await expect(page_guess.getByTestId('numguess')).toBeHidden();
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red cluegiver's turn");
+    await expect(page_guess.getByTestId('numguess')).toBeEmpty();
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Cluegiver");
 
     await expect(page_clue.getByTestId('giveclue')).toBeVisible();
     await expect(page_clue.getByTestId('giveclue')).toBeEnabled();
@@ -137,9 +138,10 @@ test('play two-player game', async () => {
     await expect(page_clue.getByTestId('giveclue')).toBeDisabled();
 
     // Guesser's turn
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red guesser's turn");
-    await expect(page_guess.getByTestId('clueheader')).toContainText(clue);
-    await expect(page_guess.getByTestId('numguess')).toContainText('Guesses Remaining: 2');
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Guesser");
+    await expect(page_guess.getByTestId('clue')).toContainText(clue);
+    await expect(page_guess.getByTestId('numguess')).toHaveText('2');
     await expect(page_guess.getByTestId('endturn')).toBeVisible();
 
     // Find two red cards for guesser
@@ -152,7 +154,7 @@ test('play two-player game', async () => {
             if (await card.textContent() === word) {
                 await card.click();
                 if (i === 0) {
-                    await expect(page_guess.getByTestId('numguess')).toContainText('Guesses Remaining: 1');
+                    await expect(page_guess.getByTestId('numguess')).toHaveText('1');
                 }
                 await expect(page_guess.getByTestId('redscore')).toHaveText(`${8-i}`);
                 await expect(page_guess.getByTestId('bluescore')).toHaveText('8');
@@ -172,8 +174,9 @@ test('play two-player game', async () => {
 
     // Guesser has exhausted all guesses. Should be cluegiver's turn.
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
-    await expect(page_guess.getByTestId('numguess')).toBeHidden();
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red cluegiver's turn");
+    await expect(page_guess.getByTestId('numguess')).toBeEmpty();
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Cluegiver");
 
     // Give clue with unlimited guesses
     clue = 'banana';
@@ -185,9 +188,10 @@ test('play two-player game', async () => {
     await expect(page_clue.getByTestId('giveclue')).toBeDisabled();
 
     // Guesser's turn
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red guesser's turn");
-    await expect(page_guess.getByTestId('clueheader')).toContainText(clue);
-    await expect(page_guess.getByTestId('numguess')).toContainText('Unlimited Guesses');
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Guesser");
+    await expect(page_guess.getByTestId('clue')).toContainText(clue);
+    await expect(page_guess.getByTestId('numguess')).toContainText('\u221E');
     await expect(page_guess.getByTestId('endturn')).toBeVisible();
 
     // Guesser guesses a blue card
@@ -214,8 +218,9 @@ test('play two-player game', async () => {
 
     // Guesser guessed wrong color. Should be cluegiver's turn.
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
-    await expect(page_guess.getByTestId('numguess')).toBeHidden();
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red cluegiver's turn");
+    await expect(page_guess.getByTestId('numguess')).toBeEmpty();
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Cluegiver");
 
     // Give clue with unlimited guesses
     clue = 'pear';
@@ -227,9 +232,10 @@ test('play two-player game', async () => {
     await expect(page_clue.getByTestId('giveclue')).toBeDisabled();
 
     // Guesser's turn
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red guesser's turn");
-    await expect(page_guess.getByTestId('clueheader')).toContainText(clue);
-    await expect(page_guess.getByTestId('numguess')).toContainText('Unlimited Guesses');
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Guesser");
+    await expect(page_guess.getByTestId('clue')).toContainText(clue);
+    await expect(page_guess.getByTestId('numguess')).toContainText('\u221E');
     await expect(page_guess.getByTestId('endturn')).toBeVisible();
 
     // Guesser ends turn
@@ -237,8 +243,9 @@ test('play two-player game', async () => {
 
     // Should be cluegiver's turn.
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
-    await expect(page_guess.getByTestId('numguess')).toBeHidden();
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red cluegiver's turn");
+    await expect(page_guess.getByTestId('numguess')).toBeEmpty();
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Cluegiver");
 
 
     // Give clue with unlimited guesses
@@ -260,7 +267,7 @@ test('play two-player game', async () => {
                 await card.click();
                 await expect(page_guess.getByTestId('redscore')).toHaveText(`${6 - i}`);
                 await expect(page_guess.getByTestId('bluescore')).toHaveText('7');
-                await expect(page_guess.getByTestId('numguess')).toContainText('Unlimited Guesses');
+                await expect(page_guess.getByTestId('numguess')).toContainText('\u221E');
                 // Card #24 is the blue guessed card
                 const cluecard = page_clue.locator('#card-23');
                 await expect(cluecard).toContainText(word);
@@ -292,8 +299,9 @@ test('play two-player game', async () => {
 
     // Guesser guessed wrong color. Should be cluegiver's turn.
     await expect(page_guess.getByTestId('endturn')).toBeHidden();
-    await expect(page_guess.getByTestId('numguess')).toBeHidden();
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red cluegiver's turn");
+    await expect(page_guess.getByTestId('numguess')).toBeEmpty();
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Cluegiver");
 
     // Give clue with 4 guesses
     clue = 'raspberry';
@@ -305,9 +313,10 @@ test('play two-player game', async () => {
     await expect(page_clue.getByTestId('giveclue')).toBeDisabled();
 
     // Guesser's turn
-    await expect(page_guess.getByTestId('whoseturn')).toContainText("It's red guesser's turn");
-    await expect(page_guess.getByTestId('clueheader')).toContainText(clue);
-    await expect(page_guess.getByTestId('numguess')).toContainText('Guesses Remaining: 4');
+    await expect(page_guess.getByTestId('turn')).toContainText("Red");
+    await expect(page_guess.getByTestId('turn')).toContainText("Guesser");
+    await expect(page_guess.getByTestId('clue')).toContainText(clue);
+    await expect(page_guess.getByTestId('numguess')).toContainText('4');
     await expect(page_guess.getByTestId('endturn')).toBeVisible();
 
     // Guesser guesses death card
@@ -322,9 +331,9 @@ test('play two-player game', async () => {
         }
         j++;
     }
-    await expect(page_clue.getByTestId('whoseturn')).toBeHidden();
-    await expect(page_clue.getByTestId('clueheader')).toBeHidden();
-    await expect(page_clue.getByTestId('numguess')).toBeHidden();
+    await expect(page_clue.getByTestId('turn')).toBeEmpty();
+    await expect(page_clue.getByTestId('clue')).toBeEmpty();
+    await expect(page_clue.getByTestId('numguess')).toBeEmpty();
     await expect(page_clue.getByTestId('abort')).toHaveValue('End Game');
 
     // Close all pages and contexts
