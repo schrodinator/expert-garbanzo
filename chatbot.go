@@ -8,13 +8,16 @@ import (
 	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
+	"golang.org/x/exp/slices"
 )
 
 type ClueStruct struct {
-	numGuess int
-	word     string
-	log      string
-	err      error
+	response  string
+	numGuess  int
+	word      string
+	match     string
+	capsWords []string
+	err       error
 }
 
 type Bot struct {
@@ -76,10 +79,10 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 			"good clue is a synonym or a related word that evokes as " +
 			"many words on your team's word list as possible, without " +
 			"also evoking the opposing team's words. When prompted, " +
-			"state ONLY the following: " +
+			"state the following: " +
 			"your clue, the number of words from your team's list " +
 			"that match your clue, and the specific words " +
-			"that match your clue."
+			"that match your clue. Explain your reasoning."
 
 		for {
 			var clue *ClueStruct
@@ -120,21 +123,19 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 func parseGPTResponse(respStr string, clue *ClueStruct) {
 	/* Chat Bot 3.5 replies in an inconsistent format, despite
 	   my attempts at prompt engineering. */
-	word := parseGPTResponseClue(respStr)
-	remaining := parseGPTResponseMatches(respStr)
-	i, err := parseGPTResponseNumber(respStr)
-	/* If we didn't find a number but did find a list of words,
-	   count the number of words and use that value. */
-	if err != nil && remaining != respStr {
+	clue.response = respStr
+	clue.word = parseGPTResponseClue(respStr)
+	clue.match = parseGPTResponseMatches(respStr)
+	clue.capsWords = findUniqueAllCapsWords(respStr)
+	var i int
+	i, clue.err = parseGPTResponseNumber(respStr)
+	/* If we didn't find a number but did find all-caps words,
+	   use the number of all-caps words. */
+	if clue.err != nil && len(clue.capsWords) != 0 {
 		/* The words might be separated by spaces and/or commas */
-		i = max(len(strings.Split(remaining, " ")),
-		        len(strings.Split(remaining, ",")))
+		i = len(clue.capsWords)
 	}
-
 	clue.numGuess = i
-	clue.word = word
-	clue.log = remaining
-	clue.err = err
 }
 
 func parseGPTResponseNumber(respStr string) (int, error) {
@@ -163,17 +164,29 @@ func parseGPTResponseClue(respStr string) string {
 }
 
 func parseGPTResponseMatches(respStr string) string {
-	/* If we can't find "num" matching words,
-	   return the original response string. */
-	remaining := respStr
-	// Words are upper case and at least 2 letters long.
-	// Words could be separated by a comma and/or a space.
+	/* Words are upper case and at least 2 letters long.
+       Words could be separated by a comma and/or a space. */
 	re := regexp.MustCompile("([[:upper:]]{2,}[, ]{1,2})*[[:upper:]]{2,}")
-	match := re.FindString(respStr)
-	if match != "" {
-		remaining = match
-	}
-	return remaining
+	return re.FindString(respStr)
+}
+
+func findUniqueAllCapsWords(respStr string) []string {
+	re := regexp.MustCompile("[[:upper:]]{2,}")
+	match := re.FindAllString(respStr, -1)
+	return unique(match)
+}
+
+func unique(slice []string) []string {
+    seen := make(map[string]bool)
+    uniqueSlice := []string{}
+    for _, v := range slice {
+        if !seen[v] {
+            seen[v] = true
+            uniqueSlice = append(uniqueSlice, v)
+        }
+    }
+    slices.Sort(uniqueSlice)
+	return uniqueSlice
 }
 
 func (bot *Bot) makeGuess() chan *ClueStruct {
@@ -211,7 +224,8 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 					clue.err = fmt.Errorf("ChatCompletion error: %v", err)
 					break
 				}
-				clue.word = resp.Choices[0].Message.Content
+				clue.response = resp.Choices[0].Message.Content
+
 			}
 			c <- clue
 		}

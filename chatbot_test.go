@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -20,6 +21,38 @@ import (
         return false
     }
     return strings.Contains(out.Error(), want.Error())
+}
+
+func getSomeCards() *Game {
+	game := &Game{}
+	game.cards = Deck{
+		"AMAZON": "blue",
+		"BOOT": "blue",
+		"BOX": "blue",
+		"CLUB": "neutral",
+		"FILE": "red",
+		"HORSE": "red",
+		"ICE": "red",
+		"LOG": "neutral",
+		"MAPLE": "red",
+		"MOUSE": "red",
+		"NEEDLE": "blue",
+		"OIL": "neutral",
+		"OLIVE": "black",
+		"PILOT": "neutral",
+		"POINT": "blue",
+		"ROCKET": "blue",
+		"SCALE": "red",
+		"SHADOW": "neutral",
+		"SHOE": "neutral",
+		"SLIP": "blue",
+		"SPIDER": "blue",
+		"STAR": "neutral",
+		"TAP": "red",
+		"VACUUM": "red",
+		"WATCH":"red",
+	}
+	return game
 }
 
 func TestParseGPTResponseNumber(t *testing.T) {
@@ -83,6 +116,28 @@ func TestParseGPTResponseMatches(t *testing.T) {
 	if match != "IT MATCHES, THE, FIRST, GROUP, OF ALL CAPS WORDS" {
 		t.Errorf("Expected IT MATCHES, THE, FIRST, GROUP, OF ALL CAPS WORDS. Got %v", match)
 	}
+
+	respStr = "There are no all-caps words here."
+	match = parseGPTResponseMatches(respStr)
+	if match != "" {
+		t.Errorf("Expected empty string, got %v", match)
+	}
+}
+
+func TestUnique(t *testing.T) {
+	s := []string{"These", "some", "are", "always", "some", "words", "words", "words"}
+	u := unique(s)
+	if slices.Compare(u, []string{"These", "always", "are", "some", "words"}) != 0 {
+		t.Errorf("got: %v", u)
+	}
+}
+
+func TestFindAllCapsWords(t *testing.T) {
+	s := "THIS is a SENTENCE with SOME CAPS in it."
+	words := findUniqueAllCapsWords(s)
+	if slices.Compare(words, []string{"CAPS", "SENTENCE", "SOME", "THIS"}) != 0 {
+		t.Errorf("got: %v", words)
+	}
 }
 
 func TestParseGPTResponse(t *testing.T) {
@@ -97,43 +152,28 @@ func TestParseGPTResponse(t *testing.T) {
 	if c.word != "Measure" {
 		t.Errorf("word: expected Measure, got %v", c.word)
 	}
-	if c.log != "SCALE, WATCH, MAPLE" {
-		t.Errorf("log: expected SCALE, WATCH, MAPLE, got %v", c.log)
+	if c.response != respStr {
+		t.Errorf("response: expected response string, got %v", c.response)
+	}
+	if c.match != "SCALE, WATCH, MAPLE" {
+		t.Errorf("match: expected SCALE, WATCH, MAPLE, got %v", c.match)
+	}
+	if slices.Compare(c.capsWords, []string{"MAPLE", "SCALE", "WATCH"}) != 0 {
+		t.Errorf("capsWords: expected MAPLE, SCALE, WATCH, got %v", c.capsWords)
+	}
+	if c.err != nil {
+		t.Errorf("got non-nil err: %v", c.err)
 	}
 }
 
 func TestMakeClueReal(t *testing.T) {
-	game := &Game{}
-	game.cards = Deck{
-		"AMAZON": "blue",
-		"BOOT": "blue",
-		"BOX": "blue",
-		"CLUB": "neutral",
-		"FILE": "red",
-		"HORSE": "red",
-		"ICE": "red",
-		"LOG": "neutral",
-		"MAPLE": "red",
-		"MOUSE": "red",
-		"NEEDLE": "blue",
-		"OIL": "neutral",
-		"OLIVE": "black",
-		"PILOT": "neutral",
-		"POINT": "blue",
-		"ROCKET": "blue",
-		"SCALE": "red",
-		"SHADOW": "neutral",
-		"SHOE": "neutral",
-		"SLIP": "blue",
-		"SPIDER": "blue",
-		"STAR": "neutral",
-		"TAP": "red",
-		"VACUUM": "red",
-		"WATCH":"red",
-	}
 	token = getMasterPassword("gpt-secretkey.txt")
+	game := getSomeCards()
 	bot := NewBot(game)
-	clue := &ClueStruct{word: "red"}	
+	clue := &ClueStruct{
+		word: "red",
+		capsWords: make([]string, 3),	
+	}	
 	bot.clue_chan <-clue
 	clue = <-bot.clue_chan
 	fmt.Printf("%#v", clue)
@@ -145,49 +185,22 @@ func TestMakeClueReal(t *testing.T) {
 	if clue.word == "" {
 		t.Errorf("clue word not present")
 	}
-	if clue.log == "" {
-		t.Errorf("clue log not present")
+	if len(clue.capsWords) == 0 {
+		t.Errorf("caps words not present")
 	}
 }
 
 func TestMakeClueMock(t *testing.T) {
-	game := &Game{}
-	game.cards = Deck{
-		"AMAZON": "blue",
-		"BOOT": "blue",
-		"BOX": "blue",
-		"CLUB": "neutral",
-		"FILE": "red",
-		"HORSE": "red",
-		"ICE": "red",
-		"LOG": "neutral",
-		"MAPLE": "red",
-		"MOUSE": "red",
-		"NEEDLE": "blue",
-		"OIL": "neutral",
-		"OLIVE": "black",
-		"PILOT": "neutral",
-		"POINT": "blue",
-		"ROCKET": "blue",
-		"SCALE": "red",
-		"SHADOW": "neutral",
-		"SHOE": "neutral",
-		"SLIP": "blue",
-		"SPIDER": "blue",
-		"STAR": "neutral",
-		"TAP": "red",
-		"VACUUM": "red",
-		"WATCH":"red",
-	}
+	game := getSomeCards()
 	bot := NewBot(game)
 
 	type testStruct struct {
-		name       string
-		botResp    string
-		expectNum  int
-		expectWord string
-		expectLog  string
-		expectErr  error
+		name        string
+		botResp     string
+		expectNum   int
+		expectWord  string
+		expectMatch string
+		expectErr   error
 	}
 	tests := []testStruct{
 		{
@@ -197,7 +210,7 @@ func TestMakeClueMock(t *testing.T) {
 				"SCALE, WATCH, MAPLE",
 			expectNum: 3,
 			expectWord: "Measure",
-			expectLog: "SCALE, WATCH, MAPLE",
+			expectMatch: "SCALE, WATCH, MAPLE",
 			expectErr: nil,
 		},
 		{
@@ -206,7 +219,7 @@ func TestMakeClueMock(t *testing.T) {
 				"SHADOW SHOW SLIP VACUUM WATCH WITCH",
 			expectNum: 6,
 			expectWord: "My",
-			expectLog: "SHADOW SHOW SLIP VACUUM WATCH WITCH",
+			expectMatch: "SHADOW SHOW SLIP VACUUM WATCH WITCH",
 			expectErr: fmt.Errorf("Could not parse number in ChatCompletion response"),
 		},
 		{
@@ -216,7 +229,7 @@ func TestMakeClueMock(t *testing.T) {
 			botResp: "Encoding 2",
 			expectNum: 2,
 			expectWord: "Encoding",
-			expectLog: "Encoding 2",
+			expectMatch: "",
 			expectErr: nil,
 		},
 	}
@@ -234,7 +247,10 @@ func TestMakeClueMock(t *testing.T) {
 				},
 			}, nil
 		}
-		clue := &ClueStruct{word: "red"}
+		clue := &ClueStruct{
+			word: "red",
+			capsWords: make([]string, 3),
+		}
 		bot.clue_chan <-clue
 		clue = <-bot.clue_chan
 
@@ -247,8 +263,24 @@ func TestMakeClueMock(t *testing.T) {
 		if clue.word != test.expectWord {
 			t.Errorf("%v clue word: expected %v, got %v", test.name, test.expectWord, clue.word)
 		}
-		if clue.log != test.expectLog {
-			t.Errorf("%v clue log: expected %v, got %v", test.name, test.expectLog, clue.log)
+		if clue.response != test.botResp {
+			t.Errorf("%v clue response: expected %v, got %v", test.name, test.botResp, clue.response)
+		}
+		if clue.match != test.expectMatch {
+			t.Errorf("%v clue log[1]: expected %v, got %v", test.name, test.expectMatch, clue.match)
 		}
 	}
+}
+
+func TestMakeGuessReal(t *testing.T) {
+	token = getMasterPassword("gpt-secretkey.txt")
+	game := getSomeCards()
+	bot := NewBot(game)
+	clue := &ClueStruct{
+		word: "Measure",
+		numGuess: 4,
+	}	
+	bot.guess_chan <-clue
+	clue = <-bot.guess_chan
+	fmt.Printf("%#v", clue)
 }
