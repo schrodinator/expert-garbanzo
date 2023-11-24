@@ -126,7 +126,7 @@ func parseGPTResponse(respStr string, clue *ClueStruct) {
 	clue.response = respStr
 	clue.word = parseGPTResponseClue(respStr)
 	clue.match = parseGPTResponseMatches(respStr)
-	clue.capsWords = findUniqueAllCapsWords(respStr)
+	clue.capsWords, _ = findUniqueAllCapsWords(respStr)
 	var i int
 	i, clue.err = parseGPTResponseNumber(respStr)
 	/* If we didn't find a number but did find all-caps words,
@@ -170,10 +170,13 @@ func parseGPTResponseMatches(respStr string) string {
 	return re.FindString(respStr)
 }
 
-func findUniqueAllCapsWords(respStr string) []string {
+func findUniqueAllCapsWords(respStr string) ([]string, error) {
 	re := regexp.MustCompile("[[:upper:]]{2,}")
 	match := re.FindAllString(respStr, -1)
-	return unique(match)
+	if len(match) == 0 {
+		return match, fmt.Errorf("could not find any all-caps words")
+	}
+	return unique(match), nil
 }
 
 func unique(slice []string) []string {
@@ -225,7 +228,7 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 					break
 				}
 				clue.response = resp.Choices[0].Message.Content
-
+				clue.capsWords, clue.err = findUniqueAllCapsWords(clue.response)
 			}
 			c <- clue
 		}

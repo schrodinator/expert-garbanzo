@@ -134,7 +134,7 @@ func TestUnique(t *testing.T) {
 
 func TestFindAllCapsWords(t *testing.T) {
 	s := "THIS is a SENTENCE with SOME CAPS in it."
-	words := findUniqueAllCapsWords(s)
+	words, _ := findUniqueAllCapsWords(s)
 	if slices.Compare(words, []string{"CAPS", "SENTENCE", "SOME", "THIS"}) != 0 {
 		t.Errorf("got: %v", words)
 	}
@@ -283,4 +283,41 @@ func TestMakeGuessReal(t *testing.T) {
 	bot.guess_chan <-clue
 	clue = <-bot.guess_chan
 	fmt.Printf("%#v", clue)
+}
+
+func TestMakeGuessMock(t *testing.T) {
+	game := getSomeCards()
+	bot := NewBot(game)
+	clue := &ClueStruct{
+		word: "Measure",
+		numGuess: 4,
+	}
+
+	response := "The three words from the word list that best match " +
+			    "the clue \"Measure\" are:\n1. SCALE\n2. RULER\n3. TAPE"
+	askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
+		return openai.ChatCompletionResponse{
+			Choices: []openai.ChatCompletionChoice{
+				{
+					Index: 0,
+					Message: openai.ChatCompletionMessage{
+						Content: response,
+					},
+				},
+			},
+		}, nil
+	}
+
+	bot.guess_chan <-clue
+	clue = <-bot.guess_chan
+
+	if clue.response != response {
+		t.Errorf("got response: %v", clue.response)
+	}
+	if clue.err != nil {
+		t.Errorf("got err: %v", clue.err)
+	}
+	if slices.Compare(clue.capsWords, []string{"RULER", "SCALE", "TAPE"}) != 0 {
+		t.Errorf("got caps words: %v", clue.capsWords)
+	}
 }
