@@ -47,20 +47,49 @@ body {
     text-align: center;
 }
 
+div.transbox {
+    margin: 30px;
+    background-color: #ffffff;
+    opacity: 0.6;
+}
+  
+div.transbox p {
+    margin: 5%;
+    font-size: large;
+    font-weight: bold;
+    text-align: center;
+    color: #000000;
+}
+
 .white {
     background-color: white;
 }
 
 .red {
     background-color: orangered;
+    background-image: url('./images/red.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: white;
+    text-shadow: 1px 1px 3px #000;
 }
 
 .blue {
     background-color: steelblue;
+    background-image: url('./images/blue.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: white;
+    text-shadow: 1px 1px 3px #000;
 }
 
 .neutral {
     background-color: beige;
+    background-image: url('./images/neutral.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: black;
+    text-shadow: 1px 1px 3px #fff;
 }
 
 .black {
@@ -71,27 +100,7 @@ body {
 .guessed {
     background-color: gray;
     text-decoration: line-through;
-}
-
-.guessed-red {
-    background-color: gray;
-    text-decoration: line-through;
-    border: 10px solid orangered;
-    line-height: 70px;
-}
-
-.guessed-blue {
-    background-color: gray;
-    text-decoration: line-through;
-    border: 10px solid steelblue;
-    line-height: 70px;
-}
-
-.guessed-neutral {
-    background-color: gray;
-    text-decoration: line-through;
-    border: 10px solid beige;
-    line-height: 70px;
+    opacity: 0.5;
 }
 
 #msg-color-container {

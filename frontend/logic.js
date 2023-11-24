@@ -461,7 +461,7 @@ function markGuessedCard({guess, cardColor}) {
     for (var i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (card.innerText === guess) {
-            card.className = `card guessed-${cardColor}`;
+            card.className = `card ${cardColor} guessed`;
             if (userRole === guesserRole) {
                 card.removeEventListener("click", this.makeGuess, false);
             }
