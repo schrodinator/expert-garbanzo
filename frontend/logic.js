@@ -287,15 +287,21 @@ function fmtTimeFromDate(date) {
 
 function changeChatRoom() {
     var newchat = document.getElementById("chatroom");
+    if (!goToRoom(newchat.value)) {
+        newchat.value = selectedChat;
+    }
+    return false;
+}
+
+function goToRoom(room) {
     const whitespace = new RegExp(/^\s*$/);
-    if (newchat.value != null && !whitespace.test(newchat.value) && newchat.value != selectedChat) {
-        selectedChat = newchat.value;
+    if (typeof room !== 'undefined' && !whitespace.test(room) && room != selectedChat) {
+        selectedChat = room;
         header = document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
 
         let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
         sendEvent("change_room", changeEvent);
-    } else {
-        newchat.value = selectedChat;
+        return true;
     }
     return false;
 }
@@ -582,6 +588,7 @@ function login() {
         "username": document.getElementById("username").value,
         "password": document.getElementById("password").value,
     }
+    let room = document.getElementById("gotoroom").value;
 
     fetch("login", {
         method: 'post',
@@ -601,7 +608,7 @@ function login() {
             return false
         }
         // user is authenticated
-        connectWebsocket(data.otp);
+        connectWebsocket(data.otp, room);
         username = formData.username;
         const loginForm = document.getElementById("login-form");
         loginForm.reset();
@@ -615,7 +622,7 @@ function login() {
     return false;
 }
 
-function connectWebsocket(otp) {
+function connectWebsocket(otp, room) {
     if (window["WebSocket"]) {
         console.log("supports websockets");
         // connect to ws
@@ -623,18 +630,15 @@ function connectWebsocket(otp) {
 
         conn.onopen = function (evt) {
             document.getElementById("onconnect").hidden = false;
+            goToRoom(room);
         }
         conn.onclose = function (evt) {
             document.getElementById("connection-header").innerHTML = "Disconnected";
             // handle automatic reconnection
         }
-
-
         conn.onmessage = function(evt) {
             const eventData = JSON.parse(evt.data);
-
             const event = Object.assign(new Event, eventData);
-
             routeEvent(event);
         }
     } else {
