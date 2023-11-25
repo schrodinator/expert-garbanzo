@@ -34,6 +34,10 @@ body {
     max-width: 500px;
 }
 
+.options {
+    margin-bottom: 5px;
+}
+
 .gameboard {
     display: grid;
     grid-template-rows: repeat(5, 100px);

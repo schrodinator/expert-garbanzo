@@ -50,16 +50,29 @@
                 <br>
 
                 <div class="game-setup" id="game-setup" hidden>
-                    <label for="team">Team: </label>
-                    <select class="txt" name="team" id="team" onchange="changeTeam();" data-testid="team" disabled>
-                        <option value="red" selected>Red</option>
-                        <option value="blue">Blue</option>
-                    </select>
-                    <label for="role">Role: </label>
-                    <select class="txt" name="role" id="role" onchange="changeRole();" data-testid="role" disabled>
-                        <option value="guesser" selected>Guesser</option>
-                        <option value="cluegiver">Clue Giver</option>
-                    </select>
+                    <div class="options">
+                        <label for="team">Team: </label>
+                        <select class="txt" name="team" id="team" onchange="changeTeam();" data-testid="team" disabled>
+                            <option value="red" selected>Red</option>
+                            <option value="blue">Blue</option>
+                        </select>
+                        <label for="role">Role: </label>
+                        <select class="txt" name="role" id="role" onchange="changeRole();" data-testid="role" disabled>
+                            <option value="guesser" selected>Guesser</option>
+                            <option value="cluegiver">Clue Giver</option>
+                        </select>
+                    </div>
+                    <div class="options" id="bots">
+                        <span>Include Bots:</span>
+                        <input type="checkbox" name="AIRedClue" id="AIRedClue" value="AIRedClue" data-testid="AIRedClue">
+                        <label for="AIRedClue">Red Cluegiver</label>
+                        <input type="checkbox" name="AIRedGuess" id="AIRedGuess" value="AIRedGuess" data-testid="AIRedGuess">
+                        <label for="AIRedGuess">Red Guesser</label>
+                        <input type="checkbox" name="AIBlueClue" id="AIBlueClue" value="AIBlueClue" data-testid="AIBlueClue">
+                        <label for="AIBlueClue">Blue Cluegiver</label>
+                        <input type="checkbox" name="AIBlueGuess" id="AIBlueGuess" value="AIBlueGuess" data-testid="AIBlueGuess">
+                        <label for="AIBlueGuess">Blue Guesser</label>
+                    </div>
                     <input class="button" type="submit" value="New Game" id="newgame-button" data-testid="newgame">
                     <input class="button" type="submit" value="Abort Game" id="abort-button" data-testid="abort" hidden>
                 </div>

@@ -117,6 +117,18 @@ for (let i = 0; i < totalNumCards; i++) {
     gameBoard.appendChild(cardItem);
 }
 
+
+function disableBotCheckboxes(boolean) {
+    let bots = document.getElementById("bots");
+    let boxes = bots.querySelectorAll('input[type="checkbox"]');
+    for (let i = 0; i < boxes.length; i++) {
+        boxes[i].disabled = boolean;
+        if (boolean === false) {
+            boxes[i].checked = false;
+        }
+    }
+}
+
 function abortGame() {
     currentGame = null;
 
@@ -131,6 +143,8 @@ function abortGame() {
     document.getElementById("sort-cards").disabled = true;
     document.getElementById("redscore").value = "";
     document.getElementById("bluescore").value = "";
+
+    disableBotCheckboxes(false);
 
     const team = document.getElementById("team");
     team.value = defaultTeam;
@@ -172,6 +186,8 @@ function setupBoard(payload) {
     document.getElementById("newgame-button").hidden = true;
     document.getElementById("abort-button").value = "Abort Game";
     document.getElementById("abort-button").hidden = false;
+
+    disableBotCheckboxes(true);
 
     teamTurn = defaultTeam;
     roleTurn = cluegiverRole;
