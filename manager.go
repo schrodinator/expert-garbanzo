@@ -51,7 +51,7 @@ func NewManager(ctx context.Context) *Manager {
 
 func (m *Manager) setupEventHandlers() {
 	m.handlers[EventSendMessage] = SendMessage
-	m.handlers[EventChangeRoom]  = ChatRoomHandler
+	m.handlers[EventEnterRoom]   = ChatRoomHandler
 	m.handlers[EventChangeTeam]  = TeamChangeHandler
 	m.handlers[EventChangeRole]  = RoleChangeHandler
 	m.handlers[EventNewGame]     = NewGameHandler
@@ -197,16 +197,23 @@ func ChatRoomHandler(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	// remove client from old chat room
-	delete(c.manager.chats[c.chatroom], c.username)
+	oldroom := c.chatroom
+	newroom := changeroom.RoomName
 
-	// enter client into new chat room
-	c.chatroom = changeroom.RoomName
-	c.manager.makeChatRoom(c.chatroom)
-	c.manager.chats[c.chatroom][c.username] = c
+	if newroom != oldroom {
+		// remove client from old chat room
+		delete(c.manager.chats[c.chatroom], c.username)
+		// notify old chat room that client has left
+		c.manager.notifyClients(oldroom, EventExitRoom, event.Payload)
 
-	// Report to everyone in the room that the new player has entered
-	err := c.manager.notifyClients(c.chatroom, EventChangeRoom, event.Payload)
+		// enter client into new chat room
+		c.chatroom = newroom
+		c.manager.makeChatRoom(c.chatroom)
+		c.manager.chats[c.chatroom][c.username] = c
+	}
+
+	// notify new room that the client has entered
+	err := c.manager.notifyClients(c.chatroom, EventEnterRoom, event.Payload)
 	return err
 }
 
@@ -410,6 +417,11 @@ func (m *Manager) removeClient(client *Client) {
 	}
 	if _, exists := m.clients[client.username]; exists {
 		client.connection.Close()
+		// notify chat room of client departure
+		exit := ChangeRoomEvent {
+			UserName: client.username,
+		}
+		m.notifyClients(client.chatroom, EventExitRoom, exit)
 		delete(m.clients, client.username)
 	}
 }

@@ -16,7 +16,8 @@ type EventHandlerList map[string]EventHandler
 const (
 	EventSendMessage = "send_message"
 	EventNewMessage  = "new_message"
-	EventChangeRoom  = "change_room"
+	EventEnterRoom   = "enter_room"
+	EventExitRoom    = "exit_room"
 	EventChangeTeam  = "change_team"
 	EventChangeRole  = "change_role"
 	EventNewGame     = "new_game"
@@ -38,7 +39,7 @@ type NewMessageEvent struct {
 }
 
 type ChangeRoomEvent struct {
-	UserName  string `json:"username"`
+	UserName  string `json:"clientName"`
 	RoomName  string `json:"roomname"`
 }
 
@@ -48,7 +49,7 @@ type NewGameEvent struct {
 }
 
 type AbortGameEvent struct {
-	UserName  string `json:"username"`
+	UserName  string `json:"clientName"`
 	TeamColor Team   `json:"teamColor"`
 }
 

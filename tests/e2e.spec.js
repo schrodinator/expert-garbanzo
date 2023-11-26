@@ -76,7 +76,7 @@ test('play two-player game', async () => {
     await page_guess.getByTestId('chatroom').press('Enter');
 
     // Assert a change room notification is printed in the chat log
-    await expect(page_clue.getByTestId('chatlog')).toContainText('cluegiver has entered ' + chatroom);
+    await expect(page_clue.getByTestId('chatlog')).toContainText(`cluegiver has entered room "${chatroom}"`);
     await expect(page_clue.getByTestId('chatlog')).toContainText('guesser has entered ');
 
     // Assert button / field visibilities and states

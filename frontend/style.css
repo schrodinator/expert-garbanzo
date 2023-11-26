@@ -101,23 +101,25 @@ body {
     opacity: 0.5;
 }
 
-#msg-color-container {
-    display: flex;
-    max-width: 600px;
-    max-height: 300px;
+.chat-container {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: 40px 3fr 1fr;
+    max-width: 900px;
+    height: 300px;
 }
 
 .messagearea {
-    flex: 1;
-    height: 300px;
     border: 1px solid #ccc;
+    margin: 5px;
     padding: 5px;
     background-color: white;
     overflow: scroll;
 }
 
-.color-container {
-    width: 50px;
+.participant {
+    overflow-wrap: anywhere;
+    margin: 5px;
 }
 
 .color-item {

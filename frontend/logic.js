@@ -23,8 +23,8 @@ class NewMessageEvent {
 }
 
 class ChangeChatRoomEvent {
-    constructor(username, roomname) {
-        this.username = username;
+    constructor(clientName, roomname) {
+        this.clientName = clientName;
         this.roomname = roomname;
     }
 }
@@ -37,8 +37,8 @@ class NewGameEvent {
 }
 
 class AbortGameEvent {
-    constructor(name, color) {
-        this.username = name;
+    constructor(clientName, color) {
+        this.clientName = clientName;
         this.teamColor = color; 
     }
 }
@@ -90,11 +90,11 @@ const cluegiverRole = "cluegiver";
 const defaultTeam = "red";
 const deathCard = "black";
 
-var selectedChat = defaultRoom;
 var username;
 var usercolor = colors[Math.floor(Math.random() * colors.length)];
 var userTeam = defaultTeam;
 var userRole = guesserRole;
+var selectedChat = "";
 var currentGame;
 
 
@@ -133,6 +133,7 @@ function abortGame() {
     currentGame = null;
 
     sendEvent("abort_game", null);
+    notifyAbortGame(username, userTeam);
 
     resetCards();
     resetClueNotification();
@@ -301,11 +302,38 @@ function fmtTimeFromDate(date) {
     return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
 }
 
+function addParticipant(name) {
+    const container = document.getElementById("participants");
+    const participant = document.createElement("div");
+    participant.className = "participant";
+    participant.id = `participant-${name}`;
+    participant.innerText = name;
+    container.appendChild(participant);
+
+    Array.from(container.children)
+         .sort((a, b) => a.value - b.value)
+         .forEach(element => container.append(element));
+}
+
+function removeParticipant(name) {
+    const container = document.getElementById("participants");
+    const child = document.getElementById(`participant-${name}`);
+    if (child != null) {
+        container.removeChild(child);
+    }
+}
+
+function removeAllParticipants() {
+    const container = document.getElementById("participants");
+    container.innerHTML = "";
+}
+
 function changeChatRoom() {
     var newchat = document.getElementById("chatroom");
     if (!goToRoom(newchat.value)) {
         newchat.value = selectedChat;
     }
+    removeAllParticipants();
     return false;
 }
 
@@ -313,10 +341,8 @@ function goToRoom(room) {
     const whitespace = new RegExp(/^\s*$/);
     if (typeof room !== 'undefined' && !whitespace.test(room) && room != selectedChat) {
         selectedChat = room;
-        header = document.getElementById("chat-header").innerHTML = "Currently in chatroom: " + selectedChat;
-
         let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
-        sendEvent("change_room", changeEvent);
+        sendEvent("enter_room", changeEvent);
         return true;
     }
     return false;
@@ -324,6 +350,7 @@ function goToRoom(room) {
 
 function notifyRoomEntry(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+    addParticipant(roomChange.clientName);
     if (roomChange.roomname == defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
@@ -332,18 +359,32 @@ function notifyRoomEntry(payload) {
         document.getElementById("end-turn").hidden = true;
         document.getElementById("gameboard-container").hidden = false;
     }
-    let message = `<br><span style="font-weight:bold;">${roomChange.username} has entered `;
-    if (username === roomChange.username) {
-        message += `${roomChange.roomname}</span><br>`;
+    let message = `<span style="font-weight:bold;">${roomChange.clientName} has entered `;
+    if (username === roomChange.clientName) {
+        message += `room "${roomChange.roomname}"</span>`;
+
+        document.getElementById("welcome-header").innerText = `Welcome to ${selectedChat}, ${username}`;
+        document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;
     } else {
-        message += `the room.</span><br>`;
+        message += `the room.</span>`;
     }
     appendToChat(message);
 }
 
-function notifyAbortGame(payload) {
-    const {teamColor, username} = Object.assign(new AbortGameEvent, payload);
-    message = `<br><span style="font-weight:bold;color:${teamColor}">${username} has left the game.</span><br>`;
+function notifyRoomExit(payload) {
+    roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+    removeParticipant(roomChange.clientName);
+    let message = `<span style="font-weight:bold;">${roomChange.clientName} has left the room.</span>`;
+    appendToChat(message);
+}
+
+function abortGameHandler(payload) {
+    const {name, teamColor} = Object.assign(new AbortGameEvent, payload);
+    notifyAbortGame(name, teamColor);
+}
+
+function notifyAbortGame(name, teamColor) {
+    message = `<span style="font-weight:bold;color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
 }
 
@@ -414,11 +455,11 @@ function capitalize(word) {
 
 function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
     const teamName = capitalize(teamColor);
-    let msg = `<br><span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
+    let msg = `<span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
     if (teamColor === cardColor) {
-        msg += `CORRECT. A point for ${teamName}.</span><br>`;
+        msg += `CORRECT. A point for ${teamName}.</span>`;
     } else {
-        msg += `incorrect. Card is ${cardColor}.</span><br>`;
+        msg += `incorrect. Card is ${cardColor}.</span>`;
     }
     appendToChat(msg);
     return false;
@@ -510,8 +551,11 @@ function routeEvent(event) {
         case "guess_event":
             guessResponseHandler(event.payload);
             break;
-        case "change_room":
+        case "enter_room":
             notifyRoomEntry(event.payload);
+            break;
+        case "exit_room":
+            notifyRoomExit(event.payload);
             break;
         case "give_clue":
             clueHandler(event.payload);
@@ -520,7 +564,7 @@ function routeEvent(event) {
             endTurnHandler(event.payload);
             break;
         case "abort_game":
-            notifyAbortGame(event.payload);
+            abortGameHandler(event.payload);
             break;
         default:
             alert("unsupported message type: " + event.type);
@@ -542,13 +586,13 @@ function appendChatMessage(payload) {
     const time = fmtTimeFromDate(new Date(messageEvent.sentTime));
     const {from, color} = messageEvent;
     const msg = htmlEscape(messageEvent.message);
-    const formattedMsg = `${time} <span style="font-weight:bold; color:${color}">${from}</span>: ${msg}<br>`;
+    const formattedMsg = `${time} <span style="font-weight:bold; color:${color}">${from}</span>: ${msg}`;
     appendToChat(formattedMsg);
 }
 
 function appendToChat(message) {
-    const textarea = document.getElementById("chatmessages");
-    textarea.innerHTML += message;
+    const textarea = document.getElementById("chatlog");
+    textarea.innerHTML += `${message}<br>`;
     textarea.scrollTop = textarea.scrollHeight;
 }
 
@@ -605,6 +649,9 @@ function login() {
         "password": document.getElementById("password").value,
     }
     let room = document.getElementById("gotoroom").value;
+    if (room === "") {
+        room = defaultRoom;
+    }
 
     fetch("login", {
         method: 'post',
@@ -624,13 +671,15 @@ function login() {
             return false
         }
         // user is authenticated
-        connectWebsocket(data.otp, room);
         username = formData.username;
+        connectWebsocket(data.otp, room);
+
+        // clear and hide the login form
         const loginForm = document.getElementById("login-form");
         loginForm.reset();
         loginForm.querySelector("input[type=submit]").disabled = true;
         document.getElementById("login-div").style.display = "none";
-        document.getElementById("welcome-header").innerHTML = "Welcome, " + username;
+
         document.getElementById("team").disabled = false;
         document.getElementById("role").disabled = false;
     }).catch((e) => { alert(e) });
@@ -649,7 +698,7 @@ function connectWebsocket(otp, room) {
             goToRoom(room);
         }
         conn.onclose = function (evt) {
-            document.getElementById("connection-header").innerHTML = "Disconnected";
+            document.getElementById("welcome-header").innerHTML = "Disconnected";
             // handle automatic reconnection
         }
         conn.onmessage = function(evt) {
@@ -664,7 +713,7 @@ function connectWebsocket(otp, room) {
 
 window.onload = function() {
     document.getElementById("chatroom-selection").onsubmit = changeChatRoom;
-    document.getElementById("chatroom-message").onsubmit = sendMessage;
+    document.getElementById("send-message").onsubmit = sendMessage;
     document.getElementById("login-form").onsubmit = login;
     document.getElementById("newgame-button").onclick = requestNewGame;
     document.getElementById("abort-button").onclick = abortGame;
