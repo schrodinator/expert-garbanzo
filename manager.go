@@ -62,9 +62,13 @@ func (m *Manager) setupEventHandlers() {
 }
 
 func NewGameHandler(event Event, c *Client) error {
-	game := c.manager.makeGame(c.chatroom)
+	var gameRequest NewGameRequestEvent
+	if err := json.Unmarshal(event.Payload, &gameRequest); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
+	game := c.manager.makeGame(c.chatroom, &gameRequest.Bots)
 
-	var cluegiverMessage NewGameEvent
+	var cluegiverMessage NewGameResponseEvent
 	cluegiverMessage.Cards = game.cards
 	cluegiverMessage.SentTime = time.Now()
 	cluegiverEvent, err := packageMessage(EventNewGame, cluegiverMessage)
@@ -72,7 +76,7 @@ func NewGameHandler(event Event, c *Client) error {
 		return err
 	}
 
-	var guesserMessage NewGameEvent
+	var guesserMessage NewGameResponseEvent
 	guesserMessage.Cards = whiteCards(game.cards)
 	guesserMessage.SentTime  = cluegiverMessage.SentTime
 	guesserEvent, err := packageMessage(EventNewGame, guesserMessage)
@@ -290,7 +294,7 @@ func (m *Manager) makeChatRoom(name string) {
 	m.chats[name] = make(ClientList)
 }
 
-func (m *Manager) makeGame(name string) *Game {
+func (m *Manager) makeGame(name string, bots *BotList) *Game {
 	game, exists := m.games[name]
 	if !exists {
 		game = &Game {
@@ -298,6 +302,7 @@ func (m *Manager) makeGame(name string) *Game {
 			teamCounts: make(map[Team]int),
 		}
 	}
+	game.bots = bots
 	game.cards = getCards()
 	game.teamTurn = red
 	game.roleTurn = cluegiver

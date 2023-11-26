@@ -28,7 +28,7 @@ func setupGame(t *testing.T, ws *websocket.Conn) *Manager {
 
 	manager := setupManager(t, ws)
 	readDictionary("./codenames-wordlist.txt")
-	game := manager.makeGame("test")
+	game := manager.makeGame("test", nil)
 	client := manager.clients["testClient"]
 	client.chatroom = "test"
 	game.players["testClient"] = client
@@ -106,7 +106,7 @@ func TestMakeGame(t *testing.T) {
 	manager := setupGame(t, nil)
 	readDictionary("./codenames-wordlist.txt")
 
-	manager.makeGame("test")
+	manager.makeGame("test", nil)
 	if _, exists := manager.games["test"]; !exists {
 		t.Error("test game does not exist")
 	}

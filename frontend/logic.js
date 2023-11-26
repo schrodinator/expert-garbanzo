@@ -23,13 +23,19 @@ class NewMessageEvent {
 }
 
 class ChangeChatRoomEvent {
-    constructor(clientName, roomname) {
+    constructor(clientName, roomName) {
         this.clientName = clientName;
-        this.roomname = roomname;
+        this.roomName = roomName;
     }
 }
 
-class NewGameEvent {
+class NewGameRequestEvent {
+    constructor(bots) {
+        this.bots = bots;
+    }
+}
+
+class NewGameResponseEvent {
     constructor(cards, sentTime) {
         this.sentTime = sentTime;
         this.cards = cards;
@@ -164,7 +170,7 @@ function abortGame() {
 
 function setupBoard(payload) {
     // Set global variable
-    currentGame = Object.assign(new NewGameEvent, payload);
+    currentGame = Object.assign(new NewGameResponseEvent, payload);
 
     let i = 0;
     for (const [word, color] of Object.entries(currentGame.cards)) {
@@ -268,7 +274,17 @@ function makeGuess() {
 }
 
 function requestNewGame() {
-    sendEvent("new_game", null);
+    game = new NewGameRequestEvent({
+        "red": {
+            "cluegiver": document.getElementById("AIRedClue").checked,
+            "guesser":   document.getElementById("AIRedGuess").checked,
+        },
+        "blue": {
+            "cluegiver": document.getElementById("AIBlueClue").checked,
+            "guesser":   document.getElementById("AIBlueGuess").checked,
+        }
+    });
+    sendEvent("new_game", game);
     return false;
 }
 
@@ -351,7 +367,7 @@ function goToRoom(room) {
 function notifyRoomEntry(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
     addParticipant(roomChange.clientName);
-    if (roomChange.roomname == defaultRoom) {
+    if (roomChange.roomName == defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
     } else {
@@ -361,7 +377,7 @@ function notifyRoomEntry(payload) {
     }
     let message = `<span style="font-weight:bold;">${roomChange.clientName} has entered `;
     if (username === roomChange.clientName) {
-        message += `room "${roomChange.roomname}"</span>`;
+        message += `room "${roomChange.roomName}"</span>`;
 
         document.getElementById("welcome-header").innerText = `Welcome to ${selectedChat}, ${username}`;
         document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;

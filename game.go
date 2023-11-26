@@ -130,9 +130,11 @@ func (d *Deck) getGuessWords() string {
 
 type GameList map[string]*Game
 type Score    map[Team]int
+type BotList  map[Team]map[Role]bool
 
 type Game struct {
 	players         ClientList
+	bots            *BotList
 	cards           Deck
 	teamTurn        Team
 	teamCounts      map[Team]int

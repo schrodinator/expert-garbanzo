@@ -40,10 +40,14 @@ type NewMessageEvent struct {
 
 type ChangeRoomEvent struct {
 	UserName  string `json:"clientName"`
-	RoomName  string `json:"roomname"`
+	RoomName  string `json:"roomName"`
 }
 
-type NewGameEvent struct {
+type NewGameRequestEvent struct {
+	Bots BotList `json:"bots"`
+}
+
+type NewGameResponseEvent struct {
 	Cards      map[string]string  `json:"cards"`
 	SentTime   time.Time          `json:"sentTime"`
 }
