@@ -350,6 +350,10 @@ function changeChatRoom() {
         newchat.value = selectedChat;
     }
     removeAllParticipants();
+    /* Abort the current game, if there is one. */
+    if (currentGame != null) {
+        abortGame();
+    }
     return false;
 }
 
