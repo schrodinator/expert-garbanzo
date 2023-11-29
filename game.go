@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
@@ -34,17 +33,6 @@ func (t Team) Change() Team {
 		return t
 	}
 }
-func (t Team) MarshalJSON() ([]byte, error) {
-	return json.Marshal(string(t))
-}
-func (t Team) UnmarshalJSON(data []byte) error {
-	var teamString string
-	if err := json.Unmarshal(data, &teamString); err != nil {
-		return err
-	}
-	t, err := NewTeam(teamString)
-	return err
-}
 func NewTeam(s string) (Team, error) {
 	switch s {
 	case "red":
@@ -72,27 +60,6 @@ func (r Role) Change() Role {
 		return guesser
 	default:
 		return r
-	}
-}
-func (r Role) MarshalJSON() ([]byte, error) {
-	return json.Marshal(string(r))
-}
-func (r Role) UnmarshalJSON(data []byte) error {
-	var roleString string
-	if err := json.Unmarshal(data, &roleString); err != nil {
-		return err
-	}
-	r, err := NewRole(roleString)
-	return err
-}
-func NewRole(r string) (Role, error) {
-	switch r {
-	case "cluegiver":
-		return cluegiver, nil
-	case "guesser":
-		return guesser, nil
-	default:
-		return "", fmt.Errorf("invalid role: %s", r)
 	}
 }
 
