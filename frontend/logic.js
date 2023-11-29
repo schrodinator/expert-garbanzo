@@ -449,6 +449,7 @@ function whoseTurn(teamTurn, roleTurn) {
     document.getElementById("turn").innerHTML = `${capitalize(teamTurn)}<br>${capitalize(roleTurn)}`;
     document.getElementById("turn").style.color = teamTurn;
     document.getElementById("end-turn").hidden = true;
+    setMaxGuessLimit(teamTurn);
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
         document.getElementById("clue-input").disabled = true;
@@ -537,6 +538,12 @@ function updateScoreboard({score}) {
         }
     }
     return false;
+}
+
+function setMaxGuessLimit(teamTurn) {
+    const loc = document.getElementById(`${teamTurn}score`);
+    const val = parseInt(loc.innerText);
+    document.getElementById("number-input").setAttribute("max", val);
 }
 
 function disableCardEvents(word) {
