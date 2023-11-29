@@ -214,20 +214,29 @@ func ChatRoomHandler(event Event, c *Client) error {
 	oldroom := c.chatroom
 	newroom := changeroom.RoomName
 
-	if newroom != oldroom {
-		// remove client from old chat room
-		delete(c.manager.chats[c.chatroom], c.username)
-		// notify old chat room that client has left
-		c.manager.notifyClients(oldroom, EventExitRoom, event.Payload)
-
-		// enter client into new chat room
-		c.chatroom = newroom
-		c.manager.makeChatRoom(c.chatroom)
-		c.manager.chats[c.chatroom][c.username] = c
+	// if client is in newroom already, there is nothing to do
+	if oldroom == newroom {
+		return nil
 	}
 
-	// notify new room that the client has entered
-	err := c.manager.notifyClients(c.chatroom, EventEnterRoom, event.Payload)
+	// remove client from old chat room
+	delete(c.manager.chats[oldroom], c.username)
+
+	// notify old chat room that client has left
+	c.manager.notifyClients(oldroom, EventExitRoom, event.Payload)
+
+	// notify new room that the client is entering
+	c.manager.notifyClients(newroom, EventEnterRoom, event.Payload)
+
+	// enter client into new chat room
+	c.chatroom = newroom
+	c.manager.makeChatRoom(newroom)
+	c.manager.chats[newroom][c.username] = c
+
+	// send list of current chat room participants to client
+	changeroom.Participants = *c.manager.chats[newroom].listClients()
+	outgoingEvent, err := packageMessage(EventEnterRoom, changeroom)
+	c.egress <- outgoingEvent
 	return err
 }
 
@@ -259,6 +268,10 @@ func SendMessage(event Event, c *Client) error {
 }
 
 func (m *Manager) notifyClients(room string, messageType string, message any) error {
+	if _, exists := m.chats[room]; !exists {
+		return fmt.Errorf("chat room %v does not exist", room)
+	}
+
 	outgoingEvent, err := packageMessage(messageType, message)
 	if err != nil {
 		return err
@@ -403,7 +416,6 @@ func (m *Manager) addClient(client *Client) {
 	defer m.Unlock()
 
 	m.clients[client.username] = client
-	m.chats[defaultChatRoom][client.username] = client
 }
 
 func (m *Manager) removeClient(client *Client) {

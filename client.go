@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -14,6 +15,17 @@ var (
 )
 
 type ClientList map[string]*Client
+func (cl ClientList) listClients() *[]string {
+	s := make([]string, len(cl))
+	i := 0
+	for k := range cl {
+		s[i] = k
+		i++
+	}
+	slices.Sort(s)
+	return &s
+}
+
 type ChatRooms map[string]ClientList
 
 type Client struct {
@@ -34,7 +46,6 @@ func NewClient(username string, conn *websocket.Conn, manager *Manager) *Client 
 		connection: conn,
 		manager:    manager,
 		username:   username,
-		chatroom:   defaultChatRoom,
 		role:       guesser,
 		team:       red,
 		egress:     make(chan Event),

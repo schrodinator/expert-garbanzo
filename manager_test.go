@@ -89,19 +89,6 @@ func setupWSTestServer(t *testing.T) (*httptest.Server, *websocket.Conn) {
 	return s, ws
 }
 
-
-func TestAddClient(t *testing.T) {
-	manager := setupManager(t, nil)
-
-	if _, exists := manager.chats[defaultChatRoom]; !exists {
-		t.Error("default chat room does not exist")
-	}
-
-	if _, exists := manager.chats[defaultChatRoom]["testClient"]; !exists {
-		t.Error("test client was not added to default chat room")
-	}
-}
-
 func TestMakeGame(t *testing.T) {
 	manager := setupGame(t, nil, nil)
 

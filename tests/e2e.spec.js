@@ -31,6 +31,11 @@ test('play two-player game', async () => {
 
     // Check that cluegiver login succeeded
     await expect(page_clue.getByTestId('chatlog')).toBeVisible();
+    await expect(page_clue.getByTestId('welcome')).toContainText('Welcome to lobby, cluegiver');
+
+    // Check participants list
+    await expect(page_clue.getByTestId('participants-title')).toContainText('Participants in lobby');
+    await expect(page_clue.getByTestId('participants')).toContainText('cluegiver');
 
     // Guesser login
     const context_guess = await chromium.launch({ headless: false, slowMo: 100 });
@@ -57,6 +62,13 @@ test('play two-player game', async () => {
 
     // Check that guesser login succeeded
     await expect(page_guess.getByTestId('chatlog')).toBeVisible();
+    await expect(page_guess.getByTestId('welcome')).toContainText('Welcome to lobby, guesser');
+
+    // Check participants list
+    await expect(page_guess.getByTestId('participants-title')).toContainText('Participants in lobby');
+    await expect(page_guess.getByTestId('participants')).toContainText('cluegiver');
+    await expect(page_guess.getByTestId('participants')).toContainText('guesser');
+    await expect(page_clue.getByTestId('participants')).toContainText('guesser');
 
     // Cluegiver sends a chat message
     const msg = 'Meet me in ' + chatroom;
@@ -69,15 +81,31 @@ test('play two-player game', async () => {
     // Assert the new game button is hidden in the lobby
     await expect(page_guess.getByTestId('newgame')).toBeHidden();
 
-    // Move into the new chat room
+    // Cluegiver moves into the new chat room
     await page_clue.getByTestId('chatroom').fill(chatroom);
     await page_clue.getByTestId('chatroom').press('Enter');
+    await expect(page_clue.getByTestId('welcome')).toContainText(`Welcome to ${chatroom}, cluegiver`);
+
+    // Check participants list
+    await expect(page_clue.getByTestId('participants-title')).toContainText(`Participants in ${chatroom}`);
+    await expect(page_clue.getByTestId('participants')).toContainText('cluegiver');
+    await expect(page_clue.getByTestId('participants')).not.toContainText('guesser');
+
+    // Guesser moves into the new chat room
     await page_guess.getByTestId('chatroom').fill(chatroom);
     await page_guess.getByTestId('chatroom').press('Enter');
+    await expect(page_guess.getByTestId('welcome')).toContainText(`Welcome to ${chatroom}, guesser`);
 
-    // Assert a change room notification is printed in the chat log
+    // Check participants list
+    await expect(page_guess.getByTestId('participants-title')).toContainText(`Participants in ${chatroom}`);
+    await expect(page_guess.getByTestId('participants')).toContainText('cluegiver');
+    await expect(page_guess.getByTestId('participants')).toContainText('guesser');
+    await expect(page_clue.getByTestId('participants')).toContainText('guesser');
+
+    // Assert the change room notifications are printed in the chat log
     await expect(page_clue.getByTestId('chatlog')).toContainText(`cluegiver has entered room "${chatroom}"`);
     await expect(page_clue.getByTestId('chatlog')).toContainText('guesser has entered ');
+    await expect(page_guess.getByTestId('chatlog')).toContainText(`guesser has entered room "${chatroom}"`);
 
     // Assert button / field visibilities and states
     await expect(page_guess.getByTestId('newgame')).toBeVisible();

@@ -40,8 +40,9 @@ type NewMessageEvent struct {
 }
 
 type ChangeRoomEvent struct {
-	UserName  string `json:"clientName"`
-	RoomName  string `json:"roomName"`
+	UserName     string   `json:"clientName"`
+	RoomName     string   `json:"roomName"`
+	Participants []string `json:"participants"`
 }
 
 type NewGameRequestEvent struct {

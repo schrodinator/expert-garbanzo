@@ -23,9 +23,10 @@ class NewMessageEvent {
 }
 
 class ChangeChatRoomEvent {
-    constructor(clientName, roomName) {
+    constructor(clientName, roomName, participants) {
         this.clientName = clientName;
         this.roomName = roomName;
+        this.participants = participants;
     }
 }
 
@@ -318,17 +319,30 @@ function fmtTimeFromDate(date) {
     return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
 }
 
-function addParticipant(name) {
+function appendParticipantDiv(name) {
     const container = document.getElementById("participants");
     const participant = document.createElement("div");
     participant.className = "participant";
     participant.id = `participant-${name}`;
     participant.innerText = name;
     container.appendChild(participant);
+}
 
+function addParticipant(name) {
+    appendParticipantDiv(name);
+
+    const container = document.getElementById("participants");
     Array.from(container.children)
          .sort((a, b) => a.value - b.value)
          .forEach(element => container.append(element));
+}
+
+function addAllParticipants(participantsList) {
+    /* expect particpantsList to be sorted already */
+    for (i = 0; i < participantsList.length; i++) {
+        const name = participantsList[i];
+        appendParticipantDiv(name);
+    }
 }
 
 function removeParticipant(name) {
@@ -370,7 +384,11 @@ function goToRoom(room) {
 
 function notifyRoomEntry(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
-    addParticipant(roomChange.clientName);
+    if (roomChange.participants != null && roomChange.participants.length > 0) {
+        addAllParticipants(roomChange.participants)
+    } else {
+        addParticipant(roomChange.clientName);
+    }
     if (roomChange.roomName == defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
