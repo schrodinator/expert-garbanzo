@@ -23,12 +23,12 @@ func setupManager(t *testing.T, ws *websocket.Conn) *Manager {
 	return manager
 }
 
-func setupGame(t *testing.T, ws *websocket.Conn) *Manager {
+func setupGame(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 	t.Helper()
 
 	manager := setupManager(t, ws)
 	readDictionary("./codenames-wordlist.txt")
-	game := manager.makeGame("test", nil)
+	game := manager.makeGame("test", bots)
 	client := manager.clients["testClient"]
 	client.chatroom = "test"
 	game.players["testClient"] = client
@@ -37,10 +37,10 @@ func setupGame(t *testing.T, ws *websocket.Conn) *Manager {
 	return manager
 }
 
-func setupDeck(t *testing.T, ws *websocket.Conn) *Manager {
+func setupDeck(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 	t.Helper()
 
-	manager := setupGame(t, ws)
+	manager := setupGame(t, ws, bots)
 	game := manager.games["test"]
 	game.cards = Deck{
 		"redword": "red",
@@ -103,10 +103,8 @@ func TestAddClient(t *testing.T) {
 }
 
 func TestMakeGame(t *testing.T) {
-	manager := setupGame(t, nil)
-	readDictionary("./codenames-wordlist.txt")
+	manager := setupGame(t, nil, nil)
 
-	manager.makeGame("test", nil)
 	if _, exists := manager.games["test"]; !exists {
 		t.Error("test game does not exist")
 	}
@@ -131,7 +129,7 @@ func TestMakeGame(t *testing.T) {
 
 func TestGuessEvaluationHandler(t *testing.T) {
 	s, ws := setupWSTestServer(t)
-	manager := setupDeck(t, ws)
+	manager := setupDeck(t, ws, nil)
 	game := manager.games["test"]
 	game.roleTurn = guesser
 	game.guessRemaining = totalNumCards
@@ -170,15 +168,25 @@ func TestGuessEvaluationHandler(t *testing.T) {
 	expect := GuessResponseEvent{
 		GuessEvent: GuessEvent{Guess: "redword", Guesser: "testClient",},
 		EndTurnEvent: EndTurnEvent{TeamTurn: red, RoleTurn: guesser,},
-		TeamColor: "red",
+		TeamColor: red,
 		CardColor: "red",
 		Correct: true,
 		GuessRemaining: 25,
 		Score: Score{red:8, blue: 8,},
 	}
-	expectJSON, _ := json.Marshal(expect)
+	expectJSON, err := json.Marshal(expect)
+	if err != nil {
+		t.Fatalf("could not marshal 'expect': %v", err)
+	}
 	if !bytes.Equal(e.Payload, expectJSON) {
 		t.Errorf("byte comparison payload not equal to expected")
+	}
+	var gre GuessResponseEvent
+	if err := json.Unmarshal(e.Payload, &gre); err != nil {
+		t.Fatalf("could not unmarshal message: %v", err)
+	}
+	if !reflect.DeepEqual(gre, expect) {
+		t.Errorf("Expected: %#v\nGot: %#v", expect, gre)
 	}
 
 	ws.Close()

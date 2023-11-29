@@ -222,7 +222,7 @@ function sortCards(how) {
                 }
             }
             const colorOrder = ["white", "red", "blue", deathCard, "neutral",
-                                "guessed", "guessed-red", "guessed-blue", "guessed-neutral"];
+                                "guessed", "guessed red", "guessed blue", "guessed neutral"];
             colorOrder.forEach(function (color) {
                 if (align.hasOwnProperty(color)) {
                     align[color].forEach(function (word) {
@@ -275,14 +275,14 @@ function makeGuess() {
 
 function requestNewGame() {
     game = new NewGameRequestEvent({
-        "red": {
-            "cluegiver": document.getElementById("AIRedClue").checked,
-            "guesser":   document.getElementById("AIRedGuess").checked,
+        "cluegiver": {
+            "red":  document.getElementById("AIRedClue").checked,
+            "blue": document.getElementById("AIBlueClue").checked,
         },
-        "blue": {
-            "cluegiver": document.getElementById("AIBlueClue").checked,
-            "guesser":   document.getElementById("AIBlueGuess").checked,
-        }
+        "guesser": {
+            "red":  document.getElementById("AIRedGuess").checked,
+            "blue": document.getElementById("AIBlueGuess").checked,
+        },
     });
     sendEvent("new_game", game);
     return false;
@@ -481,6 +481,13 @@ function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
     return false;
 }
 
+function notifyBotWait() {
+    appendToChat(`<span style="font-weight:bold;">Waiting for ChatBot...</span>`)
+    if (roleTurn == cluegiverRole) {
+        document.getElementById("clue").innerText = "Waiting for ChatBot..."
+    }
+}
+
 function checkDeathCard({cardColor, teamColor}) {
     if (cardColor == deathCard) {
         const teamName = capitalize(teamColor);
@@ -499,10 +506,11 @@ function updateScoreboard({score}) {
     for (const color of ["red", "blue"]) {
         const loc = document.getElementById(`${color}score`);
         loc.innerText = score[color];
-        if (score.color == 0) {
+        if (score[color] == 0) {
             alert(`${capitalize(color)} Team wins!`);
             disableAllCardEvents();
             document.getElementById("abort-button").value = "End Game";
+            document.getElementById("end-turn").hidden = true;
             return false;
         }
     }
@@ -537,7 +545,7 @@ function enableCardEvents() {
 }
 
 function markGuessedCard({guess, cardColor}) {
-    currentGame.cards[guess] = `guessed-${cardColor}`;
+    currentGame.cards[guess] = `guessed ${cardColor}`;
 
     for (var i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
@@ -581,6 +589,9 @@ function routeEvent(event) {
             break;
         case "abort_game":
             abortGameHandler(event.payload);
+            break;
+        case "bot_wait":
+            notifyBotWait();
             break;
         default:
             alert("unsupported message type: " + event.type);

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
-	"golang.org/x/exp/slices"
 )
 
 type ClueStruct struct {
@@ -22,27 +21,121 @@ type ClueStruct struct {
 
 type Bot struct {
 	ctx        context.Context
-	client     *openai.Client
+	OpenAI     *openai.Client
 	game       *Game
 	clue_chan  chan *ClueStruct
 	guess_chan chan *ClueStruct
+	actions    *BotActions
+	client     *Client
 }
 
-func NewBot(game *Game) *Bot {
+type BotActions struct {
+	Guesser   TeamActions `json:"guesser"`
+	Cluegiver TeamActions `json:"cluegiver"`
+}
+type TeamActions struct {
+	Red  bool `json:"red"`
+	Blue bool `json:"blue"`
+}
+func (ba BotActions) hasAction(r Role) bool {
+	switch r {
+	case cluegiver:
+		return ba.Cluegiver.Red || ba.Cluegiver.Blue
+	case guesser:
+		return ba.Guesser.Red || ba.Guesser.Blue
+	default:
+		return false
+	}
+}
+func (ba BotActions) hasTeamAction(t Team, r Role) bool {
+	var ta TeamActions
+	switch r {
+	case cluegiver:
+		ta = ba.Cluegiver
+		break;
+	case guesser:
+		ta = ba.Guesser
+		break;
+	default:
+		return false
+	}
+	switch t {
+	case red:
+		return ta.Red
+	case blue:
+		return ta.Blue
+	default:
+		return false
+	}
+}
+
+func NewBot(game *Game, ba *BotActions) *Bot {
 	b := &Bot{
-		ctx:       context.TODO(),
-		client:    openai.NewClient(token),
-		game:      game,
+		ctx:     context.TODO(),
+		OpenAI:  openai.NewClient(token),
+		game:    game,
+		actions: ba,
+		client:  &Client{game: game,},
 	}
 
-	b.clue_chan = b.makeClue()
-	b.guess_chan = b.makeGuess()
+	if ba.hasAction(cluegiver) {
+		b.clue_chan = b.makeClue()
+	}
+	if ba.hasAction(guesser) {
+		b.guess_chan = b.makeGuess()
+	}
 
 	return b
 }
 
+func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct) {
+	game := bot.game
+	t := game.teamTurn
+	r := game.roleTurn
+	if game.score[t] <= 0 {
+		// No cards left to guess.
+		return "", nil
+	}
+	if bot.actions.hasTeamAction(t, r) {
+		game.notifyPlayers(EventBotWait, nil)
+		bot.client.team = t
+		bot.client.role = r
+		c := &ClueStruct{
+			capsWords: make([]string, 0),
+		}
+		var e string
+		switch r {
+		case cluegiver:
+			e = EventGiveClue
+			c.word = t.String()
+			bot.clue_chan <- c
+			c =<-bot.clue_chan
+			break;
+		case guesser:
+			e = EventMakeGuess
+			c.word = clue.Clue
+			if clue.NumCards > 0 {
+				c.numGuess = clue.NumCards
+			} else {
+				/* Unspecified number of cards,
+				   unlimited guesses. But actually
+				   limit it to the number of cards
+				   remaining for this team. */
+				c.numGuess = game.score[game.teamTurn]
+			}
+			bot.guess_chan <- c
+			c =<-bot.guess_chan
+			break;
+		}
+		return e, c
+	}
+	return "", nil
+}
+
+/* Real call to OpenAI ChatGPT. Function stored in a var so it
+   can be overridden for testing. */
 var askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
-	return bot.client.CreateChatCompletion(
+	return bot.OpenAI.CreateChatCompletion(
 		bot.ctx,
 		openai.ChatCompletionRequest{
 			Model: openai.GPT3Dot5Turbo,
@@ -75,14 +168,14 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 			"from the opposing team's word list. The clue must not " +
 			"exactly match any of the words on the lists, nor may it " +
 			"be a direct derivative of any of the words (for example, " +
-			"it may not be a plural of any of the words). Instead, a " +
-			"good clue is a synonym or a related word that evokes as " +
+			"it may not be a plural of any of the words). " +
+			"A good clue is a synonym or a related word that evokes as " +
 			"many words on your team's word list as possible, without " +
-			"also evoking the opposing team's words. When prompted, " +
-			"state the following: " +
+			"evoking any of the opposing team's words. When prompted, " +
+			"reply with ONLY the following: " +
 			"your clue, the number of words from your team's list " +
 			"that match your clue, and the specific words " +
-			"that match your clue. Explain your reasoning."
+			"that match your clue."
 
 		for {
 			var clue *ClueStruct
@@ -94,7 +187,7 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 					break
 				}
 
-				w := bot.game.cards.getClueWords(clue.word)
+				w := bot.game.cards.getClueWords(bot.game.teamTurn)
 				if len(w.myTeam) == 0 || len(w.others) == 0 {
 					clue.err = fmt.Errorf("makeClue error: got zero-length word list")
 					break
@@ -112,6 +205,7 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 				respStr := resp.Choices[0].Message.Content
 
 				parseGPTResponse(respStr, clue)
+				fmt.Printf(clue.response)
 			}
 			c <- clue
 		}
@@ -157,10 +251,19 @@ func parseGPTResponseClue(respStr string) string {
 	line1, _, _ := strings.Cut(respStr, "\n")
 	words := strings.Split(line1, " ")
 	word := words[0]
-	if strings.HasPrefix(words[0], "Clue") && len(words) > 1 {
+	if len(words) > 1 && strings.HasPrefix(words[0], "Clue") {
+		// e.g. "Clue: ..."
 		word = words[1]
+	} else if len(words) > 2 && strings.Compare(words[1], "clue") == 0 {
+		if len(words) == 3 {
+			// e.g. "My clue: ..." or "The clue: ..."
+			word = words[2]
+		} else {
+			// e.g. "My clue is ..." or "The clue is: ..."
+			word = words[3]
+		}
 	}
-	return word
+	return strings.Trim(word, "\".")
 }
 
 func parseGPTResponseMatches(respStr string) string {
@@ -170,11 +273,57 @@ func parseGPTResponseMatches(respStr string) string {
 	return re.FindString(respStr)
 }
 
+func findGuessWords(respStr string) ([]string, error) {
+	/* ChatBot usually states their guesses as all-caps words. */
+	s, err := findUniqueAllCapsWords(respStr)
+	if len(s) > 0 {
+		return s, err
+	}
+	/* Possibility of not-all-caps words in numbered list. */
+	s, err = findUniqueNumberedListWords(respStr)
+	if len(s) > 0 {
+		return s, err
+	}
+	/* Possibility of not-all-caps words in quotation marks. */
+	s, err = findUniqueWordsInQuotes(respStr)
+	if len(s) > 0 {
+		return s, err
+	}
+	return s, fmt.Errorf("could not find any guess words")
+}
+
 func findUniqueAllCapsWords(respStr string) ([]string, error) {
 	re := regexp.MustCompile("[[:upper:]]{2,}")
 	match := re.FindAllString(respStr, -1)
 	if len(match) == 0 {
 		return match, fmt.Errorf("could not find any all-caps words")
+	}
+	return unique(match), nil
+}
+
+func findUniqueNumberedListWords(respStr string) ([]string, error) {
+	re := regexp.MustCompile("[1-9][.)]? \"?([[:alpha:]]{2,})")
+	match := re.FindAllStringSubmatch(respStr, -1)
+	if len(match) == 0 {
+		return []string{}, fmt.Errorf("could not find a numbered list of words")
+	}
+	s := make([]string, len(match))
+	for i := 0; i < len(match); i++ {
+		/* match is a 2D slice formatted like: 
+			[[fullmatch0 capturegroup0] [fullmatch1 capturegroup1] ...] */
+		s[i] = strings.ToUpper(match[i][1])
+	}
+	return unique(s), nil
+}
+
+func findUniqueWordsInQuotes(respStr string) ([]string, error) {
+	re := regexp.MustCompile("\"[[:alpha:]]{2,}[.]?\"")
+	match := re.FindAllString(respStr, -1)
+	if len(match) == 0 {
+		return match, fmt.Errorf("could not find any words in quotation marks")
+	}
+	for i := 0; i < len(match); i++ {
+		match[i] = strings.ToUpper(strings.Trim(match[i], ".\""))
 	}
 	return unique(match), nil
 }
@@ -188,7 +337,6 @@ func unique(slice []string) []string {
             uniqueSlice = append(uniqueSlice, v)
         }
     }
-    slices.Sort(uniqueSlice)
 	return uniqueSlice
 }
 
@@ -199,7 +347,8 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 		prompt := "You are playing a word game. Your teammate " +
 		"will give you a clue and a number. " +
 		"Choose that number of words from your word list that " +
-		"best match the clue."
+		"best match the clue. Reply with only those words, in " +
+		"ALL CAPITAL LETTERS."
 
 		for {
 			var clue *ClueStruct
@@ -220,7 +369,7 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 				// TODO: handle case of infinite guesses / unspecified number of cards
 				message := fmt.Sprintf(
 					"The word list is: %s. The clue is: %s. The number is: %d",
-					words, clue.word, clue.numGuess-1)
+					words, clue.word, clue.numGuess)
 
 				resp, err := bot.askGPT3Dot5(prompt, message)
 				if err != nil {
@@ -228,8 +377,9 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 					break
 				}
 				clue.response = resp.Choices[0].Message.Content
-				clue.capsWords, clue.err = findUniqueAllCapsWords(clue.response)
+				clue.capsWords, clue.err = findGuessWords(clue.response)
 			}
+			fmt.Printf(clue.response)
 			c <- clue
 		}
 	}(bot)

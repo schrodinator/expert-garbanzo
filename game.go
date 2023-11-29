@@ -102,11 +102,11 @@ type clueWords struct {
 	myTeam string
 	others string
 }
-func (d *Deck) getClueWords(team string) *clueWords {
+func (d *Deck) getClueWords(team Team) *clueWords {
 	var myTeam []string
 	var others []string
 	for card, color := range *d {
-		if color == team {
+		if color == team.String() {
 			myTeam = append(myTeam, card)
 		} else if !strings.HasPrefix(color, "guess") {
 			others = append(others, card)
@@ -128,13 +128,20 @@ func (d *Deck) getGuessWords() string {
 	return strings.Join(words, ", ")
 }
 
+func (d *Deck) contains(word string) bool {
+	for k := range *d {
+		if strings.Compare(k, word) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 type GameList map[string]*Game
 type Score    map[Team]int
-type BotList  map[Team]map[Role]bool
 
 type Game struct {
 	players         ClientList
-	bots            *BotList
 	cards           Deck
 	teamTurn        Team
 	teamCounts      map[Team]int
@@ -142,6 +149,19 @@ type Game struct {
 	guessRemaining  int
 	score           Score
 	bot             *Bot
+}
+
+func (game *Game) notifyPlayers(messageType string, message any) error {
+	outgoingEvent, err := packageMessage(messageType, message)
+	if err != nil {
+		return err
+	}
+
+	for _, client := range game.players {
+		client.egress <- outgoingEvent
+	}
+
+	return nil
 }
 
 func (game *Game) changeTurn() {
@@ -161,6 +181,9 @@ func (game *Game) updateScore(cardColor string) {
 		return
 	}
 	game.score[team] -= 1
+	if game.score[team] == 0 {
+		// TODO: Game Over
+	}
 }
 
 func (game *Game) updateGuessesRemaining(correct bool) {
@@ -181,6 +204,72 @@ func (game *Game) evaluateGuess(cardColor string) bool {
 		game.changeTurn()
 	}
 	return correct
+}
+
+func (game *Game) makeBot(ba *BotActions) {
+	if ba != nil &&
+	   (ba.hasAction(cluegiver) || ba.hasAction(guesser)) {
+		game.bot = NewBot(game, ba)
+	}
+}
+
+func (game *Game) botPlay(clue GiveClueEvent) error {
+	if game.bot == nil {
+		return nil
+	}
+	eventType, clueStruct := game.bot.Play(clue)
+	if eventType == "" || clueStruct == nil {
+		return fmt.Errorf("bot.Play() returned empty values")
+	}
+	switch eventType {
+	case EventMakeGuess:
+		/* The bot could/should return multiple guesses. */
+		for _, guess := range clueStruct.capsWords {
+			if !game.cards.contains(guess) {
+				continue
+			}
+			e := GuessEvent {
+				Guess: guess,
+				Guesser: "ChatBot",
+			}
+			evt, err := packageMessage(eventType, e)
+			if err != nil {
+				return err
+			}
+			GuessEvaluationHandler(evt, game.bot.client)
+			/* If the guess was incorrect, we're done here. */
+			if game.teamTurn != game.bot.client.team ||
+			   game.roleTurn != game.bot.client.role {
+				return nil
+			}
+		}
+		/* We could get here if the bot returns fewer guesses
+		   than requested, or if we could not parse the guess
+		   words from the response. If this is the case, we
+		   need to end the bot's turn to continue the game. */
+		if game.teamTurn == game.bot.client.team &&
+		   game.roleTurn == game.bot.client.role {
+			EndTurnHandler(Event{}, game.bot.client)
+		}
+		return nil
+
+	case EventGiveClue:
+		e := GiveClueEvent {
+			Clue: clueStruct.word,
+			NumCards: clueStruct.numGuess,
+			From: "ChatBot",
+			TeamColor: game.teamTurn,
+		}
+		evt, err := packageMessage(eventType, e)
+		if err != nil {
+			return err
+		}
+		ClueHandler(evt, game.bot.client)
+		return nil
+
+	default:
+		return fmt.Errorf("Unknown event type: %v", eventType)
+	}
 }
 
 func readDictionary(filePath string) error {

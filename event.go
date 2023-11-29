@@ -25,6 +25,7 @@ const (
 	EventGiveClue    = "give_clue"
 	EventAbortGame   = "abort_game"
 	EventEndTurn     = "end_turn"
+	EventBotWait     = "bot_wait"
 )
 
 type SendMessageEvent struct {
@@ -44,7 +45,7 @@ type ChangeRoomEvent struct {
 }
 
 type NewGameRequestEvent struct {
-	Bots BotList `json:"bots"`
+	Bots BotActions `json:"bots"`
 }
 
 type NewGameResponseEvent struct {

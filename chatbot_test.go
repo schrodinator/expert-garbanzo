@@ -25,6 +25,10 @@ import (
 
 func getSomeCards() *Game {
 	game := &Game{}
+	game.score = Score {
+		red: 9,
+		blue: 8,
+	}
 	game.cards = Deck{
 		"AMAZON": "blue",
 		"BOOT": "blue",
@@ -52,6 +56,7 @@ func getSomeCards() *Game {
 		"VACUUM": "red",
 		"WATCH":"red",
 	}
+	game.teamTurn = red
 	return game
 }
 
@@ -127,15 +132,46 @@ func TestParseGPTResponseMatches(t *testing.T) {
 func TestUnique(t *testing.T) {
 	s := []string{"These", "some", "are", "always", "some", "words", "words", "words"}
 	u := unique(s)
-	if slices.Compare(u, []string{"These", "always", "are", "some", "words"}) != 0 {
+	if slices.Compare(u, []string{"These", "some", "are", "always", "words"}) != 0 {
 		t.Errorf("got: %v", u)
 	}
 }
 
 func TestFindAllCapsWords(t *testing.T) {
 	s := "THIS is a SENTENCE with SOME CAPS in it."
-	words, _ := findUniqueAllCapsWords(s)
-	if slices.Compare(words, []string{"CAPS", "SENTENCE", "SOME", "THIS"}) != 0 {
+	words, err := findUniqueAllCapsWords(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.Compare(words, []string{"THIS", "SENTENCE", "SOME", "CAPS"}) != 0 {
+		t.Errorf("got: %v", words)
+	}
+}
+
+func TestFindUniqueNumberedListWords(t *testing.T) {
+	s := "Here are my guesses:\n1. First\n2. Second\n3. Third\n4. Third"
+	words, err := findUniqueNumberedListWords(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.Compare(words, []string{"FIRST", "SECOND", "THIRD"}) != 0 {
+		t.Errorf("got: %v", words)
+	}
+
+	s = "There is no list\nin this string"
+	words, err = findUniqueNumberedListWords(s)
+	if err == nil || len(words) > 0 {
+		t.Errorf("expected no match, got %v", words)
+	}
+}
+
+func TestFindUniqueWordsInQuotes(t *testing.T) {
+	s := "My guesses are \"first\" and \"second.\""
+	words, err := findUniqueWordsInQuotes(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.Compare(words, []string{"FIRST", "SECOND"}) != 0 {
 		t.Errorf("got: %v", words)
 	}
 }
@@ -158,8 +194,8 @@ func TestParseGPTResponse(t *testing.T) {
 	if c.match != "SCALE, WATCH, MAPLE" {
 		t.Errorf("match: expected SCALE, WATCH, MAPLE, got %v", c.match)
 	}
-	if slices.Compare(c.capsWords, []string{"MAPLE", "SCALE", "WATCH"}) != 0 {
-		t.Errorf("capsWords: expected MAPLE, SCALE, WATCH, got %v", c.capsWords)
+	if slices.Compare(c.capsWords, []string{"SCALE", "WATCH", "MAPLE"}) != 0 {
+		t.Errorf("capsWords: expected SCALE, WATCH, MAPLE, got %v", c.capsWords)
 	}
 	if c.err != nil {
 		t.Errorf("got non-nil err: %v", c.err)
@@ -167,12 +203,22 @@ func TestParseGPTResponse(t *testing.T) {
 }
 
 func TestMakeClueReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Real ChatGPT test skipped in short mode")
+	}
+
 	token = getMasterPassword("gpt-secretkey.txt")
 	game := getSomeCards()
-	bot := NewBot(game)
+	game.roleTurn = cluegiver
+	ba := &BotActions{
+		Cluegiver: TeamActions{
+			Red: true,
+		},
+	}
+	bot := NewBot(game, ba)
 	clue := &ClueStruct{
 		word: "red",
-		capsWords: make([]string, 3),	
+		capsWords: make([]string, 0),	
 	}	
 	bot.clue_chan <-clue
 	clue = <-bot.clue_chan
@@ -192,7 +238,13 @@ func TestMakeClueReal(t *testing.T) {
 
 func TestMakeClueMock(t *testing.T) {
 	game := getSomeCards()
-	bot := NewBot(game)
+	game.roleTurn = cluegiver
+	ba := &BotActions{
+		Cluegiver: TeamActions{
+			Red: true,
+		},
+	}
+	bot := NewBot(game, ba)
 
 	type testStruct struct {
 		name        string
@@ -223,8 +275,6 @@ func TestMakeClueMock(t *testing.T) {
 			expectErr: fmt.Errorf("Could not parse number in ChatCompletion response"),
 		},
 		{
-			/* If we can't find all-caps words in the input string,
-			   the log should be the entire input string */
 			name: "Response with no matched explanation words",
 			botResp: "Encoding 2",
 			expectNum: 2,
@@ -248,7 +298,6 @@ func TestMakeClueMock(t *testing.T) {
 			}, nil
 		}
 		clue := &ClueStruct{
-			word: "red",
 			capsWords: make([]string, 3),
 		}
 		bot.clue_chan <-clue
@@ -267,27 +316,52 @@ func TestMakeClueMock(t *testing.T) {
 			t.Errorf("%v clue response: expected %v, got %v", test.name, test.botResp, clue.response)
 		}
 		if clue.match != test.expectMatch {
-			t.Errorf("%v clue log[1]: expected %v, got %v", test.name, test.expectMatch, clue.match)
+			t.Errorf("%v clue match: expected %v, got %v", test.name, test.expectMatch, clue.match)
 		}
 	}
 }
 
 func TestMakeGuessReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Real ChatGPT test skipped in short mode")
+	}
+	
 	token = getMasterPassword("gpt-secretkey.txt")
 	game := getSomeCards()
-	bot := NewBot(game)
+	game.roleTurn = guesser
+	ba := &BotActions{
+		Guesser: TeamActions{
+			Red: true,
+		},
+	}
+	bot := NewBot(game, ba)
 	clue := &ClueStruct{
 		word: "Measure",
 		numGuess: 4,
-	}	
+		capsWords: make([]string, 0),
+	}
 	bot.guess_chan <-clue
 	clue = <-bot.guess_chan
 	fmt.Printf("%#v", clue)
+
+	// Weak tests for a nondeterministic response
+	if clue.response == "" {
+		t.Errorf("clue response not present")
+	}
+	if len(clue.capsWords) == 0 {
+		t.Errorf("caps words not present")
+	}
 }
 
 func TestMakeGuessMock(t *testing.T) {
 	game := getSomeCards()
-	bot := NewBot(game)
+	game.roleTurn = guesser
+	ba := &BotActions{
+		Guesser: TeamActions{
+			Red: true,
+		},
+	}
+	bot := NewBot(game, ba)
 	clue := &ClueStruct{
 		word: "Measure",
 		numGuess: 4,
@@ -317,7 +391,92 @@ func TestMakeGuessMock(t *testing.T) {
 	if clue.err != nil {
 		t.Errorf("got err: %v", clue.err)
 	}
-	if slices.Compare(clue.capsWords, []string{"RULER", "SCALE", "TAPE"}) != 0 {
+	if slices.Compare(clue.capsWords, []string{"SCALE", "RULER", "TAPE"}) != 0 {
 		t.Errorf("got caps words: %v", clue.capsWords)
+	}
+}
+
+func TestBotPlayCluegiver(t *testing.T) {
+	game := getSomeCards()
+	game.roleTurn = cluegiver
+	ba := &BotActions{
+		Cluegiver: TeamActions{
+			Red: true,
+		},
+	}
+	bot := NewBot(game, ba)
+
+	response := "Clue: Measure\nNumber of words that " +
+		"match the clue: 3\nWords that match the clue: " +
+		"SCALE, WATCH, MAPLE"
+	askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
+		return openai.ChatCompletionResponse{
+			Choices: []openai.ChatCompletionChoice{
+				{
+					Index: 0,
+					Message: openai.ChatCompletionMessage{
+						Content: response,
+					},
+				},
+			},
+		}, nil
+	}
+
+	e, c := bot.Play(GiveClueEvent{})
+	if e == "" || c == nil {
+		t.Fatal("Play returned empty values")
+	}
+	if e != EventGiveClue {
+		t.Errorf("Event: expected %v, got %v", EventGiveClue, e)
+	}
+	if c.numGuess != 3 {
+		t.Errorf("numGuess: expected 3, got %v", c.numGuess)
+	}
+	if c.word != "Measure" {
+		t.Errorf("clue word: expected 'Measure', got '%v'", c.word)
+	}
+	if c.response != response {
+		t.Errorf("clue response: expected %v, got %v", response, c.response)
+	}
+}
+
+func TestBotPlayGuesser(t *testing.T) {
+	game := getSomeCards()
+	game.roleTurn = guesser
+	ba := &BotActions{
+		Guesser: TeamActions{
+			Red: true,
+		},
+	}
+	bot := NewBot(game, ba)
+
+	clue := GiveClueEvent {
+		Clue: "Measure",
+		NumCards: 3,
+	}
+	response := "The three words from the word list that best match " +
+			    "the clue \"Measure\" are:\n1. SCALE\n2. RULER\n3. TAPE"
+	askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
+		return openai.ChatCompletionResponse{
+			Choices: []openai.ChatCompletionChoice{
+				{
+					Index: 0,
+					Message: openai.ChatCompletionMessage{
+						Content: response,
+					},
+				},
+			},
+		}, nil
+	}
+
+	e, c := bot.Play(clue)
+	if e == "" || c == nil {
+		t.Fatal("Play returned empty values")
+	}
+	if c.response != response {
+		t.Errorf("got response: %v", c.response)
+	}
+	if slices.Compare(c.capsWords, []string{"SCALE", "RULER", "TAPE"}) != 0 {
+		t.Errorf("got caps words: %v", c.capsWords)
 	}
 }

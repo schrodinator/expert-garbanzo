@@ -102,7 +102,7 @@ func NewGameHandler(event Event, c *Client) error {
 		}
 	}
 
-	return nil	
+	return game.botPlay(GiveClueEvent{})
 }
 
 func AbortGameHandler(event Event, c *Client) error {
@@ -122,8 +122,7 @@ func AbortGameHandler(event Event, c *Client) error {
 	abortGame.UserName = c.username
 	abortGame.TeamColor = c.team
 
-	err := c.manager.notifyPlayers(c.chatroom, EventAbortGame, abortGame)
-	return err
+	return game.notifyPlayers(EventAbortGame, abortGame)
 }
 
 func EndTurnHandler(event Event, c *Client) error {
@@ -133,9 +132,10 @@ func EndTurnHandler(event Event, c *Client) error {
 	var payload EndTurnEvent
 	payload.TeamTurn = game.teamTurn
 	payload.RoleTurn = game.roleTurn
-	c.manager.notifyPlayers(c.chatroom, "end_turn", payload)
-
-	return nil
+	if err := game.notifyPlayers(EventEndTurn, payload); err != nil {
+		return err
+	}
+	return game.botPlay(GiveClueEvent{})
 }
 
 func GuessEvaluationHandler(event Event, c *Client) error {
@@ -167,8 +167,15 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 
 	game.cards[card] = "guessed-" + cardColor
 
-	err := c.manager.notifyPlayers(c.chatroom, EventMakeGuess, guessResponse)
-	return err
+	if err := game.notifyPlayers(EventMakeGuess, guessResponse); err != nil {
+		return err
+	}
+	if guessResponse.Correct && game.guessRemaining > 0 {
+		/* It's still the current guesser's turn.
+		   Short circuit the call to bots. */
+		return nil
+	}
+	return game.botPlay(GiveClueEvent{})
 }
 
 func ClueHandler(event Event, c *Client) error {
@@ -190,8 +197,11 @@ func ClueHandler(event Event, c *Client) error {
 		game.guessRemaining = clue.NumCards + 1
 	}
 
-	err := c.manager.notifyPlayers(c.chatroom, EventGiveClue, event.Payload)
-	return err
+	err := game.notifyPlayers(EventGiveClue, event.Payload)
+	if err != nil {
+		return err
+	}
+	return game.botPlay(clue)
 }
 
 func ChatRoomHandler(event Event, c *Client) error {
@@ -248,19 +258,6 @@ func SendMessage(event Event, c *Client) error {
 	return status
 }
 
-func (m *Manager) notifyPlayers(room string, messageType string, message any) error {
-	outgoingEvent, err := packageMessage(messageType, message)
-	if err != nil {
-		return err
-	}
-
-	for _, client := range m.games[room].players {
-		client.egress <- outgoingEvent
-	}
-
-	return nil
-}
-
 func (m *Manager) notifyClients(room string, messageType string, message any) error {
 	outgoingEvent, err := packageMessage(messageType, message)
 	if err != nil {
@@ -294,19 +291,19 @@ func (m *Manager) makeChatRoom(name string) {
 	m.chats[name] = make(ClientList)
 }
 
-func (m *Manager) makeGame(name string, bots *BotList) *Game {
+func (m *Manager) makeGame(name string, botActions *BotActions) *Game {
 	game, exists := m.games[name]
 	if !exists {
 		game = &Game {
 			players: make(ClientList),
 			teamCounts: make(map[Team]int),
+			score: make(Score),
 		}
 	}
-	game.bots = bots
+	game.makeBot(botActions)
 	game.cards = getCards()
 	game.teamTurn = red
 	game.roleTurn = cluegiver
-	game.score = make(Score)
 	game.score[red] = 9
 	game.score[blue] = 8
 	m.games[name] = game

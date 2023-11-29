@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	pongWait     = 10 * time.Second
-	pingInterval = pongWait * 9 / 10
+	pongWait     = 60 * time.Second
+	pingInterval = pongWait * 5 / 10
 )
 
 type ClientList map[string]*Client
-type ChatRooms  map[string]ClientList
+type ChatRooms map[string]ClientList
 
 type Client struct {
 	connection *websocket.Conn

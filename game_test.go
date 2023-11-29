@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
+
+	openai "github.com/sashabaranov/go-openai"
 )
 
 // Change Role from cluegiver to guesser to cluegiver
@@ -148,7 +151,7 @@ func TestGetGuessWords(t *testing.T) {
 }
 
 func TestUpdateScore(t *testing.T) {
-	manager := setupGame(t, nil)
+	manager := setupGame(t, nil, nil)
 	game := manager.games["test"]
 
 	if game.score[red] != 9 || game.score[blue] != 8 {
@@ -189,7 +192,7 @@ type guesstest struct {
 }
 
 func TestEvaluateGuess1(t *testing.T) {
-	manager := setupDeck(t, nil)
+	manager := setupDeck(t, nil, nil)
 	game := manager.games["test"]
 	game.teamCounts[red] = 2
 	game.teamCounts[blue] = 2
@@ -252,7 +255,7 @@ func TestEvaluateGuess1(t *testing.T) {
 }
 
 func TestEvaluateGuess2(t *testing.T) {
-	manager := setupDeck(t, nil)
+	manager := setupDeck(t, nil, nil)
 	game := manager.games["test"]
 	game.teamCounts[red] = 2
 	game.teamCounts[blue] = 2
@@ -306,7 +309,7 @@ func TestEvaluateGuess2(t *testing.T) {
 }
 
 func TestEvaluateGuess3(t *testing.T) {
-	manager := setupDeck(t, nil)
+	manager := setupDeck(t, nil, nil)
 	game := manager.games["test"]
 	game.teamCounts[red] = 2
 	game.teamCounts[blue] = 2
@@ -360,7 +363,7 @@ func TestEvaluateGuess3(t *testing.T) {
 }
 
 func TestEvaluateGuess4(t *testing.T) {
-	manager := setupDeck(t, nil)
+	manager := setupDeck(t, nil, nil)
 	game := manager.games["test"]
 	game.teamCounts[red] = 2
 	game.teamCounts[blue] = 2
@@ -406,7 +409,7 @@ func TestEvaluateGuess4(t *testing.T) {
 
 // Simulate a game with only one team
 func TestEvaluateGuess5(t *testing.T) {
-	manager := setupDeck(t, nil)
+	manager := setupDeck(t, nil, nil)
 	game := manager.games["test"]
 	game.teamCounts[red] = 2
 	game.roleTurn = guesser
@@ -447,4 +450,90 @@ func TestEvaluateGuess5(t *testing.T) {
 			         tt.name, tt.expectRoleTurn, game.roleTurn)
 		}
 	}
+}
+
+func TestMakeBot(t *testing.T) {
+	game := Game{}
+	ba := &BotActions {
+		Cluegiver: TeamActions{
+			Red: true,
+		},
+	}
+	if game.bot != nil {
+		t.Error("Expected game.bot to be nil before initialization")
+	}
+	game.makeBot(ba)
+	if game.bot == nil {
+		t.Fatal("game.bot is nil")
+	}
+	if !game.bot.actions.hasAction(cluegiver) {
+		t.Error("bot does not have cluegiver action")
+	}
+	if game.bot.actions.hasAction(guesser) {
+		t.Error("bot should not have guesser action")
+	}
+}
+
+func TestBotPlay(t *testing.T) {
+	s, ws := setupWSTestServer(t)
+	bot := &BotActions {
+		Cluegiver: TeamActions{
+			Red: true,
+		},
+	}
+	manager := setupDeck(t, ws, bot)
+	game := manager.games["test"]
+	game.teamTurn = red
+	game.roleTurn = cluegiver
+	client := game.players["testClient"]
+	go client.writeMessages()
+
+	response := "Clue: Measure\nNumber of words that " +
+		"match the clue: 3\nWords that match the clue: " +
+		"SCALE, WATCH, MAPLE"
+	askGPT3Dot5Bot = func (bot *Bot, system string, user string) (openai.ChatCompletionResponse, error) {
+		return openai.ChatCompletionResponse{
+			Choices: []openai.ChatCompletionChoice{
+				{
+					Index: 0,
+					Message: openai.ChatCompletionMessage{
+						Content: response,
+					},
+				},
+			},
+		}, nil
+	}
+	expect := GiveClueEvent {
+		Clue: "Measure",
+		NumCards: 3,
+		From: "ChatBot",
+		TeamColor: red,
+	}
+
+	game.botPlay(GiveClueEvent{})
+	
+	/* First message is "bot_wait" */
+	_, message, err := ws.ReadMessage()
+	/* Second message is the clue we want */
+	_, message, err = ws.ReadMessage()
+	if err != nil {
+		t.Errorf("Error reading from websocket: %v", err)
+	}
+	var e Event
+	if err := json.Unmarshal(message, &e); err != nil {
+		t.Fatalf("could not unmarshal message: %v", err)
+	}
+	if e.Type != EventGiveClue {
+		t.Errorf("wrong Type: %v", e.Type)
+	}
+	var c GiveClueEvent
+	if err := json.Unmarshal(e.Payload, &c); err != nil {
+		t.Fatalf("could not unmarshal message: %v", err)
+	}
+	if c != expect {
+		t.Errorf("Expected: %#v\nGot: %#v", expect, c)
+	}
+
+	ws.Close()
+	s.Close()
 }

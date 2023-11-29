@@ -161,7 +161,7 @@ test('play two-player game', async () => {
                 // Cluegiver's cards are kept sorted, with guessed cards at the end
                 const cluecard = page_clue.locator('#card-24');
                 await expect(cluecard).toContainText(word);
-                await expect(cluecard).toHaveClass(/guessed-red/);
+                await expect(cluecard).toHaveClass(/guessed red/);
                 break;
             }
             j++;
@@ -206,7 +206,7 @@ test('play two-player game', async () => {
             // Cluegiver's cards are kept sorted, with guessed cards at the end
             const cluecard = page_clue.locator('#card-24');
             await expect(cluecard).toContainText(word);
-            await expect(cluecard).toHaveClass(/guessed-blue/);
+            await expect(cluecard).toHaveClass(/guessed blue/);
             break;
         }
         j++;
@@ -271,7 +271,7 @@ test('play two-player game', async () => {
                 // Card #24 is the blue guessed card
                 const cluecard = page_clue.locator('#card-23');
                 await expect(cluecard).toContainText(word);
-                await expect(cluecard).toHaveClass(/guessed-red/);
+                await expect(cluecard).toHaveClass(/guessed red/);
                 break;
             }
             j++;
@@ -291,7 +291,7 @@ test('play two-player game', async () => {
             await expect(page_guess.getByTestId('bluescore')).toHaveText('7');
             const cluecard = page_clue.locator('#card-24');
             await expect(cluecard).toContainText(word);
-            await expect(cluecard).toHaveClass(/guessed-neutral/);
+            await expect(cluecard).toHaveClass(/guessed neutral/);
             break;
         }
         j++;
