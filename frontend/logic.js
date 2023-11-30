@@ -23,10 +23,11 @@ class NewMessageEvent {
 }
 
 class ChangeChatRoomEvent {
-    constructor(clientName, roomName, participants) {
+    constructor(clientName, roomName, participants, gameInProgress) {
         this.clientName = clientName;
         this.roomName = roomName;
         this.participants = participants;
+        this.gameInProgress = gameInProgress;
     }
 }
 
@@ -384,11 +385,13 @@ function goToRoom(room) {
 
 function notifyRoomEntry(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+
     if (roomChange.participants != null && roomChange.participants.length > 0) {
         addAllParticipants(roomChange.participants)
     } else {
         addParticipant(roomChange.clientName);
     }
+
     if (roomChange.roomName == defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
@@ -397,22 +400,33 @@ function notifyRoomEntry(payload) {
         document.getElementById("end-turn").hidden = true;
         document.getElementById("gameboard-container").hidden = false;
     }
-    let message = `<span style="font-weight:bold;">${roomChange.clientName} has entered `;
+
+    let message = `${roomChange.clientName} has entered `;
     if (username === roomChange.clientName) {
-        message += `room "${roomChange.roomName}"</span>`;
+        message += `room "${roomChange.roomName}"`;
 
         document.getElementById("welcome-header").innerText = `Welcome to ${selectedChat}, ${username}`;
         document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;
     } else {
-        message += `the room.</span>`;
+        message += `the room.`;
     }
     appendToChat(message);
+
+    if (roomChange.gameInProgress) {
+        // TOOD: consider adding a "join game" option
+        document.getElementById("team").disabled = true;
+        document.getElementById("role").disabled = true;
+        disableBotCheckboxes(true);
+        document.getElementById("newgame-button").disabled = true;
+        document.getElementById("newgame-button").hidden = true;
+        appendToChat(`** Game in progress **`);
+    }
 }
 
 function notifyRoomExit(payload) {
     roomChange = Object.assign(new ChangeChatRoomEvent, payload);
     removeParticipant(roomChange.clientName);
-    let message = `<span style="font-weight:bold;">${roomChange.clientName} has left the room.</span>`;
+    let message = `${roomChange.clientName} has left the room.`;
     appendToChat(message);
 }
 
@@ -422,7 +436,7 @@ function abortGameHandler(payload) {
 }
 
 function notifyAbortGame(name, teamColor) {
-    message = `<span style="font-weight:bold;color:${teamColor}">${name} has left the game.</span>`;
+    message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
 }
 
@@ -494,18 +508,18 @@ function capitalize(word) {
 
 function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
     const teamName = capitalize(teamColor);
-    let msg = `<span style="font-weight:bold; color:${teamColor}">${guesser} uncovers ${guess}: `;
+    let msg = `<span style="color:${teamColor}">${guesser} uncovers ${guess}:</span> `;
     if (teamColor === cardColor) {
-        msg += `CORRECT. A point for ${teamName}.</span>`;
+        msg += `CORRECT. A point for ${teamName}.`;
     } else {
-        msg += `incorrect. Card is ${cardColor}.</span>`;
+        msg += `incorrect. Card is ${cardColor}.`;
     }
     appendToChat(msg);
     return false;
 }
 
 function notifyBotWait() {
-    appendToChat(`<span style="font-weight:bold;">Waiting for ChatBot...</span>`)
+    appendToChat(`Waiting for ChatBot...`)
     if (roleTurn == cluegiverRole) {
         document.getElementById("clue").innerText = "Waiting for ChatBot..."
     }
@@ -622,6 +636,9 @@ function routeEvent(event) {
         case "bot_wait":
             notifyBotWait();
             break;
+        case "game_over":
+            gameOverHandler();
+            break;
         default:
             alert("unsupported message type: " + event.type);
             break;
@@ -642,13 +659,15 @@ function appendChatMessage(payload) {
     const time = fmtTimeFromDate(new Date(messageEvent.sentTime));
     const {from, color} = messageEvent;
     const msg = htmlEscape(messageEvent.message);
-    const formattedMsg = `${time} <span style="font-weight:bold; color:${color}">${from}</span>: ${msg}`;
-    appendToChat(formattedMsg);
+    const formattedMsg = `${time} <span style="font-weight:bold;color:${color}">${from}</span>: ${msg}<br>`;
+    const textarea = document.getElementById("chatlog");
+    textarea.innerHTML += formattedMsg;
+    textarea.scrollTop = textarea.scrollHeight;
 }
 
 function appendToChat(message) {
     const textarea = document.getElementById("chatlog");
-    textarea.innerHTML += `${message}<br>`;
+    textarea.innerHTML += `<span style="font-weight:bold;">${message}</span><br>`;
     textarea.scrollTop = textarea.scrollHeight;
 }
 
@@ -765,6 +784,15 @@ function connectWebsocket(otp, room) {
     } else {
         alert("Client does not support websockets");
     }
+}
+
+function gameOverHandler() {
+    document.getElementById("team").disabled = false;
+    document.getElementById("role").disabled = false;
+    disableBotCheckboxes(false);
+    document.getElementById("newgame-button").disabled = false;
+    document.getElementById("newgame-button").hidden = false;
+    appendChatMessage("** Game has ended **");
 }
 
 window.onload = function() {

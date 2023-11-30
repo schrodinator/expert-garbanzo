@@ -108,6 +108,7 @@ type GameList map[string]*Game
 type Score    map[Team]int
 
 type Game struct {
+	name            string
 	players         ClientList
 	cards           Deck
 	teamTurn        Team
@@ -116,6 +117,7 @@ type Game struct {
 	guessRemaining  int
 	score           Score
 	bot             *Bot
+	manager         *Manager
 }
 
 func (game *Game) notifyPlayers(messageType string, message any) error {
@@ -148,9 +150,6 @@ func (game *Game) updateScore(cardColor string) {
 		return
 	}
 	game.score[team] -= 1
-	if game.score[team] == 0 {
-		// TODO: Game Over
-	}
 }
 
 func (game *Game) updateGuessesRemaining(correct bool) {
@@ -237,6 +236,10 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 	default:
 		return fmt.Errorf("Unknown event type: %v", eventType)
 	}
+}
+
+func (game *Game) removeGame() bool {
+	return game.manager.removeGame(game.name)
 }
 
 func readDictionary(filePath string) error {

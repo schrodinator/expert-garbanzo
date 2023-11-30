@@ -26,6 +26,7 @@ const (
 	EventAbortGame   = "abort_game"
 	EventEndTurn     = "end_turn"
 	EventBotWait     = "bot_wait"
+	EventGameOver    = "game_over"
 )
 
 type SendMessageEvent struct {
@@ -40,9 +41,10 @@ type NewMessageEvent struct {
 }
 
 type ChangeRoomEvent struct {
-	UserName     string   `json:"clientName"`
-	RoomName     string   `json:"roomName"`
-	Participants []string `json:"participants"`
+	UserName       string   `json:"clientName"`
+	RoomName       string   `json:"roomName"`
+	Participants   []string `json:"participants"`
+	GameInProgress bool     `json:"gameInProgress"`
 }
 
 type NewGameRequestEvent struct {

@@ -112,6 +112,9 @@ func AbortGameHandler(event Event, c *Client) error {
 		return fmt.Errorf("Game %v not found", c.chatroom)
 	}
 	delete(game.players, c.username)
+	if game.removeGame() {
+		return nil
+	}
 
 	game.teamCounts[c.team] -= 1
 	if (game.teamCounts[c.team] <= 0) {
@@ -121,7 +124,6 @@ func AbortGameHandler(event Event, c *Client) error {
 	var abortGame AbortGameEvent
 	abortGame.UserName = c.username
 	abortGame.TeamColor = c.team
-
 	return game.notifyPlayers(EventAbortGame, abortGame)
 }
 
@@ -139,15 +141,7 @@ func EndTurnHandler(event Event, c *Client) error {
 }
 
 func GuessEvaluationHandler(event Event, c *Client) error {
-	var guessResponse GuessResponseEvent
-
-	if err := json.Unmarshal(event.Payload, &guessResponse); err != nil {
-		return fmt.Errorf("bad payload in request: %v", err)
-	}
-
 	game := c.game
-	card := guessResponse.Guess
-	cardColor := game.cards[guessResponse.Guess]
 	if c.team != game.teamTurn {
 		return errors.New("It is not this player's team turn")
 	}
@@ -157,6 +151,12 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 			c.role, game.roleTurn)
 	}
 
+	var guessResponse GuessResponseEvent
+	if err := json.Unmarshal(event.Payload, &guessResponse); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
+	card := guessResponse.Guess
+	cardColor := game.cards[guessResponse.Guess]
 	guessResponse.Correct = game.evaluateGuess(cardColor)
 	guessResponse.GuessRemaining = game.guessRemaining
 	guessResponse.TeamColor = c.team
@@ -169,6 +169,10 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 
 	if err := game.notifyPlayers(EventMakeGuess, guessResponse); err != nil {
 		return err
+	}
+	if cardColor == deathCard || game.score[c.team] <= 0 {
+		game.removeGame()
+		return nil
 	}
 	if guessResponse.Correct && game.guessRemaining > 0 {
 		/* It's still the current guesser's turn.
@@ -232,6 +236,11 @@ func ChatRoomHandler(event Event, c *Client) error {
 	c.chatroom = newroom
 	c.manager.makeChatRoom(newroom)
 	c.manager.chats[newroom][c.username] = c
+
+	// notify client if there is a game in progress
+	if _, exists := c.manager.games[newroom]; exists {
+		changeroom.GameInProgress = true
+	}
 
 	// send list of current chat room participants to client
 	changeroom.Participants = *c.manager.chats[newroom].listClients()
@@ -306,21 +315,37 @@ func (m *Manager) makeChatRoom(name string) {
 
 func (m *Manager) makeGame(name string, botActions *BotActions) *Game {
 	game, exists := m.games[name]
-	if !exists {
-		game = &Game {
-			players: make(ClientList),
-			teamCounts: make(map[Team]int),
-			score: make(Score),
-		}
+	if exists {
+		return game
+	}
+	game = &Game {
+		name: name,
+		players: make(ClientList),
+		cards: getCards(),
+		teamCounts: make(map[Team]int),
+		teamTurn: red,
+		roleTurn: cluegiver,
+		score: Score {
+			red: 9,
+			blue: 8,
+		},
+		manager: m,
 	}
 	game.makeBot(botActions)
-	game.cards = getCards()
-	game.teamTurn = red
-	game.roleTurn = cluegiver
-	game.score[red] = 9
-	game.score[blue] = 8
 	m.games[name] = game
 	return game
+}
+
+func (m *Manager) removeGame(room string) bool {
+	game := m.games[room]
+	if game != nil {
+		if len(game.players) == 0 {
+			delete(m.games, room)
+			return true
+		}
+		m.notifyClients(room, EventGameOver, nil)
+	}
+	return false
 }
 
 func (m *Manager) routeEvent(event Event, c *Client) error {

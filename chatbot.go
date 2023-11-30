@@ -366,7 +366,6 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 					break
 				}
 
-				// TODO: handle case of infinite guesses / unspecified number of cards
 				message := fmt.Sprintf(
 					"The word list is: %s. The clue is: %s. The number is: %d",
 					words, clue.word, clue.numGuess)
