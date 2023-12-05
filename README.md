@@ -1,6 +1,6 @@
-A chat app using websockets. 
+This started as a chat app using websockets, based on ProgrammingPercy's tutorial ([YouTube](https://www.youtube.com/watch?v=pKpKv9MKN-E) / [GitHub](https://github.com/percybolmer/websocketsgo)).
 
-Based on ProgrammingPercy's tutorial: [YouTube](https://www.youtube.com/watch?v=pKpKv9MKN-E) / [GitHub](https://github.com/percybolmer/websocketsgo)
+Now it's a game, a knockoff of [CodeNames](https://boardgamegeek.com/boardgame/178900/codenames), with AI players courtesy of ChatGPT 3.5.
 
 ### Running locally
 
