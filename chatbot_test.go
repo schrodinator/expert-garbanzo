@@ -11,7 +11,7 @@ import (
 
 /* Check if the error message in "out" contains the
    error message in "want" */
-   func ErrorContains(t *testing.T, out error, want error) bool {
+func ErrorContains(t *testing.T, out error, want error) bool {
 	t.Helper()
 
     if out == nil {

@@ -69,10 +69,10 @@ type clueWords struct {
 	myTeam string
 	others string
 }
-func (d *Deck) getClueWords(team Team) *clueWords {
+func (d Deck) getClueWords(team Team) *clueWords {
 	var myTeam []string
 	var others []string
-	for card, color := range *d {
+	for card, color := range d {
 		if color == team.String() {
 			myTeam = append(myTeam, card)
 		} else if !strings.HasPrefix(color, "guess") {
@@ -85,9 +85,9 @@ func (d *Deck) getClueWords(team Team) *clueWords {
 	}
 }
 
-func (d *Deck) getGuessWords() string {
+func (d Deck) getGuessWords() string {
 	var words []string
-	for card, color := range *d {
+	for card, color := range d {
 		if !strings.HasPrefix(color, "guess") {
 			words = append(words, card)
 		}
@@ -95,13 +95,35 @@ func (d *Deck) getGuessWords() string {
 	return strings.Join(words, ", ")
 }
 
-func (d *Deck) contains(word string) bool {
-	for k := range *d {
+func (d Deck) contains(word string) bool {
+	for k := range d {
 		if strings.Compare(k, word) == 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func (d Deck) whiteCards() Deck {
+	whiteDeck := make(Deck, totalNumCards)
+	for card := range d {
+		whiteDeck[card] = "white"
+	}
+	return whiteDeck
+}
+
+type Actions  map[Team]map[Role]int
+func (actions Actions) teamCount() int {
+	ct := 0
+	for _, t := range []Team{ red, blue } {
+		if actions.playerCount(t) > 0 {
+			ct++
+		}
+	}
+	return ct
+}
+func (actions Actions) playerCount(team Team) int {
+	return actions[team][guesser] + actions[team][cluegiver]
 }
 
 type GameList map[string]*Game
@@ -112,7 +134,7 @@ type Game struct {
 	players         ClientList
 	cards           Deck
 	teamTurn        Team
-	teamCounts      map[Team]int
+	actions         Actions
 	roleTurn        Role
 	guessRemaining  int
 	score           Score
@@ -135,7 +157,7 @@ func (game *Game) notifyPlayers(messageType string, message any) error {
 
 func (game *Game) changeTurn() {
 	game.roleTurn = game.roleTurn.Change()
-	if len(game.teamCounts) == 1 {
+	if game.actions.teamCount() == 1 {
 		return
 	}
 	if game.roleTurn == cluegiver {
@@ -238,9 +260,22 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 	}
 }
 
+func (game *Game) validGame() bool {
+	for _, t := range []Team{ red, blue } {
+		if (game.actions[t][cluegiver] == 0 && game.actions[t][guesser] != 0) ||
+		   (game.actions[t][cluegiver] != 0 && game.actions[t][guesser] == 0) {
+			/* Team does not have both a guesser and a cluegiver,
+			   allowing for a team with neither (i.e. single-team co-op game) */
+			return false
+		}
+	}
+	return true
+}
+
 func (game *Game) removeGame() bool {
 	return game.manager.removeGame(game.name)
 }
+
 
 func readDictionary(filePath string) error {
 	if len(dictionary) == 0 {
@@ -286,10 +321,32 @@ func getCards() Deck {
 	return cards
 }
 
-func whiteCards(deck Deck) Deck {
-	whiteDeck := make(Deck, totalNumCards)
-	for card := range deck {
-		whiteDeck[card] = "white"
+func getActions(players ClientList, bots *BotActions) Actions {
+	actions := Actions{
+		red: {
+			cluegiver: 0,
+			guesser: 0,
+		},
+		blue: {
+			cluegiver: 0,
+			guesser: 0,
+		},
 	}
-	return whiteDeck
+
+	// count player actions
+	for _, player := range players {
+		actions[player.team][player.role] += 1
+	}
+
+	// count bot actions
+	if bots != nil {
+		for _, t := range []Team{ red, blue } {
+			for _, r := range []Role{ guesser, cluegiver } {
+				if bots.hasTeamAction(t, r) {
+					actions[t][r] += 1
+				}
+			}
+		}
+	}
+	return actions
 }

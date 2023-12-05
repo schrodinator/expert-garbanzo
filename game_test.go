@@ -9,6 +9,26 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+
+func setupTwoPlayerGame(t *testing.T, game *Game) {
+	t.Helper()
+
+	for _, r := range []Role{ cluegiver, guesser } {
+		game.actions[red][r] = 1
+	}
+}
+
+func setupFourPlayerGame(t *testing.T, game *Game) {
+	t.Helper()
+
+	for _, t := range []Team{ red, blue } {
+		for _, r := range []Role{ cluegiver, guesser } {
+			game.actions[t][r] = 1
+		}
+	}
+}
+
+
 // Change Role from cluegiver to guesser to cluegiver
 func TestRoleChangeType(t *testing.T) {
 	var myRole Role
@@ -69,8 +89,7 @@ func TestChangeTurn(t *testing.T) {
 	}
 }
 
-/* Calling getCards() returns 25 cards.
-   The function is nondeterministic so this is not a perfect test. */
+/* Calling getCards() returns 25 cards. */
 func TestGetCards(t *testing.T) {
 	readDictionary("./codenames-wordlist.txt")
 	cards := getCards()
@@ -191,13 +210,26 @@ type guesstest struct {
 	expectRoleTurn Role
 }
 
-func TestEvaluateGuess1(t *testing.T) {
+func modGame(t *testing.T, numPlayers int, numGuess int) *Game {
+	t.Helper()
+
 	manager := setupDeck(t, nil, nil)
 	game := manager.games["test"]
-	game.teamCounts[red] = 2
-	game.teamCounts[blue] = 2
+	if numPlayers == 4 {
+		setupFourPlayerGame(t, game)
+	} else {
+		setupTwoPlayerGame(t, game)
+	}
 	game.roleTurn = guesser
-	game.guessRemaining = 3
+	game.guessRemaining = numGuess
+	return game
+}
+
+/* Simulate a four-player game with three correct (red) guesses. */
+func TestEvaluateGuess1(t *testing.T) {
+	numPlayers := 4
+	guessesRemaining := 3
+	game := modGame(t, numPlayers, guessesRemaining)
 
 	var guesses = []guesstest {
 		{
@@ -254,13 +286,12 @@ func TestEvaluateGuess1(t *testing.T) {
 	}
 }
 
+/* Simulate a four-player game with one correct (red) guess
+   and one incorrect (blue) guess. */
 func TestEvaluateGuess2(t *testing.T) {
-	manager := setupDeck(t, nil, nil)
-	game := manager.games["test"]
-	game.teamCounts[red] = 2
-	game.teamCounts[blue] = 2
-	game.roleTurn = guesser
-	game.guessRemaining = 3
+	numPlayers := 4
+	guessesRemaining := 3
+	game := modGame(t, numPlayers, guessesRemaining)
 
 	var guesses = []guesstest {
 		{
@@ -308,13 +339,12 @@ func TestEvaluateGuess2(t *testing.T) {
 	}
 }
 
+/* Simulate a four-player game with one correct (red) guess
+   and one incorrect (neutral) guess, given unlimited guesses. */
 func TestEvaluateGuess3(t *testing.T) {
-	manager := setupDeck(t, nil, nil)
-	game := manager.games["test"]
-	game.teamCounts[red] = 2
-	game.teamCounts[blue] = 2
-	game.roleTurn = guesser
-	game.guessRemaining = 25
+	numPlayers := 4
+	guessesRemaining := 25
+	game := modGame(t, numPlayers, guessesRemaining)
 
 	var guesses = []guesstest {
 		{
@@ -362,13 +392,11 @@ func TestEvaluateGuess3(t *testing.T) {
 	}
 }
 
+/* Simulate guessing the death card. */
 func TestEvaluateGuess4(t *testing.T) {
-	manager := setupDeck(t, nil, nil)
-	game := manager.games["test"]
-	game.teamCounts[red] = 2
-	game.teamCounts[blue] = 2
-	game.roleTurn = guesser
-	game.guessRemaining = 25
+	numPlayers := 4
+	guessesRemaining := 25
+	game := modGame(t, numPlayers, guessesRemaining)
 
 	var guesses = []guesstest {
 		{
@@ -407,13 +435,11 @@ func TestEvaluateGuess4(t *testing.T) {
 	}
 }
 
-// Simulate a game with only one team
+/* Simulate a game with only one team and an incorrect guess. */
 func TestEvaluateGuess5(t *testing.T) {
-	manager := setupDeck(t, nil, nil)
-	game := manager.games["test"]
-	game.teamCounts[red] = 2
-	game.roleTurn = guesser
-	game.guessRemaining = 25
+	numPlayers := 2
+	guessesRemaining := 25
+	game := modGame(t, numPlayers, guessesRemaining)
 
 	var guesses = []guesstest {
 		{

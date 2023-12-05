@@ -62,11 +62,24 @@ func (m *Manager) setupEventHandlers() {
 }
 
 func NewGameHandler(event Event, c *Client) error {
+	m := c.manager
+	m.Lock()
+	defer m.Unlock()
+
 	var gameRequest NewGameRequestEvent
 	if err := json.Unmarshal(event.Payload, &gameRequest); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
-	game := c.manager.makeGame(c.chatroom, &gameRequest.Bots)
+
+	/* All clients in the chat room at the time of
+	   game creation are added as players. */
+	game := m.makeGame(c.chatroom, m.chats[c.chatroom], &gameRequest.Bots)
+
+	/* Ensure initial game state is valid. */
+	if !game.validGame() {
+		game.notifyPlayers(EventGameOver, nil)
+		return fmt.Errorf("Invalid game state requested")
+	}
 
 	var cluegiverMessage NewGameResponseEvent
 	cluegiverMessage.Cards = game.cards
@@ -77,28 +90,19 @@ func NewGameHandler(event Event, c *Client) error {
 	}
 
 	var guesserMessage NewGameResponseEvent
-	guesserMessage.Cards = whiteCards(game.cards)
+	guesserMessage.Cards = game.cards.whiteCards()
 	guesserMessage.SentTime  = cluegiverMessage.SentTime
 	guesserEvent, err := packageMessage(EventNewGame, guesserMessage)
 	if err != nil {
 		return err
 	}
 
-	for _, client := range c.manager.chats[c.chatroom] {
-		/* All clients in the chat room at the time of
-	       game creation are added as players */
-		game.players[client.username] = client
-		if _, exists := game.teamCounts[client.team]; exists {
-			game.teamCounts[client.team] += 1
+	/* Send appropriately colored cards based on role. */
+	for _, player := range game.players {
+		if player.role == cluegiver {
+			player.egress <- cluegiverEvent
 		} else {
-			game.teamCounts[client.team] = 1
-		}
-		client.game = game
-
-		if client.role == cluegiver {
-			client.egress <- cluegiverEvent
-		} else {
-			client.egress <- guesserEvent
+			player.egress <- guesserEvent
 		}
 	}
 
@@ -116,10 +120,7 @@ func AbortGameHandler(event Event, c *Client) error {
 		return nil
 	}
 
-	game.teamCounts[c.team] -= 1
-	if (game.teamCounts[c.team] <= 0) {
-		delete(game.teamCounts, c.team)
-	}
+	game.actions[c.team][c.role] -= 1
 
 	var abortGame AbortGameEvent
 	abortGame.UserName = c.username
@@ -313,16 +314,16 @@ func (m *Manager) makeChatRoom(name string) {
 	m.chats[name] = make(ClientList)
 }
 
-func (m *Manager) makeGame(name string, botActions *BotActions) *Game {
+func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *Game {
 	game, exists := m.games[name]
 	if exists {
 		return game
 	}
 	game = &Game {
 		name: name,
-		players: make(ClientList),
+		players: players,
 		cards: getCards(),
-		teamCounts: make(map[Team]int),
+		actions: getActions(players, bots),
 		teamTurn: red,
 		roleTurn: cluegiver,
 		score: Score {
@@ -331,8 +332,13 @@ func (m *Manager) makeGame(name string, botActions *BotActions) *Game {
 		},
 		manager: m,
 	}
-	game.makeBot(botActions)
+	game.makeBot(bots)
 	m.games[name] = game
+	
+	for _, player := range players {
+		player.game = game
+	}
+
 	return game
 }
 

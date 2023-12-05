@@ -28,6 +28,6 @@ AI players are powered by OpenAI ChatGPT 3.5. Using AI players requires an API k
 #### Frontend
 Start the server locally (see above) and run Playwright **without** parallelism: `npx playwright test --workers=1`
 
-Or execute the tests for each browser type individually in `npx playwright test –ui`
+Or execute the tests for each browser type individually in `npx playwright test --ui`
 
 When running tests in parallel, one will usually randomly fail to log in; rerunning the test on its own is successful.

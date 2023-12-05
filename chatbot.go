@@ -205,7 +205,9 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 				respStr := resp.Choices[0].Message.Content
 
 				parseGPTResponse(respStr, clue)
-				fmt.Printf(clue.response)
+				if verbose {
+					fmt.Printf(clue.response)
+				}
 			}
 			c <- clue
 		}
@@ -378,7 +380,9 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 				clue.response = resp.Choices[0].Message.Content
 				clue.capsWords, clue.err = findGuessWords(clue.response)
 			}
-			fmt.Printf(clue.response)
+			if verbose {
+				fmt.Printf(clue.response)
+			}
 			c <- clue
 		}
 	}(bot)

@@ -28,11 +28,9 @@ func setupGame(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 
 	manager := setupManager(t, ws)
 	readDictionary("./codenames-wordlist.txt")
-	game := manager.makeGame("test", bots)
 	client := manager.clients["testClient"]
 	client.chatroom = "test"
-	game.players["testClient"] = client
-	client.game = game
+	manager.makeGame("test", ClientList{"testClient": client}, bots)
 	
 	return manager
 }
@@ -48,7 +46,6 @@ func setupDeck(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 		"neutralword": "neutral",
 		"deathword": deathCard,
 	}
-	manager.games["test"] = game
 	return manager
 }
 

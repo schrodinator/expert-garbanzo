@@ -12,13 +12,16 @@ import (
 var masterPassword string
 var token string
 
+/* Print ChatGPT responses to stdout. */
+var verbose bool
+
 const (
 	defaultChatRoom = "lobby"
 	deathCard       = "black"
 )
 
-
 func main() {
+	verbose = true
 	masterPassword = getMasterPassword("password.txt")
 	token = getMasterPassword("gpt-secretkey.txt")
 

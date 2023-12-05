@@ -792,7 +792,7 @@ function gameOverHandler() {
     disableBotCheckboxes(false);
     document.getElementById("newgame-button").disabled = false;
     document.getElementById("newgame-button").hidden = false;
-    appendChatMessage("** Game has ended **");
+    appendToChat("** Game has ended **");
 }
 
 window.onload = function() {
