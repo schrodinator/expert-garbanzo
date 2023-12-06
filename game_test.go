@@ -96,6 +96,23 @@ func TestGetCards(t *testing.T) {
 	if len(cards) != totalNumCards {
 		t.Errorf("not dealing with a full deck: %v cards", len(cards))
 	}
+	ct_red := 0
+	ct_blue := 0
+	for _, color := range cards {
+		if color == "red" {
+			ct_red++
+		} else if color == "blue" {
+			ct_blue++
+		} else if color != deathCard && color != "neutral" {
+			t.Errorf("impossible color")
+		}
+	}
+	if ct_red != 9 {
+		t.Errorf("should have 9 red cards. have %v", ct_red)
+	}
+	if ct_blue != 8 {
+		t.Errorf("should have 9 blue cards. have %v", ct_blue)
+	}
 }
 
 func TestGetClueWords(t *testing.T) {
