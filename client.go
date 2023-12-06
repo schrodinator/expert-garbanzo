@@ -10,12 +10,13 @@ import (
 )
 
 var (
-	pongWait     = 60 * time.Second
-	pingInterval = pongWait * 5 / 10
+	pongWait     = 20 * time.Second
+	pingInterval = pongWait * 9 / 10
 )
 
 type ClientList map[string]*Client
-func (cl ClientList) listClients() *[]string {
+/* Alphabetical list of clients. */
+func (cl ClientList) listClients() []string {
 	s := make([]string, len(cl))
 	i := 0
 	for k := range cl {
@@ -23,7 +24,7 @@ func (cl ClientList) listClients() *[]string {
 		i++
 	}
 	slices.Sort(s)
-	return &s
+	return s
 }
 
 type ChatRooms map[string]ClientList

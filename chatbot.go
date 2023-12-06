@@ -109,6 +109,12 @@ func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct) {
 			e = EventGiveClue
 			c.word = t.String()
 			bot.clue_chan <- c
+			/* Reset connection timeout while waiting
+			   for ChatGPT response. */
+			for _, player := range game.players {
+				fmt.Println("waiting for bot")
+				player.pongHandler("pong")
+			}
 			c =<-bot.clue_chan
 			break;
 		case guesser:
@@ -117,13 +123,18 @@ func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct) {
 			if clue.NumCards > 0 {
 				c.numGuess = clue.NumCards
 			} else {
-				/* Unspecified number of cards,
-				   unlimited guesses. But actually
-				   limit it to the number of cards
+				/* Unspecified number of cards, unlimited
+				   guesses. Set it to the number of cards
 				   remaining for this team. */
 				c.numGuess = game.score[game.teamTurn]
 			}
 			bot.guess_chan <- c
+			/* Reset connection timeout while waiting
+			   for ChatGPT response. */
+			for _, player := range game.players {
+				fmt.Println("waiting for bot")
+				player.pongHandler("pong")
+			}
 			c =<-bot.guess_chan
 			break;
 		}
@@ -206,7 +217,7 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 
 				parseGPTResponse(respStr, clue)
 				if verbose {
-					fmt.Printf(clue.response)
+					fmt.Println(clue.response)
 				}
 			}
 			c <- clue
@@ -381,7 +392,7 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 				clue.capsWords, clue.err = findGuessWords(clue.response)
 			}
 			if verbose {
-				fmt.Printf(clue.response)
+				fmt.Println(clue.response)
 			}
 			c <- clue
 		}
