@@ -63,8 +63,6 @@ func (m *Manager) setupEventHandlers() {
 
 func NewGameHandler(event Event, c *Client) error {
 	m := c.manager
-	m.Lock()
-	defer m.Unlock()
 
 	var gameRequest NewGameRequestEvent
 	if err := json.Unmarshal(event.Payload, &gameRequest); err != nil {
@@ -81,17 +79,19 @@ func NewGameHandler(event Event, c *Client) error {
 		return fmt.Errorf("Invalid game state requested")
 	}
 
-	var cluegiverMessage NewGameResponseEvent
-	cluegiverMessage.Cards = game.cards
-	cluegiverMessage.SentTime = time.Now()
+	cluegiverMessage := NewGameResponseEvent {
+		Cards: game.cards,
+		SentTime: time.Now(),
+	}
 	cluegiverEvent, err := packageMessage(EventNewGame, cluegiverMessage)
 	if err != nil {
 		return err
 	}
 
-	var guesserMessage NewGameResponseEvent
-	guesserMessage.Cards = game.cards.whiteCards()
-	guesserMessage.SentTime  = cluegiverMessage.SentTime
+	guesserMessage := NewGameResponseEvent {
+		Cards: game.cards.whiteCards(),
+		SentTime: cluegiverMessage.SentTime,
+	}
 	guesserEvent, err := packageMessage(EventNewGame, guesserMessage)
 	if err != nil {
 		return err
@@ -122,9 +122,10 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	game.actions[c.team][c.role] -= 1
 
-	var abortGame AbortGameEvent
-	abortGame.UserName = c.username
-	abortGame.TeamColor = c.team
+	abortGame := AbortGameEvent {
+		UserName: c.username,
+		TeamColor: c.team,
+	}
 	return game.notifyPlayers(EventAbortGame, abortGame)
 }
 
@@ -132,9 +133,10 @@ func EndTurnHandler(event Event, c *Client) error {
 	game := c.game
 	game.changeTurn()
 
-	var payload EndTurnEvent
-	payload.TeamTurn = game.teamTurn
-	payload.RoleTurn = game.roleTurn
+	payload := EndTurnEvent {
+		TeamTurn: game.teamTurn,
+		RoleTurn: game.roleTurn,
+	}
 	if err := game.notifyPlayers(EventEndTurn, payload); err != nil {
 		return err
 	}
@@ -239,12 +241,14 @@ func ChatRoomHandler(event Event, c *Client) error {
 	c.manager.chats[newroom][c.username] = c
 
 	// notify client if there is a game in progress
-	if _, exists := c.manager.games[newroom]; exists {
-		changeroom.GameInProgress = true
+	if _, exists:= c.manager.games[newroom]; exists {
+		if len(c.manager.games[newroom].players) > 0 {
+			changeroom.GameInProgress = true
+		}
 	}
 
 	// send list of current chat room participants to client
-	changeroom.Participants = *c.manager.chats[newroom].listClients()
+	changeroom.Participants = c.manager.chats[newroom].listClients()
 	outgoingEvent, err := packageMessage(EventEnterRoom, changeroom)
 	c.egress <- outgoingEvent
 	return err
@@ -267,11 +271,14 @@ func SendMessage(event Event, c *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	var broadMessage NewMessageEvent
-	broadMessage.SentTime = time.Now()
-	broadMessage.Message = chatevent.Message
-	broadMessage.From = chatevent.From
-	broadMessage.Color = chatevent.Color
+	broadMessage := NewMessageEvent {
+		SentTime: time.Now(),
+		SendMessageEvent: SendMessageEvent {
+			Message: chatevent.Message,
+			From: chatevent.From,
+			Color: chatevent.Color,
+		},
+	}
 
 	status := c.manager.notifyClients(c.chatroom, EventNewMessage, broadMessage)
 	return status
@@ -342,6 +349,7 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 	return game
 }
 
+/* Return true if game was deleted. */
 func (m *Manager) removeGame(room string) bool {
 	game := m.games[room]
 	if game != nil {
@@ -453,12 +461,14 @@ func (m *Manager) removeClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	// TODO: delete empty games / chatrooms
-	if _, exists := m.games[client.chatroom]; exists {
-		delete(m.games[client.chatroom].players, client.username)
+	room := client.chatroom
+	if _, exists := m.games[room]; exists {
+		delete(m.games[room].players, client.username)
+		// remove the game if no more players
+		m.removeGame(room)
 	}
-	if _, exists := m.chats[client.chatroom]; exists {
-		delete(m.chats[client.chatroom], client.username)
+	if _, exists := m.chats[room]; exists {
+		delete(m.chats[room], client.username)
 	}
 	if _, exists := m.clients[client.username]; exists {
 		client.connection.Close()
@@ -466,7 +476,7 @@ func (m *Manager) removeClient(client *Client) {
 		exit := ChangeRoomEvent {
 			UserName: client.username,
 		}
-		m.notifyClients(client.chatroom, EventExitRoom, exit)
+		m.notifyClients(room, EventExitRoom, exit)
 		delete(m.clients, client.username)
 	}
 }
