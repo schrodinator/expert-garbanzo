@@ -790,9 +790,8 @@ function gameOverHandler() {
     document.getElementById("team").disabled = false;
     document.getElementById("role").disabled = false;
     disableBotCheckboxes(false);
-    document.getElementById("newgame-button").disabled = false;
-    document.getElementById("newgame-button").hidden = false;
-    appendToChat("** Game has ended **");
+    document.getElementById("end-turn").hidden = true;
+    appendToChat("** Game Over **");
 }
 
 window.onload = function() {
