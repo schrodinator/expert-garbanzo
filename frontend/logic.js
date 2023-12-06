@@ -395,10 +395,12 @@ function notifyRoomEntry(payload) {
     if (roomChange.roomName == defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
+        document.getElementById("instruction").hidden = false;
     } else {
         document.getElementById("game-setup").hidden = false;
         document.getElementById("end-turn").hidden = true;
         document.getElementById("gameboard-container").hidden = false;
+        document.getElementById("instruction").hidden = true;
     }
 
     let message = `${roomChange.clientName} has entered `;

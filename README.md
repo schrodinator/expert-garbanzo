@@ -17,6 +17,14 @@ Start the server: `go run !(*_test).go`
 
 In a browser, navigate to: `https://localhost:8080`
 
+### Starting a Game
+
+To play a game, go to any chat room except for the lobby. The lobby is intended to meet people who want to play. Make up a room name for your group (or just yourself).
+
+A game must have (at least) one guesser and (at least) one cluegiver per team. These roles may be played by ChatBots. You may elect to play a cooperative game by filling both roles on only one team.
+
+Caution: While it is possible to have multiple players with the same role, this is currently untested, unreliable, and chaotic. It is a work in progress.
+
 ### AI Players
 
 AI players are powered by OpenAI ChatGPT 3.5. Using AI players requires an API key, which can be obtained at https://platform.openai.com/api-keys. Save the secret key in a file called `gpt-secretkey.txt` in the top-level directory.
