@@ -96,6 +96,7 @@ const defaultRoom = "lobby";
 const guesserRole = "guesser";
 const cluegiverRole = "cluegiver";
 const defaultTeam = "red";
+const defaultRole = guesserRole;
 const deathCard = "black";
 
 var username;
@@ -320,30 +321,40 @@ function fmtTimeFromDate(date) {
     return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
 }
 
-function appendParticipantDiv(name) {
+function appendParticipantDiv({name, teamColor, role}) {
     const container = document.getElementById("participants");
     const participant = document.createElement("div");
     participant.className = "participant";
     participant.id = `participant-${name}`;
-    participant.innerText = name;
+    participant.setAttribute("data-testid", `participant-${name}`);
+    if (selectedChat != defaultRoom && teamColor != null && role != null) {
+        participant.innerHTML = `${name} - <span style="color:${teamColor}">${teamColor} ${role}</span>`;
+    } else {
+        participant.innerHTML = `${name}`;
+    }
     container.appendChild(participant);
 }
 
 function addParticipant(name) {
-    appendParticipantDiv(name);
+    const participant = { name: name, teamColor: defaultTeam, role: defaultRole };
+    appendParticipantDiv(participant);
 
     const container = document.getElementById("participants");
     Array.from(container.children)
-         .sort((a, b) => a.value - b.value)
+         .sort((a, b) => a.id - b.id)
          .forEach(element => container.append(element));
 }
 
 function addAllParticipants(participantsList) {
     /* expect particpantsList to be sorted already */
     for (i = 0; i < participantsList.length; i++) {
-        const name = participantsList[i];
-        appendParticipantDiv(name);
+        appendParticipantDiv(participantsList[i]);
     }
+}
+
+function updateParticipant({clientName, teamColor, role}) {
+    const participant = document.getElementById(`participant-${clientName}`);
+    participant.innerHTML = `${clientName} - <span style="color:${teamColor}">${teamColor} ${role}</span>`;
 }
 
 function removeParticipant(name) {
@@ -620,6 +631,9 @@ function routeEvent(event) {
             break;
         case "new_game":
             setupBoard(event.payload);
+            break;
+        case "update_participant":
+            updateParticipant(event.payload);
             break;
         case "guess_event":
             guessResponseHandler(event.payload);

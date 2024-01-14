@@ -89,7 +89,8 @@ test('play two-player game', async () => {
     // Check participants list
     await expect(page_clue.getByTestId('participants-title')).toContainText(`Participants in ${chatroom}`);
     await expect(page_clue.getByTestId('participants')).toContainText('cluegiver');
-    await expect(page_clue.getByTestId('participants')).not.toContainText('guesser');
+    await expect(page_clue.getByTestId('participant-cluegiver')).toBeAttached();
+    await expect(page_clue.getByTestId('participant-guesser')).not.toBeAttached();
 
     // Guesser moves into the new chat room
     await page_guess.getByTestId('chatroom').fill(chatroom);
@@ -100,7 +101,10 @@ test('play two-player game', async () => {
     await expect(page_guess.getByTestId('participants-title')).toContainText(`Participants in ${chatroom}`);
     await expect(page_guess.getByTestId('participants')).toContainText('cluegiver');
     await expect(page_guess.getByTestId('participants')).toContainText('guesser');
+    await expect(page_guess.getByTestId('participant-cluegiver')).toBeAttached();
+    await expect(page_guess.getByTestId('participant-guesser')).toBeAttached();
     await expect(page_clue.getByTestId('participants')).toContainText('guesser');
+    await expect(page_clue.getByTestId('participant-guesser')).toBeAttached();
 
     // Assert the change room notifications are printed in the chat log
     await expect(page_clue.getByTestId('chatlog')).toContainText(`cluegiver has entered room "${chatroom}"`);

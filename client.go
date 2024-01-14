@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"slices"
+	"sort"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -14,17 +14,29 @@ var (
 	pingInterval = pongWait * 9 / 10
 )
 
+type Participant struct {
+	Name  string  `json:"name"`
+	Team  Team    `json:"teamColor"`
+	Role  Role    `json:"role"`
+}
+
 type ClientList map[string]*Client
 /* Alphabetical list of clients. */
-func (cl ClientList) listClients() []string {
-	s := make([]string, len(cl))
+func (cl ClientList) listClients() []Participant {
+	participants := make([]Participant, len(cl))
 	i := 0
-	for k := range cl {
-		s[i] = k
+	for name, client := range cl {
+		participants[i] = Participant {
+			Name: name,
+			Team: client.team,
+			Role: client.role,
+		}
 		i++
 	}
-	slices.Sort(s)
-	return s
+	sort.Slice(participants, func(i, j int) bool {
+		return participants[i].Name < participants[j].Name
+	})
+	return participants
 }
 
 type ChatRooms map[string]ClientList

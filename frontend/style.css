@@ -114,12 +114,18 @@ body {
     margin: 5px;
     padding: 5px;
     background-color: white;
-    overflow: scroll;
+    overflow-x: wrap;
+    overflow-y: scroll;
+}
+
+.participantlist {
+    width: 250px;
+    overflow-x: scroll;
 }
 
 .participant {
-    overflow-wrap: anywhere;
     margin: 5px;
+    white-space: nowrap;
 }
 
 .color-item {

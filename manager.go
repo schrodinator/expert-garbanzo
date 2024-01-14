@@ -122,7 +122,7 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	game.actions[c.team][c.role] -= 1
 
-	abortGame := AbortGameEvent {
+	abortGame := PlayerAlignmentEvent {
 		UserName: c.username,
 		TeamColor: c.team,
 	}
@@ -256,12 +256,26 @@ func ChatRoomHandler(event Event, c *Client) error {
 
 func TeamChangeHandler(event Event, c *Client) error {
 	c.team = c.team.Change()
-	return nil
+	updateMsg := PlayerAlignmentEvent {
+		UserName: c.username,
+		TeamColor: c.team,
+		Role: c.role,
+	}
+	return c.manager.notifyClients(c.chatroom, EventUpdateParticipant, updateMsg)
 }
 
 func RoleChangeHandler(event Event, c *Client) error {
 	c.role = c.role.Change()
-	return nil
+	updateMsg := PlayerAlignmentEvent {
+		UserName: c.username,
+		TeamColor: c.team,
+		Role: c.role,
+	}
+	return c.manager.notifyClients(c.chatroom, EventUpdateParticipant, updateMsg)
+}
+
+func UpdateUserAlignment() {
+
 }
 
 func SendMessage(event Event, c *Client) error {

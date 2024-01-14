@@ -20,6 +20,7 @@ const (
 	EventExitRoom    = "exit_room"
 	EventChangeTeam  = "change_team"
 	EventChangeRole  = "change_role"
+	EventUpdateParticipant  = "update_participant"
 	EventNewGame     = "new_game"
 	EventMakeGuess   = "guess_event"
 	EventGiveClue    = "give_clue"
@@ -41,10 +42,10 @@ type NewMessageEvent struct {
 }
 
 type ChangeRoomEvent struct {
-	UserName       string   `json:"clientName"`
-	RoomName       string   `json:"roomName"`
-	Participants   []string `json:"participants"`
-	GameInProgress bool     `json:"gameInProgress"`
+	UserName       string        `json:"clientName"`
+	RoomName       string        `json:"roomName"`
+	Participants   []Participant `json:"participants"`
+	GameInProgress bool          `json:"gameInProgress"`
 }
 
 type NewGameRequestEvent struct {
@@ -56,9 +57,10 @@ type NewGameResponseEvent struct {
 	SentTime   time.Time          `json:"sentTime"`
 }
 
-type AbortGameEvent struct {
+type PlayerAlignmentEvent struct {
 	UserName  string `json:"clientName"`
 	TeamColor Team   `json:"teamColor"`
+	Role      Role   `json:"role"`
 }
 
 type GiveClueEvent struct {
