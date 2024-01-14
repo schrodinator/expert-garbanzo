@@ -98,6 +98,7 @@ const cluegiverRole = "cluegiver";
 const defaultTeam = "red";
 const defaultRole = guesserRole;
 const deathCard = "black";
+const botWaitMsg = "Waiting for ChatBot...";
 
 var username;
 var usercolor = colors[Math.floor(Math.random() * colors.length)];
@@ -488,6 +489,8 @@ function whoseTurn(teamTurn, roleTurn) {
         return;
     }
     if (roleTurn === cluegiverRole) {
+        // clear the previous clue from the clue box
+        document.getElementById("clue").innerText = "";
         document.getElementById("clue-input").disabled = false;
         document.getElementById("cluebox").querySelector("input[type=submit]").disabled = false;
         return;
@@ -514,6 +517,10 @@ function endTurn() {
 
 function endTurnHandler(payload) {
     const {teamTurn, roleTurn} = Object.assign(new EndTurnEvent, payload);
+    const cluebox = document.getElementById("clue");
+    if (cluebox.innerText == botWaitMsg) {
+        cluebox.innerText = "";
+    }
     document.getElementById("numguess").innerText = "";
     whoseTurn(teamTurn, roleTurn);
     return false;
@@ -536,9 +543,12 @@ function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
 }
 
 function notifyBotWait() {
-    appendToChat(`Waiting for ChatBot...`)
-    if (roleTurn == cluegiverRole) {
-        document.getElementById("clue").innerText = "Waiting for ChatBot..."
+    appendToChat(botWaitMsg)
+    if (roleTurn == cluegiverRole && (
+            (teamTurn == "red" && document.getElementById("AIRedClue").checked) ||
+            (teamTurn == "blue" && document.getElementById("AIBlueClue").checked)
+        )) {
+        document.getElementById("clue").innerText = botWaitMsg;
     }
 }
 
