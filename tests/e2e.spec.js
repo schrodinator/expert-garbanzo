@@ -31,7 +31,7 @@ test('play two-player game', async () => {
 
     // Check that cluegiver login succeeded
     await expect(page_clue.getByTestId('chatlog')).toBeVisible();
-    await expect(page_clue.getByTestId('welcome')).toContainText('Welcome to lobby, cluegiver');
+    await expect(page_clue.getByTestId('welcome')).toContainText('Welcome to the lobby, cluegiver');
 
     // Check participants list
     await expect(page_clue.getByTestId('participants-title')).toContainText('Participants in lobby');
@@ -62,7 +62,7 @@ test('play two-player game', async () => {
 
     // Check that guesser login succeeded
     await expect(page_guess.getByTestId('chatlog')).toBeVisible();
-    await expect(page_guess.getByTestId('welcome')).toContainText('Welcome to lobby, guesser');
+    await expect(page_guess.getByTestId('welcome')).toContainText('Welcome to the lobby, guesser');
 
     // Check participants list
     await expect(page_guess.getByTestId('participants-title')).toContainText('Participants in lobby');

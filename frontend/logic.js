@@ -395,19 +395,23 @@ function notifyRoomEntry(payload) {
     if (roomChange.roomName == defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
-        document.getElementById("instruction").hidden = false;
     } else {
         document.getElementById("game-setup").hidden = false;
         document.getElementById("end-turn").hidden = true;
         document.getElementById("gameboard-container").hidden = false;
-        document.getElementById("instruction").hidden = true;
     }
 
     let message = `${roomChange.clientName} has entered `;
     if (username === roomChange.clientName) {
-        message += `room "${roomChange.roomName}"`;
+        const welcome = document.getElementById("welcome-header");
+        if (roomChange.roomName === "lobby") {
+            message += `the lobby.`;
+            welcome.innerText = `Welcome to the lobby, ${username}. Go to any chat room to play a game.`;
+        } else {
+            message += `room "${roomChange.roomName}".`;
+            welcome.innerText = `Welcome to ${selectedChat}, ${username}.`;
+        }
 
-        document.getElementById("welcome-header").innerText = `Welcome to ${selectedChat}, ${username}`;
         document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;
     } else {
         message += `the room.`;
