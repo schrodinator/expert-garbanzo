@@ -111,23 +111,35 @@ func NewGameHandler(event Event, c *Client) error {
 }
 
 func AbortGameHandler(event Event, c *Client) error {
-	c.game = nil
 	game, exists := c.manager.games[c.chatroom]
 	if !exists {
 		return fmt.Errorf("Game %v not found", c.chatroom)
 	}
-	delete(game.players, c.username)
-	if game.removeGame() {
-		return nil
-	}
-
-	game.actions[c.team][c.role] -= 1
 
 	abortGame := PlayerAlignmentEvent {
 		UserName: c.username,
 		TeamColor: c.team,
 	}
-	return game.notifyPlayers(EventAbortGame, abortGame)
+	if err := game.notifyPlayers(EventAbortGame, abortGame); err != nil {
+		return err
+	}
+
+	c.game = nil
+	delete(game.players, c.username)
+	if len(game.players) == 0 {
+		if !game.removeGame() {
+			return fmt.Errorf("Could not remove game %v", c.chatroom)
+		}
+		return nil
+	}
+
+	game.actions[c.team][c.role] -= 1
+	if !game.validGame() {
+		/* TODO: consider having a bot fill in for any unfilled role
+		   as long as there is at least one remaining human player. */
+		game.notifyPlayers(EventGameOver, "Essential roles unfilled. Cannot continue the game.")
+	}
+	return nil
 }
 
 func EndTurnHandler(event Event, c *Client) error {
@@ -273,10 +285,6 @@ func RoleChangeHandler(event Event, c *Client) error {
 		Role: c.role,
 	}
 	return c.manager.notifyClients(c.chatroom, EventUpdateParticipant, updateMsg)
-}
-
-func UpdateUserAlignment() {
-
 }
 
 func SendMessage(event Event, c *Client) error {

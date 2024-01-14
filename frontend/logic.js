@@ -143,7 +143,6 @@ function abortGame() {
     currentGame = null;
 
     sendEvent("abort_game", null);
-    notifyAbortGame(username, userTeam);
 
     resetCards();
     resetClueNotification();
@@ -449,12 +448,8 @@ function notifyRoomExit(payload) {
 }
 
 function abortGameHandler(payload) {
-    const {name, teamColor} = Object.assign(new AbortGameEvent, payload);
-    notifyAbortGame(name, teamColor);
-}
-
-function notifyAbortGame(name, teamColor) {
-    message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
+    const {clientName, teamColor} = Object.assign(new AbortGameEvent, payload);
+    message = `<span style="color:${teamColor}">${clientName} has left the game.</span>`;
     appendToChat(message);
 }
 
@@ -667,7 +662,7 @@ function routeEvent(event) {
             notifyBotWait();
             break;
         case "game_over":
-            gameOverHandler();
+            gameOverHandler(event.payload);
             break;
         default:
             alert("unsupported message type: " + event.type);
@@ -827,7 +822,10 @@ function connectWebsocket(otp, room) {
     }
 }
 
-function gameOverHandler() {
+function gameOverHandler(message) {
+    if (message != null) {
+        alert(message);
+    }
     document.getElementById("team").disabled = false;
     document.getElementById("role").disabled = false;
     disableBotCheckboxes(false);
