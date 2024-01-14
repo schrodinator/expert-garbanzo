@@ -207,7 +207,7 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 	}
 	eventType, clueStruct := game.bot.Play(clue)
 	if eventType == "" || clueStruct == nil {
-		return fmt.Errorf("bot.Play() returned empty values")
+		return nil
 	}
 	switch eventType {
 	case EventMakeGuess:
@@ -225,7 +225,7 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 				return err
 			}
 			GuessEvaluationHandler(evt, game.bot.client)
-			/* If the guess was incorrect, we're done here. */
+			/* If the guess was incorrect, we're done. */
 			if game.teamTurn != game.bot.client.team ||
 			   game.roleTurn != game.bot.client.role {
 				return nil
@@ -233,8 +233,8 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 		}
 		/* We could get here if the bot returns fewer guesses
 		   than requested, or if we could not parse the guess
-		   words from the response. If this is the case, we
-		   need to end the bot's turn to continue the game. */
+		   words from the response. In this case, we need to
+		   end the bot's turn in order to continue the game. */
 		if game.teamTurn == game.bot.client.team &&
 		   game.roleTurn == game.bot.client.role {
 			EndTurnHandler(Event{}, game.bot.client)
