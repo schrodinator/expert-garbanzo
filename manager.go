@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 
@@ -442,6 +443,16 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// replace with real authentication
 	if req.Password != masterPassword {
 		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Check for valid username (non-empty, no whitespace)
+	if req.Username == "" {
+		http.Error(w, "Username must not be empty", http.StatusBadRequest)
+		return
+	}
+	if regexp.MustCompile(`\s`).MatchString(req.Username) {
+		http.Error(w, "Username must not contain whitespace", http.StatusBadRequest)
 		return
 	}
 

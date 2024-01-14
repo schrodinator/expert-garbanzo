@@ -743,6 +743,17 @@ function login() {
         "username": document.getElementById("username").value,
         "password": document.getElementById("password").value,
     }
+    /* Do not allow whitespace in username. This would break participants list,
+       etc., where the username becomes part of a CSS identifier. */
+    const whitespace = new RegExp(/\s+/);
+    if (typeof formData.username === 'undefined' || formData.username === "") {
+        alert("Username may not be empty");
+        return;
+    }
+    if (whitespace.test(formData.username)) {
+        alert("Username may not contain whitespace");
+        return;
+    }
     let room = document.getElementById("gotoroom").value;
     if (room === "") {
         room = defaultRoom;
