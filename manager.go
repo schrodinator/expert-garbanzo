@@ -76,7 +76,9 @@ func NewGameHandler(event Event, c *Client) error {
 
 	/* Ensure initial game state is valid. */
 	if !game.validGame() {
-		game.notifyPlayers(EventGameOver, nil)
+		game.notifyPlayers(EventGameOver, "Essential roles unfilled. " +
+			"Need at least one guesser and one cluegiver per team, " +
+			"and at least one team. Cannot start game.")
 		return fmt.Errorf("Invalid game state requested")
 	}
 
