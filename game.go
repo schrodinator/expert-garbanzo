@@ -9,6 +9,8 @@ import (
 )
 
 const totalNumCards = 25
+const defaultTeam = red
+const defaultRole = guesser
 
 var (
 	dictionary []string

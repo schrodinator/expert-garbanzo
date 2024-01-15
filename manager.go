@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
 	"regexp"
 	"sync"
@@ -126,8 +127,10 @@ func AbortGameHandler(event Event, c *Client) error {
 		return err
 	}
 
-	c.game = nil
 	delete(game.players, c.username)
+	c.game = nil
+	c.team = defaultTeam
+	c.role = defaultRole
 	if len(game.players) == 0 {
 		if !game.removeGame() {
 			return fmt.Errorf("Could not remove game %v", c.chatroom)
@@ -353,7 +356,7 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 	}
 	game = &Game {
 		name: name,
-		players: players,
+		players: maps.Clone(players),
 		cards: getCards(),
 		actions: getActions(players, bots),
 		teamTurn: red,

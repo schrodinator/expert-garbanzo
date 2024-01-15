@@ -538,10 +538,10 @@ function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
 }
 
 function notifyBotWait() {
-    appendToChat(botWaitMsg)
-    if (roleTurn == cluegiverRole && (
-            (teamTurn == "red" && document.getElementById("AIRedClue").checked) ||
-            (teamTurn == "blue" && document.getElementById("AIBlueClue").checked)
+    appendToChat(botWaitMsg);
+    if (roleTurn === cluegiverRole && (
+            (teamTurn === "red" && document.getElementById("AIRedClue").checked) ||
+            (teamTurn === "blue" && document.getElementById("AIBlueClue").checked)
         )) {
         document.getElementById("clue").innerText = botWaitMsg;
     }
