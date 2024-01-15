@@ -716,7 +716,6 @@ function clueHandler(payload) {
 function login() {
     let formData = {
         "username": document.getElementById("username").value,
-        "password": document.getElementById("password").value,
     }
     /* Do not allow whitespace in username. This would break participants list,
        etc., where the username becomes part of a CSS identifier. */

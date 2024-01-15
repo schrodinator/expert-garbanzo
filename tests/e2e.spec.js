@@ -3,7 +3,6 @@ const exp = require('constants');
 var fs = require('fs');
 
 const chatroom = 'gameroom';
-const password = fs.readFileSync('./password.txt', { encoding: 'utf8', flag: 'r' });
 
 test('play two-player game', async () => {
     // Cluegiver login
@@ -26,8 +25,7 @@ test('play two-player game', async () => {
     });
     await page_clue.goto('/');
     await page_clue.getByTestId('username').fill('cluegiver');
-    await page_clue.getByTestId('password').fill(password);
-    await page_clue.getByTestId('password').press('Enter');
+    await page_clue.getByTestId('username').press('Enter');
 
     // Check that cluegiver login succeeded
     await expect(page_clue.getByTestId('chatlog')).toBeVisible();
@@ -57,8 +55,7 @@ test('play two-player game', async () => {
     });
     await page_guess.goto('/');
     await page_guess.getByTestId('username').fill('guesser');
-    await page_guess.getByTestId('password').fill(password);
-    await page_guess.getByTestId('password').press('Enter');
+    await page_guess.getByTestId('username').press('Enter');
 
     // Check that guesser login succeeded
     await expect(page_guess.getByTestId('chatlog')).toBeVisible();

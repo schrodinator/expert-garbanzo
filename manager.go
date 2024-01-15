@@ -438,7 +438,6 @@ func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
 func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 	type userLoginRequest struct {
 		Username string `json:"username"`
-		Password string `json:"password"`
 	}
 
 	type response struct {
@@ -453,12 +452,6 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// replace with real authentication
-	if req.Password != masterPassword {
-		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
