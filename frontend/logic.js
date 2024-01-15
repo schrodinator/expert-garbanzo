@@ -90,8 +90,8 @@ class EndTurnEvent {
 }
 
 const totalNumCards = 25;
-const colors = ["red", "darkorange", "blue", "dodgerblue", "green",
-                "brown", "purple", "hotpink", "black", "gray"];
+const colors = ["#ff0000", "#ff8c00", "#0000ff", "#005a9c", "#00ff00",
+                "#964b00", "#800080", "#ff69b4", "#000000", "#808080"];
 const defaultRoom = "lobby";
 const guesserRole = "guesser";
 const cluegiverRole = "cluegiver";
@@ -108,17 +108,6 @@ var selectedChat = "";
 var currentGame;
 
 
-colorContainer = document.getElementById("color-container");
-for (let i = 0; i < colors.length; i++) {
-    const colorItem = document.createElement("div");
-    colorItem.className = "color-item";
-    colorItem.style = `background-color:${colors[i]}`
-    colorItem.onclick = function () {
-      changeColor(this);
-    };
-    colorContainer.appendChild(colorItem);
-}
-
 const gameBoard = document.getElementById("gameboard");
 for (let i = 0; i < totalNumCards; i++) {
     const cardItem = document.createElement("div");
@@ -127,6 +116,9 @@ for (let i = 0; i < totalNumCards; i++) {
     gameBoard.appendChild(cardItem);
 }
 
+function changeUserColor(event) {
+    usercolor = event.target.value;
+}
 
 function disableBotCheckboxes(boolean) {
     let bots = document.getElementById("bots");
@@ -301,10 +293,6 @@ function changeTeam() {
     userTeam = document.getElementById("team").value;
     sendEvent("change_team", null);
     return false;
-}
-
-function changeColor(element) {
-    usercolor = getComputedStyle(element).backgroundColor;
 }
 
 // Pad single-digit numbers with a leading zero
@@ -817,6 +805,9 @@ function gameOverHandler(message) {
 }
 
 window.onload = function() {
+    const colorpicker = document.getElementById("colorpicker");
+    colorpicker.value = usercolor;
+    colorpicker.addEventListener("input", changeUserColor, false);
     document.getElementById("chatroom-selection").onsubmit = changeChatRoom;
     document.getElementById("send-message").onsubmit = sendMessage;
     document.getElementById("login-form").onsubmit = login;

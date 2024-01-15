@@ -102,14 +102,14 @@ body {
 }
 
 .chat-container {
-    display: grid;
-    grid-template-rows: auto;
-    grid-template-columns: 40px 3fr 1fr;
+    display: flex;
     max-width: 900px;
     height: 300px;
 }
 
 .messagearea {
+    flex: 1 1 70%;
+    min-width: 300px;
     border: 1px solid #ccc;
     margin: 5px;
     padding: 5px;
@@ -119,8 +119,12 @@ body {
 }
 
 .participantlist {
-    width: 250px;
-    overflow-x: scroll;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    margin: 5px;
+    padding: 5px;
+    background-color: white;
+    overflow: scroll;
 }
 
 .participant {

@@ -33,17 +33,17 @@
                 <br>
 
                 <div class="chat-container">
-                    <div class="color-container" id="color-container"></div>
                     <div class="messagearea" id="chatlog" data-testid="chatlog"></div>
                     <div class="participantsarea">
                         <div class="participant" id="participants-title" data-testid="participants-title"></div>
-                        <div class="messagearea participantlist" id="participants" data-testid="participants"></div>
+                        <div class="participantlist" id="participants" data-testid="participants"></div>
                     </div>
                 </div>
 
                 <br>
 
                 <form id="send-message">
+                    <input type="color" id="colorpicker">
                     <label for="message">Message:</label>
                     <input class="txt" type="text" id="message" maxlength="512" name="message" data-testid="message">
                     <input class="button" type="submit" value="Send message">
