@@ -329,7 +329,15 @@ function addParticipant(name) {
 
     const container = document.getElementById("participants");
     Array.from(container.children)
-         .sort((a, b) => a.id - b.id)
+         .sort(function (a, b) {
+            if (a.id < b.id) {
+                return -1;
+            }
+            if (a.id > b.id) {
+                return 1;
+            }
+            return 0;
+         })
          .forEach(element => container.append(element));
 }
 
