@@ -194,7 +194,6 @@ function setupBoard(payload) {
     document.getElementById("role").disabled = true;
     document.getElementById("team").disabled = true;
     document.getElementById("newgame-button").hidden = true;
-    document.getElementById("abort-button").value = "Abort Game";
     document.getElementById("abort-button").hidden = false;
 
     disableBotCheckboxes(true);
@@ -261,6 +260,7 @@ function resetCards() {
 }
 
 function resetClueNotification() {
+    document.getElementById("turn").innerHTML = "";
     document.getElementById("clue").innerHTML = "";
     document.getElementById("numguess").innerText = "";
     document.getElementById("number-input").value = 2;
@@ -403,7 +403,7 @@ function notifyRoomEntry(payload) {
         addParticipant(roomChange.clientName);
     }
 
-    if (roomChange.roomName == defaultRoom) {
+    if (roomChange.roomName === defaultRoom) {
         document.getElementById("game-setup").hidden = true;
         document.getElementById("gameboard-container").hidden = true;
     } else {
@@ -458,9 +458,6 @@ function guessResponseHandler(payload) {
 
     markGuessedCard(guessResponse);
     notifyChatRoom(guessResponse);
-    if (checkDeathCard(guessResponse)) {
-        return;
-    }
     updateScoreboard(guessResponse);
     notifyGuessRemaining(guessResponse);
 
@@ -498,7 +495,7 @@ function whoseTurn(teamTurn, roleTurn) {
 
 function notifyGuessRemaining({guessRemaining}) {
     const remaining = document.getElementById("numguess");
-    if (guessRemaining == 0) {
+    if (guessRemaining === 0) {
         remaining.innerText = "";
     } else if (guessRemaining < totalNumCards) {
         remaining.innerText = guessRemaining;
@@ -513,7 +510,7 @@ function endTurn() {
 function endTurnHandler(payload) {
     const {teamTurn, roleTurn} = Object.assign(new EndTurnEvent, payload);
     const cluebox = document.getElementById("clue");
-    if (cluebox.innerText == botWaitMsg) {
+    if (cluebox.innerText === botWaitMsg) {
         cluebox.innerText = "";
     }
     document.getElementById("numguess").innerText = "";
@@ -547,28 +544,13 @@ function notifyBotWait() {
     }
 }
 
-function checkDeathCard({cardColor, teamColor}) {
-    if (cardColor == deathCard) {
-        const teamName = capitalize(teamColor);
-        alert(`${teamName} Team uncovers the Black Card. ${teamName} Team loses!`);
-        disableAllCardEvents();
-        document.getElementById("numguess").innerText = "";
-        document.getElementById("turn").innerText = "";
-        document.getElementById("clue").innerText = "";
-        document.getElementById("abort-button").value = "End Game";
-        return true;
-    }
-    return false;
-}
-
 function updateScoreboard({score}) {
     for (const color of ["red", "blue"]) {
         const loc = document.getElementById(`${color}score`);
         loc.innerText = score[color];
-        if (score[color] == 0) {
+        if (score[color] === 0) {
             alert(`${capitalize(color)} Team wins!`);
             disableAllCardEvents();
-            document.getElementById("abort-button").value = "End Game";
             document.getElementById("end-turn").hidden = true;
             return false;
         }
@@ -823,12 +805,13 @@ function connectWebsocket(otp, room) {
 }
 
 function gameOverHandler(message) {
-    if (message != null) {
+    if (message != null && message !== "") {
         alert(message);
     }
     document.getElementById("team").disabled = false;
     document.getElementById("role").disabled = false;
     disableBotCheckboxes(false);
+    resetClueNotification();
     document.getElementById("end-turn").hidden = true;
     appendToChat("** Game Over **");
 }

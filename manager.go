@@ -119,7 +119,7 @@ func AbortGameHandler(event Event, c *Client) error {
 		return fmt.Errorf("Game %v not found", c.chatroom)
 	}
 
-	abortGame := PlayerAlignmentEvent {
+	abortGame := PlayerAlignmentResponse {
 		UserName: c.username,
 		TeamColor: c.team,
 	}
@@ -129,20 +129,20 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	delete(game.players, c.username)
 	c.game = nil
-	c.team = defaultTeam
-	c.role = defaultRole
 	if len(game.players) == 0 {
-		if !game.removeGame() {
+		if !game.removeGame(nil) {
 			return fmt.Errorf("Could not remove game %v", c.chatroom)
 		}
 		return nil
 	}
 
-	game.actions[c.team][c.role] -= 1
-	if !game.validGame() {
-		/* TODO: consider having a bot fill in for any unfilled role
-		   as long as there is at least one remaining human player. */
-		game.notifyPlayers(EventGameOver, "Essential roles unfilled. Cannot continue the game.")
+	if game.active {
+		game.actions[c.team][c.role] -= 1
+		if !game.validGame() {
+			/* TODO: consider having a bot fill in for any unfilled role
+			as long as there is at least one remaining human player. */
+			game.notifyPlayers(EventGameOver, "Essential roles unfilled. Cannot continue the game.")
+		}
 	}
 	return nil
 }
@@ -192,7 +192,8 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 		return err
 	}
 	if cardColor == deathCard || game.score[c.team] <= 0 {
-		game.removeGame()
+		t := c.team.Title()
+		game.removeGame(fmt.Sprintf("%v Team uncovers the Black Card. %v Team loses!", t, t))
 		return nil
 	}
 	if guessResponse.Correct && game.guessRemaining > 0 {
@@ -274,7 +275,7 @@ func ChatRoomHandler(event Event, c *Client) error {
 
 func TeamChangeHandler(event Event, c *Client) error {
 	c.team = c.team.Change()
-	updateMsg := PlayerAlignmentEvent {
+	updateMsg := PlayerAlignmentResponse {
 		UserName: c.username,
 		TeamColor: c.team,
 		Role: c.role,
@@ -284,7 +285,7 @@ func TeamChangeHandler(event Event, c *Client) error {
 
 func RoleChangeHandler(event Event, c *Client) error {
 	c.role = c.role.Change()
-	updateMsg := PlayerAlignmentEvent {
+	updateMsg := PlayerAlignmentResponse {
 		UserName: c.username,
 		TeamColor: c.team,
 		Role: c.role,
@@ -366,6 +367,7 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 			blue: 8,
 		},
 		manager: m,
+		active: true,
 	}
 	game.makeBot(bots)
 	m.games[name] = game
@@ -378,14 +380,15 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 }
 
 /* Return true if game was deleted. */
-func (m *Manager) removeGame(room string) bool {
+func (m *Manager) removeGame(room string, message any) bool {
 	game := m.games[room]
 	if game != nil {
 		if len(game.players) == 0 {
 			delete(m.games, room)
 			return true
 		}
-		m.notifyClients(room, EventGameOver, nil)
+		game.active = false
+		m.notifyClients(room, EventGameOver, message)
 	}
 	return false
 }
@@ -503,7 +506,7 @@ func (m *Manager) removeClient(client *Client) {
 	if _, exists := m.games[room]; exists {
 		delete(m.games[room].players, client.username)
 		// remove the game if no more players
-		m.removeGame(room)
+		m.removeGame(room, nil)
 	}
 	if _, exists := m.chats[room]; exists {
 		delete(m.chats[room], client.username)

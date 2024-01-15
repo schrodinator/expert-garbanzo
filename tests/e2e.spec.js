@@ -366,7 +366,6 @@ test('play two-player game', async () => {
     await expect(page_clue.getByTestId('turn')).toBeEmpty();
     await expect(page_clue.getByTestId('clue')).toBeEmpty();
     await expect(page_clue.getByTestId('numguess')).toBeEmpty();
-    await expect(page_clue.getByTestId('abort')).toHaveValue('End Game');
 
     // Close all pages and contexts
     await page_clue.close();

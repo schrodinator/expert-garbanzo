@@ -25,6 +25,16 @@ const (
 func (t Team) String() string {
 	return string(t)
 }
+func (t Team) Title() string {
+	switch t {
+	case red:
+		return "Red"
+	case blue:
+		return "Blue"
+	default:
+		return ""
+	}
+}
 func (t Team) Change() Team {
 	switch t {
 	case red:
@@ -142,6 +152,7 @@ type Game struct {
 	score           Score
 	bot             *Bot
 	manager         *Manager
+	active          bool
 }
 
 func (game *Game) notifyPlayers(messageType string, message any) error {
@@ -274,8 +285,8 @@ func (game *Game) validGame() bool {
 	return true
 }
 
-func (game *Game) removeGame() bool {
-	return game.manager.removeGame(game.name)
+func (game *Game) removeGame(message any) bool {
+	return game.manager.removeGame(game.name, message)
 }
 
 

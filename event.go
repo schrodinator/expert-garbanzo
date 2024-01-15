@@ -57,7 +57,7 @@ type NewGameResponseEvent struct {
 	SentTime   time.Time          `json:"sentTime"`
 }
 
-type PlayerAlignmentEvent struct {
+type PlayerAlignmentResponse struct {
 	UserName  string `json:"clientName"`
 	TeamColor Team   `json:"teamColor"`
 	Role      Role   `json:"role"`
