@@ -38,9 +38,9 @@ class NewGameRequestEvent {
 }
 
 class NewGameResponseEvent {
-    constructor(cards, sentTime) {
-        this.sentTime = sentTime;
+    constructor(cards, teamTurn) {
         this.cards = cards;
+        this.teamTurn = teamTurn;
     }
 }
 
@@ -190,7 +190,7 @@ function setupBoard(payload) {
 
     disableBotCheckboxes(true);
 
-    teamTurn = defaultTeam;
+    teamTurn = currentGame.teamTurn;
     roleTurn = cluegiverRole;
     whoseTurn(teamTurn, roleTurn);
 }

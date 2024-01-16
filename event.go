@@ -54,7 +54,7 @@ type NewGameRequestEvent struct {
 
 type NewGameResponseEvent struct {
 	Cards      map[string]string  `json:"cards"`
-	SentTime   time.Time          `json:"sentTime"`
+	TeamTurn   Team               `json:"teamTurn"`
 }
 
 type PlayerAlignmentResponse struct {

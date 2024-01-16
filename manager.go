@@ -80,12 +80,13 @@ func NewGameHandler(event Event, c *Client) error {
 		game.notifyPlayers(EventGameOver, "Essential roles unfilled. " +
 			"Need at least one guesser and one cluegiver per team, " +
 			"and at least one team. Cannot start game.")
+		game.removeGame(nil)
 		return fmt.Errorf("Invalid game state requested")
 	}
 
 	cluegiverMessage := NewGameResponseEvent {
 		Cards: game.cards,
-		SentTime: time.Now(),
+		TeamTurn: game.teamTurn,
 	}
 	cluegiverEvent, err := packageMessage(EventNewGame, cluegiverMessage)
 	if err != nil {
@@ -94,7 +95,7 @@ func NewGameHandler(event Event, c *Client) error {
 
 	guesserMessage := NewGameResponseEvent {
 		Cards: game.cards.whiteCards(),
-		SentTime: cluegiverMessage.SentTime,
+		TeamTurn: game.teamTurn,
 	}
 	guesserEvent, err := packageMessage(EventNewGame, guesserMessage)
 	if err != nil {
@@ -368,6 +369,9 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 		},
 		manager: m,
 		active: true,
+	}
+	if game.actions.playerCount(red) == 0 {
+		game.teamTurn = blue
 	}
 	game.makeBot(bots)
 	m.games[name] = game
