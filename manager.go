@@ -192,9 +192,13 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	if err := game.notifyPlayers(EventMakeGuess, guessResponse); err != nil {
 		return err
 	}
-	if cardColor == deathCard || game.score[c.team] <= 0 {
+	if cardColor == deathCard {
 		t := c.team.Title()
 		game.removeGame(fmt.Sprintf("%v Team uncovers the Black Card. %v Team loses!", t, t))
+		return nil
+	}
+	if game.score[c.team] <= 0  {
+		game.removeGame(fmt.Sprintf("%v Team wins!", c.team.Title()))
 		return nil
 	}
 	if guessResponse.Correct && game.guessRemaining > 0 {

@@ -548,14 +548,7 @@ function updateScoreboard({score}) {
     for (const color of ["red", "blue"]) {
         const loc = document.getElementById(`${color}score`);
         loc.innerText = score[color];
-        if (score[color] === 0) {
-            alert(`${capitalize(color)} Team wins!`);
-            disableAllCardEvents();
-            document.getElementById("end-turn").hidden = true;
-            return false;
-        }
     }
-    return false;
 }
 
 function setMaxGuessLimit(teamTurn) {
