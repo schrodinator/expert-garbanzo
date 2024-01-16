@@ -22,7 +22,6 @@ const (
 
 func main() {
 	verbose = true
-	masterPassword = getMasterPassword("password.txt")
 	token = getMasterPassword("gpt-secretkey.txt")
 
 	setupAPI()
