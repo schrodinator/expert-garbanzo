@@ -52,12 +52,12 @@
                 <div class="game-setup" id="game-setup" hidden>
                     <div class="options">
                         <label for="team">Team: </label>
-                        <select class="txt" name="team" id="team" onchange="changeTeam();" data-testid="team" disabled>
+                        <select class="txt" name="team" id="team" data-testid="team" disabled>
                             <option value="red" selected>Red</option>
                             <option value="blue">Blue</option>
                         </select>
                         <label for="role">Role: </label>
-                        <select class="txt" name="role" id="role" onchange="changeRole();" data-testid="role" disabled>
+                        <select class="txt" name="role" id="role" data-testid="role" disabled>
                             <option value="guesser" selected>Guesser</option>
                             <option value="cluegiver">Clue Giver</option>
                         </select>
@@ -116,7 +116,7 @@
                     <br>
 
                     <label for="sort-cards">Sort: </label>
-                    <select class="txt" name="sort-cards" id="sort-cards" onchange="sortCards(this.value);" data-testid="sort" disabled>
+                    <select class="txt" name="sort-cards" id="sort-cards" data-testid="sort" disabled>
                         <option value="alphabetical" selected>Alphabetical</option>
                         <option value="color">Color</option>
                         <option value="keep-sorted">Color - Keep Sorted</option>

@@ -196,6 +196,10 @@ function setupBoard(payload) {
 }
 
 function sortCards(how) {
+    if (typeof how === "object") {
+        // Assume it's an event.
+        how = how.target.value;
+    }
     let i = 0;
     switch (how) {
         case "alphabetical":
@@ -822,4 +826,7 @@ window.onload = function() {
     document.getElementById("abort-button").onclick = abortGame;
     document.getElementById("cluebox").onsubmit = giveClue;
     document.getElementById("end-turn").onclick = endTurn;
+    document.getElementById("sort-cards").addEventListener("change", sortCards, false);
+    document.getElementById("role").addEventListener("change", changeRole, false);
+    document.getElementById("team").addEventListener("change", changeTeam, false);
 }
