@@ -42,7 +42,7 @@ type NewMessageEvent struct {
 }
 
 type ChangeRoomEvent struct {
-	UserName       string        `json:"clientName"`
+	UserName       string        `json:"name"`
 	RoomName       string        `json:"roomName"`
 	Participants   []Participant `json:"participants"`
 	GameInProgress bool          `json:"gameInProgress"`
@@ -58,7 +58,7 @@ type NewGameResponseEvent struct {
 }
 
 type PlayerAlignmentResponse struct {
-	UserName  string `json:"clientName"`
+	UserName  string `json:"name"`
 	TeamColor Team   `json:"teamColor"`
 	Role      Role   `json:"role"`
 }

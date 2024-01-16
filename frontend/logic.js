@@ -1,3 +1,5 @@
+"use strict";
+
 class Event {
     constructor(type, payload){
         this.type = type;
@@ -23,8 +25,8 @@ class NewMessageEvent {
 }
 
 class ChangeChatRoomEvent {
-    constructor(clientName, roomName, participants, gameInProgress) {
-        this.clientName = clientName;
+    constructor(name, roomName, participants, gameInProgress) {
+        this.name = name;
         this.roomName = roomName;
         this.participants = participants;
         this.gameInProgress = gameInProgress;
@@ -45,8 +47,8 @@ class NewGameResponseEvent {
 }
 
 class AbortGameEvent {
-    constructor(clientName, color) {
-        this.clientName = clientName;
+    constructor(name, color) {
+        this.name = name;
         this.teamColor = color; 
     }
 }
@@ -55,14 +57,14 @@ class GiveClueEvent {
     constructor(clue, numCards) {
         this.clue = clue;
         this.numCards = numCards;
-        this.from = username;
+        this.from = userName;
         this.teamColor = userTeam;
     }
 }
 
 class GuessEvent {
     constructor(guess, numCards) {
-        this.guesser = username;
+        this.guesser = userName;
         this.guess = guess;
         this.numCards = numCards;
     }
@@ -71,7 +73,7 @@ class GuessEvent {
 class GuessResponseEvent {
     constructor(guess, numCards, teamColor, cardColor,
                 correct, teamTurn, roleTurn) {
-        this.guesser = username;
+        this.guesser = userName;
         this.guess = guess;
         this.numCards = numCards;
         this.teamColor = teamColor;
@@ -100,12 +102,15 @@ const defaultRole = guesserRole;
 const deathCard = "black";
 const botWaitMsg = "Waiting for ChatBot...";
 
-var username;
-var usercolor = colors[Math.floor(Math.random() * colors.length)];
-var userTeam = defaultTeam;
-var userRole = guesserRole;
-var selectedChat = "";
-var currentGame;
+let conn;  // websocket connection
+let userName;
+let userColor = colors[Math.floor(Math.random() * colors.length)];
+let userTeam = defaultTeam;
+let userRole = guesserRole;
+let selectedChat = "";
+let currentGame = null;
+let teamTurn;
+let roleTurn;
 
 
 const gameBoard = document.getElementById("gameboard");
@@ -117,7 +122,7 @@ for (let i = 0; i < totalNumCards; i++) {
 }
 
 function changeUserColor(event) {
-    usercolor = event.target.value;
+    userColor = event.target.value;
 }
 
 function disableBotCheckboxes(boolean) {
@@ -138,13 +143,12 @@ function abortGame() {
 
     resetCards();
     resetClueNotification();
+    resetScoreboard();
 
     document.getElementById("cluebox").hidden = true;
     document.getElementById("abort-button").hidden = true;
     document.getElementById("newgame-button").hidden = false;
     document.getElementById("sort-cards").disabled = true;
-    document.getElementById("redscore").value = "";
-    document.getElementById("bluescore").value = "";
 
     disableBotCheckboxes(false);
 
@@ -173,7 +177,7 @@ function setupBoard(payload) {
         i += 1;
     }
 
-    setupScoreboard();
+    resetScoreboard();
 
     document.getElementById("clue").innerHTML = "";
     document.getElementById("cluebox").hidden = true;
@@ -199,7 +203,7 @@ function sortCards(how) {
     if (typeof how === "object") {
         // Assume it's an event.
         how = how.target.value;
-    }
+    }  // Now, "how" is a string.
     let i = 0;
     switch (how) {
         case "alphabetical":
@@ -211,7 +215,7 @@ function sortCards(how) {
 
         case "keep-sorted":
         case "color":
-            var align = new Object();
+            let align = new Object();
             for (const [word, color] of Object.entries(currentGame.cards)) {
                 if (color in align) {
                     align[color].push(word);
@@ -239,9 +243,9 @@ function setupCard(cardNum, word, color) {
     card.className = `card ${color}`;
     if (userRole === guesserRole) {
         if (color.includes("guessed")) {
-            card.removeEventListener("click", this.makeGuess, false);
+            card.removeEventListener("click", makeGuess, false);
         } else {
-            card.addEventListener("click", this.makeGuess, false);
+            card.addEventListener("click", makeGuess, false);
         }
     }
 }
@@ -251,7 +255,7 @@ function resetCards() {
         const card = document.getElementById(`card-${i}`)
         card.className = "card";
         card.innerText = "";
-        card.removeEventListener("click", this.makeGuess, false);
+        card.removeEventListener("click", makeGuess, false);
     }
 }
 
@@ -262,7 +266,7 @@ function resetClueNotification() {
     document.getElementById("number-input").value = 2;
 }
 
-function setupScoreboard() {
+function resetScoreboard() {
     document.getElementById("redscore").innerText = 9;
     document.getElementById("bluescore").innerText = 8;
 }
@@ -273,7 +277,7 @@ function makeGuess() {
 }
 
 function requestNewGame() {
-    game = new NewGameRequestEvent({
+    const game = new NewGameRequestEvent({
         "cluegiver": {
             "red":  document.getElementById("AIRedClue").checked,
             "blue": document.getElementById("AIBlueClue").checked,
@@ -313,23 +317,19 @@ function fmtTimeFromDate(date) {
     return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
 }
 
-function appendParticipantDiv({name, teamColor, role}) {
+function appendParticipantDiv(participant) {
+    const name = participant.name;
     const container = document.getElementById("participants");
-    const participant = document.createElement("div");
-    participant.className = "participant";
-    participant.id = `participant-${name}`;
-    participant.setAttribute("data-testid", `participant-${name}`);
-    if (selectedChat != defaultRoom && teamColor != null && role != null) {
-        participant.innerHTML = `${name} - <span style="color:${teamColor}">${teamColor} ${role}</span>`;
-    } else {
-        participant.innerHTML = `${name}`;
-    }
-    container.appendChild(participant);
+    const child = document.createElement("div");
+    child.className = "participant";
+    child.id = `participant-${name}`;
+    child.setAttribute("data-testid", `participant-${name}`);
+    container.appendChild(child);
+    updateParticipant(participant);
 }
 
 function addParticipant(name) {
-    const participant = { name: name, teamColor: defaultTeam, role: defaultRole };
-    appendParticipantDiv(participant);
+    appendParticipantDiv({name: name, teamColor: defaultTeam, role: defaultRole});
 
     const container = document.getElementById("participants");
     Array.from(container.children)
@@ -345,16 +345,20 @@ function addParticipant(name) {
          .forEach(element => container.append(element));
 }
 
-function addAllParticipants(participantsList) {
-    /* expect particpantsList to be sorted already */
-    for (i = 0; i < participantsList.length; i++) {
+function addParticipantsList(participantsList) {
+    /* Expect particpantsList to be sorted already. */
+    for (let i = 0; i < participantsList.length; i++) {
         appendParticipantDiv(participantsList[i]);
     }
 }
 
-function updateParticipant({clientName, teamColor, role}) {
-    const participant = document.getElementById(`participant-${clientName}`);
-    participant.innerHTML = `${clientName} - <span style="color:${teamColor}">${teamColor} ${role}</span>`;
+function updateParticipant({name, teamColor, role}) {
+    const participant = document.getElementById(`participant-${name}`);
+    if (selectedChat === defaultRoom) {
+        participant.innerHTML = name;
+        return;
+    }
+    participant.innerHTML = `${name} <span style="color:${teamColor}">${teamColor} ${role}</span>`;
 }
 
 function removeParticipant(name) {
@@ -371,7 +375,7 @@ function removeAllParticipants() {
 }
 
 function changeChatRoom() {
-    var newchat = document.getElementById("chatroom");
+    const newchat = document.getElementById("chatroom");
     if (!goToRoom(newchat.value)) {
         newchat.value = selectedChat;
     }
@@ -387,7 +391,7 @@ function goToRoom(room) {
     const whitespace = new RegExp(/^\s*$/);
     if (typeof room !== 'undefined' && !whitespace.test(room) && room != selectedChat) {
         selectedChat = room;
-        let changeEvent = new ChangeChatRoomEvent(username, selectedChat);
+        let changeEvent = new ChangeChatRoomEvent(userName, selectedChat);
         sendEvent("enter_room", changeEvent);
         return true;
     }
@@ -395,12 +399,12 @@ function goToRoom(room) {
 }
 
 function notifyRoomEntry(payload) {
-    roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+    let roomChange = Object.assign(new ChangeChatRoomEvent, payload);
 
     if (roomChange.participants != null && roomChange.participants.length > 0) {
-        addAllParticipants(roomChange.participants)
+        addParticipantsList(roomChange.participants);
     } else {
-        addParticipant(roomChange.clientName);
+        addParticipant(roomChange.name);
     }
 
     if (roomChange.roomName === defaultRoom) {
@@ -412,15 +416,15 @@ function notifyRoomEntry(payload) {
         document.getElementById("gameboard-container").hidden = false;
     }
 
-    let message = `${roomChange.clientName} has entered `;
-    if (username === roomChange.clientName) {
+    let message = `${roomChange.name} has entered `;
+    if (userName === roomChange.name) {
         const welcome = document.getElementById("welcome-header");
         if (roomChange.roomName === "lobby") {
             message += `the lobby.`;
-            welcome.innerText = `Welcome to the lobby, ${username}. Go to any chat room to play a game.`;
+            welcome.innerText = `Welcome to the lobby, ${userName}. Go to any chat room to play a game.`;
         } else {
             message += `room "${roomChange.roomName}".`;
-            welcome.innerText = `Welcome to ${selectedChat}, ${username}.`;
+            welcome.innerText = `Welcome to ${selectedChat}, ${userName}.`;
         }
 
         document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;
@@ -441,21 +445,20 @@ function notifyRoomEntry(payload) {
 }
 
 function notifyRoomExit(payload) {
-    roomChange = Object.assign(new ChangeChatRoomEvent, payload);
-    removeParticipant(roomChange.clientName);
-    let message = `${roomChange.clientName} has left the room.`;
+    const roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+    removeParticipant(roomChange.name);
+    let message = `${roomChange.name} has left the room.`;
     appendToChat(message);
 }
 
 function abortGameHandler(payload) {
-    const {clientName, teamColor} = Object.assign(new AbortGameEvent, payload);
-    message = `<span style="color:${teamColor}">${clientName} has left the game.</span>`;
+    const {name, teamColor} = Object.assign(new AbortGameEvent, payload);
+    const message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
 }
 
 function guessResponseHandler(payload) {
-    guessResponse = Object.assign(new GuessResponseEvent, payload);
-
+    const guessResponse = Object.assign(new GuessResponseEvent, payload);
     markGuessedCard(guessResponse);
     notifyChatRoom(guessResponse);
     updateScoreboard(guessResponse);
@@ -504,7 +507,6 @@ function notifyGuessRemaining({guessRemaining}) {
 
 function endTurn() {
     sendEvent("end_turn", null);
-    return false;
 }
 
 function endTurnHandler(payload) {
@@ -515,7 +517,6 @@ function endTurnHandler(payload) {
     }
     document.getElementById("numguess").innerText = "";
     whoseTurn(teamTurn, roleTurn);
-    return false;
 }
 
 function capitalize(word) {
@@ -531,7 +532,6 @@ function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
         msg += `incorrect. Card is ${cardColor}.`;
     }
     appendToChat(msg);
-    return false;
 }
 
 function notifyBotWait() {
@@ -558,10 +558,10 @@ function setMaxGuessLimit(teamTurn) {
 }
 
 function disableCardEvents(word) {
-    for (var i = 0; i < totalNumCards; i++) {
+    for (let i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (card.innerText === word) {
-            card.removeEventListener("click", this.makeGuess, false);
+            card.removeEventListener("click", makeGuess, false);
             return false;
         }
     }
@@ -569,16 +569,16 @@ function disableCardEvents(word) {
 }
 
 function disableAllCardEvents() {
-    for (var i = 0; i < totalNumCards; i++) {
-        document.getElementById(`card-${i}`).removeEventListener("click", this.makeGuess, false);
+    for (let i = 0; i < totalNumCards; i++) {
+        document.getElementById(`card-${i}`).removeEventListener("click", makeGuess, false);
     }
 }
 
 function enableCardEvents() {
-    for (var i = 0; i < totalNumCards; i++) {
+    for (let i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (!card.className.includes("guessed")) {
-            card.addEventListener("click", this.makeGuess, false);
+            card.addEventListener("click", makeGuess, false);
         }
     }
     return false;
@@ -587,12 +587,12 @@ function enableCardEvents() {
 function markGuessedCard({guess, cardColor}) {
     currentGame.cards[guess] = `guessed ${cardColor}`;
 
-    for (var i = 0; i < totalNumCards; i++) {
+    for (let i = 0; i < totalNumCards; i++) {
         const card = document.getElementById(`card-${i}`);
         if (card.innerText === guess) {
             card.className = `card ${cardColor} guessed`;
             if (userRole === guesserRole) {
-                card.removeEventListener("click", this.makeGuess, false);
+                card.removeEventListener("click", makeGuess, false);
             }
             break;
         }
@@ -677,9 +677,9 @@ function sendEvent(eventName, payload) {
 }
 
 function sendMessage() {
-    var newmessage = document.getElementById("message");
+    let newmessage = document.getElementById("message");
     if (newmessage != null) {
-        let outgoingEvent = new SendMessageEvent(newmessage.value, username, usercolor);
+        let outgoingEvent = new SendMessageEvent(newmessage.value, userName, userColor);
         sendEvent("send_message", outgoingEvent);
         newmessage.value = "";
     }
@@ -690,7 +690,7 @@ function giveClue() {
     const clue = document.getElementById("clue-input");
     const numCards = document.getElementById("number-input").value;
     const whitespace = new RegExp(/^\s*$/);
-    if (!(clue.value == null || whitespace.test(clue.value))) {
+    if (!(clue.value === null || whitespace.test(clue.value))) {
         let outgoingEvent = new GiveClueEvent(clue.value, numCards);
         sendEvent("give_clue", outgoingEvent);
         clue.disabled = true;
@@ -705,7 +705,7 @@ function clueHandler(payload) {
     const {teamColor, clue, numCards} = clueEvent;
     const numguess = document.getElementById("numguess");
 
-    var msg = clue;
+    let msg = clue;
     if (numCards > 0) {
         msg += `<br>(applies to ${numCards} cards)`;
         numguess.innerText = `${+numCards + 1}`;
@@ -756,7 +756,7 @@ function login() {
             return false
         }
         // user is authenticated
-        username = formData.username;
+        userName = formData.username;
         connectWebsocket(data.otp, room);
 
         // clear and hide the login form
@@ -800,17 +800,14 @@ function gameOverHandler(message) {
     if (message != null && message !== "") {
         alert(message);
     }
-    document.getElementById("team").disabled = false;
-    document.getElementById("role").disabled = false;
-    disableBotCheckboxes(false);
-    resetClueNotification();
     document.getElementById("end-turn").hidden = true;
+    document.getElementById("turn").innerHTML = "";
     appendToChat("** Game Over **");
 }
 
 window.onload = function() {
     const colorpicker = document.getElementById("colorpicker");
-    colorpicker.value = usercolor;
+    colorpicker.value = userColor;
     colorpicker.addEventListener("input", changeUserColor, false);
     document.getElementById("chatroom-selection").onsubmit = changeChatRoom;
     document.getElementById("send-message").onsubmit = sendMessage;
