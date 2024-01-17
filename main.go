@@ -9,7 +9,6 @@ import (
 	"os"
 )
 
-var masterPassword string
 var token string
 
 /* Print ChatGPT responses to stdout. */

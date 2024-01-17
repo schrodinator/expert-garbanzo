@@ -31,8 +31,7 @@ func setupFourPlayerGame(t *testing.T, game *Game) {
 
 // Change Role from cluegiver to guesser to cluegiver
 func TestRoleChangeType(t *testing.T) {
-	var myRole Role
-	myRole = cluegiver
+	myRole := cluegiver
 	roleChange := myRole.Change()
 	if reflect.TypeOf(roleChange) != reflect.TypeOf(myRole) {
 		t.Errorf("type of roleChange: %v", reflect.TypeOf(roleChange))
@@ -49,8 +48,7 @@ func TestRoleChangeType(t *testing.T) {
 
 // Change Team from red to blue to red
 func TestTeamChange(t *testing.T) {
-	var myTeam Team
-	myTeam = red
+	myTeam := red
 
 	teamChange := myTeam.Change()
 	if reflect.TypeOf(teamChange) != reflect.TypeOf(myTeam) {
@@ -555,10 +553,13 @@ func TestBotPlay(t *testing.T) {
 
 	game.botPlay(GiveClueEvent{})
 	
-	/* First message is "bot_wait" */
-	_, message, err := ws.ReadMessage()
+	/* First message is "bot_wait". Skip it. */
+	_, _, err := ws.ReadMessage()
+	if err != nil {
+		t.Errorf("Error reading from websocket: %v", err)
+	}
 	/* Second message is the clue we want */
-	_, message, err = ws.ReadMessage()
+	_, message, err := ws.ReadMessage()
 	if err != nil {
 		t.Errorf("Error reading from websocket: %v", err)
 	}
