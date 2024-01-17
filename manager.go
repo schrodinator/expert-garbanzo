@@ -17,7 +17,6 @@ import (
 
 var (
 	websocketUpgrader = websocket.Upgrader{
-		CheckOrigin:     checkOrigin,
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
@@ -465,18 +464,18 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check for valid username (non-empty, no whitespace)
 	if req.Username == "" {
-		http.Error(w, "Username must not be empty", http.StatusBadRequest)
+		http.Error(w, "User name must not be empty", http.StatusBadRequest)
 		return
 	}
 	if regexp.MustCompile(`\s`).MatchString(req.Username) {
-		http.Error(w, "Username must not contain whitespace", http.StatusBadRequest)
+		http.Error(w, "User name must not contain whitespace", http.StatusBadRequest)
 		return
 	}
 
 	// Enforce unique usernames
 	if _, exists := m.clients[req.Username]; exists {
 		// someone with this username is already logged in
-		resp.Message = "Username " + req.Username + " is already logged in. Choose a different username."
+		resp.Message = "User name " + req.Username + " is already logged in. Choose a different username."
 	} else {
 		otp := m.otps.NewOTP(req.Username)
 		resp.OTP = otp.Key
@@ -520,16 +519,5 @@ func (m *Manager) removeClient(client *Client) {
 		}
 		m.notifyClients(room, EventExitRoom, exit)
 		delete(m.clients, client.username)
-	}
-}
-
-func checkOrigin(r *http.Request) bool {
-	origin := r.Header.Get("Origin")
-
-	switch origin {
-	case "https://localhost:8080":
-		return true
-	default:
-		return false
 	}
 }
