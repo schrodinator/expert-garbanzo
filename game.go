@@ -279,6 +279,10 @@ func (game *Game) validGame() bool {
 			   allowing for a team with neither (i.e. single-team co-op game) */
 			return false
 		}
+		if (game.actions[t][cluegiver] > 1 || game.actions[t][guesser] > 1) {
+			/* Team has more than one guesser or more than one cluegiver */
+			return false
+		}
 	}
 	return true
 }
