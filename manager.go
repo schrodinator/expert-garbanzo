@@ -27,7 +27,6 @@ type Manager struct {
 	chats    ChatRooms
 	games    GameList
 	handlers EventHandlerList
-	bot      *Bot
 
 	sync.RWMutex
 
@@ -80,7 +79,7 @@ func NewGameHandler(event Event, c *Client) error {
 			"Need at least one guesser and one cluegiver per team, " +
 			"and at least one team. Cannot start game.")
 		game.removeGame(nil)
-		return fmt.Errorf("Invalid game state requested")
+		return fmt.Errorf("invalid game state requested")
 	}
 
 	cluegiverMessage := NewGameResponseEvent {
@@ -131,7 +130,7 @@ func AbortGameHandler(event Event, c *Client) error {
 	c.game = nil
 	if len(game.players) == 0 {
 		if !game.removeGame(nil) {
-			return fmt.Errorf("Could not remove game %v", c.chatroom)
+			return fmt.Errorf("could not remove game %v", c.chatroom)
 		}
 		return nil
 	}
@@ -164,12 +163,10 @@ func EndTurnHandler(event Event, c *Client) error {
 func GuessEvaluationHandler(event Event, c *Client) error {
 	game := c.game
 	if c.team != game.teamTurn {
-		return errors.New("It is not this player's team turn")
+		return errors.New("player team doesn't match team turn")
 	}
 	if c.role != game.roleTurn {
-		return fmt.Errorf(
-			"It is not this player's role turn. Player role: %v, game role: %v",
-			c.role, game.roleTurn)
+		return fmt.Errorf("player role doesn't match role turn")
 	}
 
 	var guessResponse GuessResponseEvent

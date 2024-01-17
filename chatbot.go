@@ -52,10 +52,8 @@ func (ba BotActions) hasTeamAction(t Team, r Role) bool {
 	switch r {
 	case cluegiver:
 		ta = ba.Cluegiver
-		break;
 	case guesser:
 		ta = ba.Guesser
-		break;
 	default:
 		return false
 	}
@@ -116,7 +114,6 @@ func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct) {
 				player.pongHandler("pong")
 			}
 			c =<-bot.clue_chan
-			break;
 		case guesser:
 			e = EventMakeGuess
 			c.word = clue.Clue
@@ -136,7 +133,6 @@ func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct) {
 				player.pongHandler("pong")
 			}
 			c =<-bot.guess_chan
-			break;
 		}
 		return e, c
 	}
@@ -189,36 +185,32 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 			"that match your clue."
 
 		for {
-			var clue *ClueStruct
-			var ok bool
-			select {
-			case clue, ok = <-c:
-				if !ok {
-					clue.err = fmt.Errorf("Clue channel error")
-					break
-				}
+			clue, ok := <-c
+			if !ok {
+				clue.err = fmt.Errorf("clue channel error")
+				break
+			}
 
-				w := bot.game.cards.getClueWords(bot.game.teamTurn)
-				if len(w.myTeam) == 0 || len(w.others) == 0 {
-					clue.err = fmt.Errorf("makeClue error: got zero-length word list")
-					break
-				}
+			w := bot.game.cards.getClueWords(bot.game.teamTurn)
+			if len(w.myTeam) == 0 || len(w.others) == 0 {
+				clue.err = fmt.Errorf("makeClue error: got zero-length word list")
+				break
+			}
 
-				message := fmt.Sprintf("Your team's list: %s. Opposing team's list: %s.",
-					w.myTeam, w.others)
+			message := fmt.Sprintf("Your team's list: %s. Opposing team's list: %s.",
+				w.myTeam, w.others)
 
-				resp, err := bot.askGPT3Dot5(prompt, message)
-				if err != nil {
-					clue.err = fmt.Errorf("ChatCompletion error: %v", err)
-					break
-				}
+			resp, err := bot.askGPT3Dot5(prompt, message)
+			if err != nil {
+				clue.err = fmt.Errorf("ChatCompletion error: %v", err)
+				break
+			}
 
-				respStr := resp.Choices[0].Message.Content
+			respStr := resp.Choices[0].Message.Content
 
-				parseGPTResponse(respStr, clue)
-				if verbose {
-					fmt.Println(clue.response)
-				}
+			parseGPTResponse(respStr, clue)
+			if verbose {
+				fmt.Println(clue.response)
 			}
 			c <- clue
 		}
@@ -249,12 +241,12 @@ func parseGPTResponseNumber(respStr string) (int, error) {
 	numRegex := regexp.MustCompile("[0-9]+")
 	nums := numRegex.FindAllString(respStr, 1)
 	if nums == nil {
-		return -1, fmt.Errorf("Could not parse number in ChatCompletion response: %v", respStr)
+		return -1, fmt.Errorf("could not parse number in ChatCompletion response: %v", respStr)
 	}
 	// string to int
 	i, err := strconv.Atoi(nums[0])
 	if err != nil {
-		return -1, fmt.Errorf("Could not convert number in ChatCompletion response: %v, %v",
+		return -1, fmt.Errorf("could not convert number in ChatCompletion response: %v, %v",
 			nums, respStr)
 	}
 	return i, nil
@@ -364,33 +356,29 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 		"ALL CAPITAL LETTERS."
 
 		for {
-			var clue *ClueStruct
-			var ok bool
-			select {
-			case clue, ok = <-c:
-				if !ok {
-					clue.err = fmt.Errorf("Guess channel error")
-					break
-				}
-
-				words := bot.game.cards.getGuessWords()
-				if len(words) == 0 {
-					clue.err = fmt.Errorf("makeGuess error: got zero-length word list")
-					break
-				}
-
-				message := fmt.Sprintf(
-					"The word list is: %s. The clue is: %s. The number is: %d",
-					words, clue.word, clue.numGuess)
-
-				resp, err := bot.askGPT3Dot5(prompt, message)
-				if err != nil {
-					clue.err = fmt.Errorf("ChatCompletion error: %v", err)
-					break
-				}
-				clue.response = resp.Choices[0].Message.Content
-				clue.capsWords, clue.err = findGuessWords(clue.response)
+			clue, ok := <-c
+			if !ok {
+				clue.err = fmt.Errorf("guess channel error")
+				break
 			}
+
+			words := bot.game.cards.getGuessWords()
+			if len(words) == 0 {
+				clue.err = fmt.Errorf("makeGuess error: got zero-length word list")
+				break
+			}
+
+			message := fmt.Sprintf(
+				"The word list is: %s. The clue is: %s. The number is: %d",
+				words, clue.word, clue.numGuess)
+
+			resp, err := bot.askGPT3Dot5(prompt, message)
+			if err != nil {
+				clue.err = fmt.Errorf("ChatCompletion error: %v", err)
+				break
+			}
+			clue.response = resp.Choices[0].Message.Content
+			clue.capsWords, clue.err = findGuessWords(clue.response)
 			if verbose {
 				fmt.Println(clue.response)
 			}

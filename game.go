@@ -9,8 +9,6 @@ import (
 )
 
 const totalNumCards = 25
-const defaultTeam = red
-const defaultRole = guesser
 
 var (
 	dictionary []string
@@ -269,7 +267,7 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 		return nil
 
 	default:
-		return fmt.Errorf("Unknown event type: %v", eventType)
+		return fmt.Errorf("unknown event type: %v", eventType)
 	}
 }
 
