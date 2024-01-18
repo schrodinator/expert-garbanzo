@@ -453,7 +453,7 @@ function abortGameHandler(payload) {
     const {name, teamColor} = Object.assign(new AbortGameEvent, payload);
     const message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
-    if (selectedChat !== defaultRoom) {
+    if (name === userName && selectedChat !== defaultRoom) {
         document.getElementById("game-setup").hidden = false;
         document.getElementById("gameboard-container").hidden = true;
     }
