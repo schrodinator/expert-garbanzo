@@ -639,6 +639,9 @@ function routeEvent(event) {
         case "game_over":
             gameOverHandler(event.payload);
             break;
+        case "invalid_state":
+            invalidStateHandler(event.payload);
+            break;
         default:
             alert("unsupported message type: " + event.type);
             break;
@@ -818,6 +821,10 @@ function gameOverHandler(message) {
         document.getElementById("newgame-button").hidden = false;
     }
     appendToChat("** Game Over **");
+}
+
+function invalidStateHandler(message) {
+    alert(message);
 }
 
 window.onload = function() {

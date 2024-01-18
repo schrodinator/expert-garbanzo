@@ -28,6 +28,7 @@ const (
 	EventEndTurn     = "end_turn"
 	EventBotWait     = "bot_wait"
 	EventGameOver    = "game_over"
+	EventInvalidState = "invalid_state"
 )
 
 type SendMessageEvent struct {
