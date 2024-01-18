@@ -120,6 +120,7 @@ for (let i = 0; i < totalNumCards; i++) {
     cardItem.id = `card-${i}`;
     gameBoard.appendChild(cardItem);
 }
+document.getElementById("gameboard-container").display = "none";
 
 function changeUserColor(event) {
     userColor = event.target.value;
@@ -170,6 +171,7 @@ function abortGame() {
 function setupBoard(payload) {
     // Set global variable
     currentGame = Object.assign(new NewGameResponseEvent, payload);
+    document.getElementById("gameboard-container").hidden = false;
 
     let i = 0;
     for (const [word, color] of Object.entries(currentGame.cards)) {
@@ -180,15 +182,17 @@ function setupBoard(payload) {
     resetScoreboard();
 
     document.getElementById("clue").innerHTML = "";
-    document.getElementById("cluebox").hidden = true;
     if (userRole === cluegiverRole) {
         document.getElementById("cluebox").hidden = false;
+    } else {
+        document.getElementById("cluebox").hidden = true;
     }
 
     document.getElementById("sort-cards").value = "alphabetical";
     document.getElementById("sort-cards").disabled = false;
     document.getElementById("role").disabled = true;
     document.getElementById("team").disabled = true;
+    document.getElementById("game-setup").hidden = true;
     document.getElementById("newgame-button").hidden = true;
     document.getElementById("abort-button").hidden = false;
 
@@ -377,11 +381,12 @@ function removeAllParticipants() {
 function changeChatRoom() {
     const newchat = document.getElementById("chatroom");
     if (!goToRoom(newchat.value)) {
+        // failed to change chat room
         newchat.value = selectedChat;
+        return false;
     }
     removeAllParticipants();
-    /* Abort the current game, if there is one. */
-    if (currentGame != null) {
+    if (currentGame !== null) {
         abortGame();
     }
     return false;
@@ -389,7 +394,7 @@ function changeChatRoom() {
 
 function goToRoom(room) {
     const whitespace = new RegExp(/^\s*$/);
-    if (typeof room !== 'undefined' && !whitespace.test(room) && room != selectedChat) {
+    if (typeof room !== "undefined" && !whitespace.test(room) && room !== selectedChat) {
         selectedChat = room;
         let changeEvent = new ChangeChatRoomEvent(userName, selectedChat);
         sendEvent("enter_room", changeEvent);
@@ -407,41 +412,34 @@ function notifyRoomEntry(payload) {
         addParticipant(roomChange.name);
     }
 
-    if (roomChange.roomName === defaultRoom) {
-        document.getElementById("game-setup").hidden = true;
-        document.getElementById("gameboard-container").hidden = true;
-    } else {
-        document.getElementById("game-setup").hidden = false;
-        document.getElementById("end-turn").hidden = true;
-        document.getElementById("gameboard-container").hidden = false;
-    }
-
     let message = `${roomChange.name} has entered `;
     if (userName === roomChange.name) {
         const welcome = document.getElementById("welcome-header");
-        if (roomChange.roomName === "lobby") {
-            message += `the lobby.`;
+
+        if (roomChange.roomName === defaultRoom) {
+            document.getElementById("game-setup").hidden = true;
             welcome.innerText = `Welcome to the lobby, ${userName}. Go to any chat room to play a game.`;
+            message += `the lobby.`;
         } else {
-            message += `room "${roomChange.roomName}".`;
+            document.getElementById("game-setup").hidden = false;
             welcome.innerText = `Welcome to ${selectedChat}, ${userName}.`;
+            message += `room "${roomChange.roomName}".`;
         }
 
         document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;
+        if (roomChange.gameInProgress) {
+            // TOOD: consider adding a "join game" option
+            document.getElementById("team").disabled = true;
+            document.getElementById("role").disabled = true;
+            disableBotCheckboxes(true);
+            document.getElementById("newgame-button").disabled = true;
+            document.getElementById("newgame-button").hidden = true;
+            appendToChat(`** Game in progress **`);
+        }
     } else {
         message += `the room.`;
     }
     appendToChat(message);
-
-    if (roomChange.gameInProgress) {
-        // TOOD: consider adding a "join game" option
-        document.getElementById("team").disabled = true;
-        document.getElementById("role").disabled = true;
-        disableBotCheckboxes(true);
-        document.getElementById("newgame-button").disabled = true;
-        document.getElementById("newgame-button").hidden = true;
-        appendToChat(`** Game in progress **`);
-    }
 }
 
 function notifyRoomExit(payload) {
@@ -455,6 +453,10 @@ function abortGameHandler(payload) {
     const {name, teamColor} = Object.assign(new AbortGameEvent, payload);
     const message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
+    if (selectedChat !== defaultRoom) {
+        document.getElementById("game-setup").hidden = false;
+        document.getElementById("gameboard-container").hidden = true;
+    }
 }
 
 function guessResponseHandler(payload) {
@@ -475,7 +477,7 @@ function guessResponseHandler(payload) {
 function whoseTurn(teamTurn, roleTurn) {
     document.getElementById("turn").innerHTML = `${capitalize(teamTurn)}<br>${capitalize(roleTurn)}`;
     document.getElementById("turn").style.color = teamTurn;
-    document.getElementById("end-turn").hidden = true;
+    document.getElementById("end-turn").style.visibility = "hidden";
     setMaxGuessLimit(teamTurn);
     if (userTeam !== teamTurn) {
         disableAllCardEvents();
@@ -492,7 +494,7 @@ function whoseTurn(teamTurn, roleTurn) {
     }
     if (userRole === guesserRole) {
         enableCardEvents();
-        document.getElementById("end-turn").hidden = false;
+        document.getElementById("end-turn").style.visibility = "visible";
     }
 }
 
@@ -524,18 +526,16 @@ function capitalize(word) {
 }
 
 function notifyChatRoom({guess, guesser, teamColor, cardColor}) {
-    const teamName = capitalize(teamColor);
     let msg = `<span style="color:${teamColor}">${guesser} uncovers ${guess}:</span> `;
     if (teamColor === cardColor) {
-        msg += `CORRECT. A point for ${teamName}.`;
+        msg += `CORRECT.`;
     } else {
-        msg += `incorrect. Card is ${cardColor}.`;
+        msg += `Incorrect. Card is ${cardColor}.`;
     }
     appendToChat(msg);
 }
 
 function notifyBotWait() {
-    appendToChat(botWaitMsg);
     if (roleTurn === cluegiverRole && (
             (teamTurn === "red" && document.getElementById("AIRedClue").checked) ||
             (teamTurn === "blue" && document.getElementById("AIBlueClue").checked)
@@ -707,7 +707,7 @@ function clueHandler(payload) {
 
     let msg = clue;
     if (numCards > 0) {
-        msg += `<br>(applies to ${numCards} cards)`;
+        msg += `<br>(applies to ${numCards} card${numCards > 1 ? 's' : ''})`;
         numguess.innerText = `${+numCards + 1}`;
     } else {
         numguess.innerText = `\u221E`;  /* infinity */
@@ -753,7 +753,7 @@ function login() {
         if (data.otp === "") {
             // expect the backend to return the error message
             document.getElementById("welcome-header").innerHTML = data.message
-            return false
+            return false;
         }
         // user is authenticated
         userName = formData.username;
@@ -764,9 +764,6 @@ function login() {
         loginForm.reset();
         loginForm.querySelector("input[type=submit]").disabled = true;
         document.getElementById("login-div").style.display = "none";
-
-        document.getElementById("team").disabled = false;
-        document.getElementById("role").disabled = false;
     }).catch((e) => { alert(e) });
 
     return false;
@@ -780,11 +777,17 @@ function connectWebsocket(otp, room) {
 
         conn.onopen = function (evt) {
             document.getElementById("onconnect").hidden = false;
-            goToRoom(room);
+            const whitespace = new RegExp(/^\s*$/);
+            if (!whitespace.test(room)) {
+                selectedChat = room;
+                let changeEvent = new ChangeChatRoomEvent(userName, selectedChat);
+                sendEvent("enter_room", changeEvent);
+            }
+            return false;
         }
         conn.onclose = function (evt) {
             document.getElementById("welcome-header").innerHTML = "Disconnected";
-            // handle automatic reconnection
+            // TODO: handle automatic reconnection
         }
         conn.onmessage = function(evt) {
             const eventData = JSON.parse(evt.data);
@@ -800,8 +803,8 @@ function gameOverHandler(message) {
     if (message != null && message !== "") {
         alert(message);
     }
-    document.getElementById("end-turn").hidden = true;
-    document.getElementById("turn").innerHTML = "";
+    document.getElementById("end-turn").style.visibility = "hidden";
+    document.getElementById("turn").innerHTML = `<span style="color:black">Game Over</span>`;
     appendToChat("** Game Over **");
 }
 

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<meta content="width=device-width, initial-scale=1" name="viewport" />
 <html lang="en">
     <head>
         <title>Expert Garbanzo</title>
@@ -10,11 +11,10 @@
 
             <div id="login-div">
                 <form class="login" id="login-form">
-                    <label for="username">username:</label>
+                    <label class="label" for="username">User name:</label>
                     <input class="txt" type="text" id="username" name="username" maxlength="64" data-testid="username">
-                    <label for="gotoroom">chat room:</label>
-                    <input class="txt" type="text" id="gotoroom" maxlength="255" data-testid="gotoroom">
-                    <div class="scoretitle">(leave "chat room" blank to start in lobby)</div>
+                    <label class="label" for="gotoroom">Chat room:</label>
+                    <input class="txt" type="text" id="gotoroom" maxlength="255" data-testid="gotoroom" placeholder="leave blank to start in lobby">
                     <input class="button" type="submit" value="login">
                 </form>
             </div>
@@ -22,105 +22,102 @@
             <div id="onconnect" hidden>
                 <h3 id="welcome-header" data-testid="welcome"></h3>
 
-                <form id="chatroom-selection">
-                    <label for="chatroom">Chat Room:</label>
-                    <input class="txt" type="text" id="chatroom" name="chatroom" maxlength="255" data-testid="chatroom">
-                    <input class="button" type="submit" value="Go To Chat Room">
-                </form>
-
-                <br>
-
                 <div class="chat-container">
-                    <div class="messagearea" id="chatlog" data-testid="chatlog"></div>
+                    <form class="chatroom-selection" id="chatroom-selection">
+                        <input class="txt" type="text" id="chatroom" name="chatroom" maxlength="255" data-testid="chatroom" placeholder="enter chat room name">
+                        <input class="button" type="submit" value="Go To Chat Room">
+                    </form>
+                    <div></div>
+                    <div class="chatarea">
+                        <div class="messagearea" id="chatlog" data-testid="chatlog"></div>
+                        <form class="send-message" id="send-message">
+                            <input type="color" id="colorpicker">
+                            <input class="txt" type="text" id="message" maxlength="512" name="message" data-testid="message" placeholder="send a message to the chat room">
+                            <input class="button" type="submit" value="Send message">
+                        </form>
+                    </div>
                     <div class="participantsarea">
                         <div class="participant" id="participants-title" data-testid="participants-title"></div>
                         <div class="participantlist" id="participants" data-testid="participants"></div>
                     </div>
                 </div>
+            </div>
 
-                <br>
-
-                <form id="send-message">
-                    <input type="color" id="colorpicker">
-                    <label for="message">Message:</label>
-                    <input class="txt" type="text" id="message" maxlength="512" name="message" data-testid="message">
-                    <input class="button" type="submit" value="Send message">
-                </form>
-
-                <br>
-
-                <div class="game-setup" id="game-setup" hidden>
-                    <div class="options">
+            <div class="game-setup" id="game-setup" hidden>
+                <div class="options">
+                    <div>
                         <label for="team">Team: </label>
-                        <select class="txt" name="team" id="team" data-testid="team" disabled>
+                        <select class="txt" name="team" id="team" data-testid="team">
                             <option value="red" selected>Red</option>
                             <option value="blue">Blue</option>
                         </select>
+                    </div>
+                    <div>
                         <label for="role">Role: </label>
-                        <select class="txt" name="role" id="role" data-testid="role" disabled>
+                        <select class="txt" name="role" id="role" data-testid="role">
                             <option value="guesser" selected>Guesser</option>
                             <option value="cluegiver">Clue Giver</option>
                         </select>
                     </div>
-                    <div class="options" id="bots">
-                        <span>Include Bots:</span>
-                        <input type="checkbox" name="AIRedClue" id="AIRedClue" value="AIRedClue" data-testid="AIRedClue">
-                        <label for="AIRedClue">Red Cluegiver</label>
-                        <input type="checkbox" name="AIRedGuess" id="AIRedGuess" value="AIRedGuess" data-testid="AIRedGuess">
-                        <label for="AIRedGuess">Red Guesser</label>
-                        <input type="checkbox" name="AIBlueClue" id="AIBlueClue" value="AIBlueClue" data-testid="AIBlueClue">
-                        <label for="AIBlueClue">Blue Cluegiver</label>
-                        <input type="checkbox" name="AIBlueGuess" id="AIBlueGuess" value="AIBlueGuess" data-testid="AIBlueGuess">
-                        <label for="AIBlueGuess">Blue Guesser</label>
+                </div>
+                <div class="bots" id="bots">
+                    <span>Include Bots:</span>
+                    <input type="checkbox" name="AIRedClue" id="AIRedClue" value="AIRedClue" data-testid="AIRedClue">
+                    <label for="AIRedClue">Red Clue Giver</label>
+                    <input type="checkbox" name="AIRedGuess" id="AIRedGuess" value="AIRedGuess" data-testid="AIRedGuess">
+                    <label for="AIRedGuess">Red Guesser</label>
+                    <input type="checkbox" name="AIBlueClue" id="AIBlueClue" value="AIBlueClue" data-testid="AIBlueClue">
+                    <label for="AIBlueClue">Blue Clue Giver</label>
+                    <input type="checkbox" name="AIBlueGuess" id="AIBlueGuess" value="AIBlueGuess" data-testid="AIBlueGuess">
+                    <label for="AIBlueGuess">Blue Guesser</label>
+                </div>
+                <input class="button" type="submit" value="New Game" id="newgame-button" data-testid="newgame">
+            </div>
+
+            <div class="gameboard-container" id="gameboard-container" hidden>
+                <div class="gameinfo">
+                    <div class="infobox scoreboard" id="scoreboard">
+                        <div class="scoretitle" id="scoretitle">Cards Remaining</div>
+                        <div class="scoreheader redteam" id="redheader">Red</div>
+                        <div class="scoreheader blueteam" id="blueheader">Blue</div>
+                        <div class="score redteam" id="redscore" data-testid="redscore"></div>
+                        <div class="score blueteam" id="bluescore" data-testid="bluescore"></div>
                     </div>
-                    <input class="button" type="submit" value="New Game" id="newgame-button" data-testid="newgame">
-                    <input class="button" type="submit" value="Leave Game" id="abort-button" data-testid="abort" hidden>
+                    <div class="infobox whoseturn" id="whoseturn">
+                        <div id="turntitle">Turn</div>
+                        <div class="boxitem" id="turn" data-testid="turn"></div>
+                    </div>
+                    <div class="infobox clueinfo" id="clueinfo">
+                        <div id="cluetitle">Clue</div>
+                        <div class="boxitem" id="clue" data-testid="clue"></div>
+                    </div>
+                    <div class="infobox guessinfo" id="guesses-remaining">
+                        <div id="guesstitle">Guesses<br>Remaining</div>
+                        <div id="numguess" data-testid="numguess"></div>
+                    </div>
                 </div>
 
-                <br>
+                <form id="cluebox">
+                    <label for="clue-input">Clue:</label>
+                    <input class="txt" type="text" id="clue-input" maxlength="99" data-testid="giveclue">
+                    <label for="number-input">Number of Cards:</label>
+                    <input class="txt" id="number-input" type="number" min="0" max="9" value="2" data-testid="number">
+                    <input class="button" type="submit" value="Give Clue">
+                </form>
+                
+                <div class="gameboard" id="gameboard"></div>
 
-                <div class="gameboard-container" id="gameboard-container" hidden>
-                    <div class="gameinfo">
-                        <div class="infobox scoreboard" id="scoreboard">
-                            <div class="scoretitle" id="scoretitle">Cards Remaining</div>
-                            <div class="scoreheader redteam" id="redheader">Red</div>
-                            <div class="scoreheader blueteam" id="blueheader">Blue</div>
-                            <div class="score redteam" id="redscore" data-testid="redscore"></div>
-                            <div class="score blueteam" id="bluescore" data-testid="bluescore"></div>
-                        </div>
-                        <div class="infobox whoseturn" id="whoseturn">
-                            <div id="turntitle">Turn</div>
-                            <div class="boxitem" id="turn" data-testid="turn"></div>
-                        </div>
-                        <div class="infobox clueinfo" id="clueinfo">
-                            <div id="cluetitle">Clue</div>
-                            <div class="boxitem" id="clue" data-testid="clue"></div>
-                        </div>
-                        <div class="infobox guessinfo" id="guesses-remaining">
-                            <div id="guesstitle">Guesses<br>Remaining</div>
-                            <div id="numguess" data-testid="numguess"></div>
-                        </div>
+                <div class="game-buttons">
+                    <div>
+                        <label for="sort-cards">Sort: </label>
+                        <select class="txt" name="sort-cards" id="sort-cards" data-testid="sort" disabled>
+                            <option value="alphabetical" selected>Alphabetical</option>
+                            <option value="color">Color</option>
+                            <option value="keep-sorted">Color - Keep Sorted</option>
+                        </select>
                     </div>
-                    <br>
-                    <form id="cluebox" hidden>
-                        <label for="clue-input">Clue:</label>
-                        <input class="txt" type="text" id="clue-input" maxlength="99" data-testid="giveclue">
-                        <label for="number-input">Number of Cards:</label>
-                        <input class="txt" id="number-input" type="number" min="0" max="9" value="2" data-testid="number">
-                        <input class="button" type="submit" value="Give Clue">
-                    </form>
-                    <input class="button" id="end-turn" type="submit" value="End Turn" data-testid="endturn" hidden>
-                    
-                    <br>
-                    <div class="gameboard" id="gameboard"></div>
-                    <br>
-
-                    <label for="sort-cards">Sort: </label>
-                    <select class="txt" name="sort-cards" id="sort-cards" data-testid="sort" disabled>
-                        <option value="alphabetical" selected>Alphabetical</option>
-                        <option value="color">Color</option>
-                        <option value="keep-sorted">Color - Keep Sorted</option>
-                    </select>
+                    <input class="button" type="submit" value="End Turn" id="end-turn" data-testid="endturn">
+                    <input class="button button-leave" type="submit" value="Leave Game" id="abort-button" data-testid="abort">
                 </div>
             </div>
         </div>

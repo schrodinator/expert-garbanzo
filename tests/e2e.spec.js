@@ -360,7 +360,7 @@ test('play two-player game', async () => {
         }
         j++;
     }
-    await expect(page_clue.getByTestId('turn')).toBeEmpty();
+    await expect(page_clue.getByTestId('turn')).toContainText("Game Over");
     await expect(page_clue.getByTestId('clue')).toBeEmpty();
     await expect(page_clue.getByTestId('numguess')).toBeEmpty();
 
