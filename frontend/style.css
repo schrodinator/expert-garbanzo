@@ -137,7 +137,7 @@ body {
     display: grid;
     grid-template-rows: auto;
     grid-template-columns: 150px 200px;
-    padding-top: 10px;
+    padding-top: 2em;
     padding-bottom: 10px;
 }
 
@@ -216,7 +216,9 @@ input[type="checkbox"] + label::after {
     display: grid;
     grid-template-rows: auto auto auto auto;
     grid-template-columns: max-content;
-    row-gap: 1em;
+    row-gap: 1.25em;
+    padding-top: 2em;
+    padding-bottom: 2em;
 }
 
 .gameinfo {
