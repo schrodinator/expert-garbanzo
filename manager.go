@@ -76,7 +76,7 @@ func NewGameHandler(event Event, c *Client) error {
 	/* Ensure initial game state is valid. */
 	if !game.validGame() {
 		game.notifyPlayers(EventGameOver, "Essential roles unfilled. " +
-			"Need at least one guesser and one cluegiver per team, " +
+			"Need exactly one guesser and one cluegiver per team, " +
 			"and at least one team. Cannot start game.")
 		game.removeGame(nil)
 		return fmt.Errorf("invalid game state requested")
@@ -140,7 +140,7 @@ func AbortGameHandler(event Event, c *Client) error {
 		if !game.validGame() {
 			/* TODO: consider having a bot fill in for any unfilled role
 			as long as there is at least one remaining human player. */
-			game.notifyPlayers(EventGameOver, "Essential roles unfilled. Cannot continue the game.")
+			game.removeGame("Essential roles unfilled. Cannot continue the game.")
 		}
 	}
 	return nil
@@ -391,12 +391,14 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 func (m *Manager) removeGame(room string, message any) bool {
 	game := m.games[room]
 	if game != nil {
+		if game.active {
+			m.notifyClients(room, EventGameOver, message)
+			game.active = false
+		}
 		if len(game.players) == 0 {
 			delete(m.games, room)
 			return true
 		}
-		game.active = false
-		m.notifyClients(room, EventGameOver, message)
 	}
 	return false
 }
