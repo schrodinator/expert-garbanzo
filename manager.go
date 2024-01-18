@@ -215,7 +215,11 @@ func ClueHandler(event Event, c *Client) error {
 	if err := json.Unmarshal(event.Payload, &clue); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
-	if (clue.NumCards == 0) {
+	if (clue.NumCards <= 0) {
+		/* TODO: clue.NumCards == -1 if ChatGPT returned something
+		   unparseable or barely parseable. Consider handling this
+		   differently, e.g. have ChatGPT try again. */
+		   
 		/* Special case: if the cluegiver did not specify the number
 		   of cards, their team gets unlimited guesses. Set the
 		   number of guesses equal to the number of cards in the game. */

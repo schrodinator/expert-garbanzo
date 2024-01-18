@@ -231,7 +231,6 @@ func parseGPTResponse(respStr string, clue *ClueStruct) {
 	/* If we didn't find a number but did find all-caps words,
 	   use the number of all-caps words. */
 	if clue.err != nil && len(clue.capsWords) != 0 {
-		/* The words might be separated by spaces and/or commas */
 		i = len(clue.capsWords)
 	}
 	clue.numGuess = i
