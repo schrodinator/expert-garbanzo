@@ -746,7 +746,9 @@ function login() {
         if (response.ok) {
             return response.json();
         } else {
-            throw 'unauthorized';
+            return response.text().then(
+                (text) => {throw new Error(text)}
+            );
         }
     }).then((data) => {
         // check that username is not taken and we were issued an OTP
@@ -764,7 +766,7 @@ function login() {
         loginForm.reset();
         loginForm.querySelector("input[type=submit]").disabled = true;
         document.getElementById("login-div").style.display = "none";
-    }).catch((e) => { alert(e) });
+    }).catch((error) => { alert(error) });
 
     return false;
 }

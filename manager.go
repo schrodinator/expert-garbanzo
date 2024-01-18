@@ -476,7 +476,10 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Enforce unique usernames
 	if _, exists := m.clients[req.Username]; exists {
 		// someone with this username is already logged in
-		resp.Message = "User name " + req.Username + " is already logged in. Choose a different username."
+		http.Error(w, 
+			"User name \"" + req.Username + "\" is already logged in. Choose a different username.",
+			http.StatusConflict)
+		return
 	} else {
 		otp := m.otps.NewOTP(req.Username)
 		resp.OTP = otp.Key
