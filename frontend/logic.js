@@ -802,11 +802,21 @@ function connectWebsocket(otp, room) {
 }
 
 function gameOverHandler(message) {
-    if (message != null && message !== "") {
+    if (message !== null && message !== "") {
         alert(message);
     }
     document.getElementById("end-turn").style.visibility = "hidden";
-    document.getElementById("turn").innerHTML = `<span style="color:black">Game Over</span>`;
+    const turnElement = document.getElementById("turn");
+    turnElement.innerHTML = "Game Over";
+    turnElement.style.color = "black";
+    if (currentGame === null) {
+        /* A non-player client in the chat room, waiting for the game to end. */
+        document.getElementById("team").disabled = false;
+        document.getElementById("role").disabled = false;
+        disableBotCheckboxes(false);
+        document.getElementById("newgame-button").disabled = false;
+        document.getElementById("newgame-button").hidden = false;
+    }
     appendToChat("** Game Over **");
 }
 
