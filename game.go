@@ -275,8 +275,8 @@ func (game *Game) validGame() bool {
 	for _, t := range []Team{ red, blue } {
 		if (game.actions[t][cluegiver] == 0 && game.actions[t][guesser] != 0) ||
 		   (game.actions[t][cluegiver] != 0 && game.actions[t][guesser] == 0) {
-			/* Team does not have both a guesser and a cluegiver,
-			   allowing for a team with neither (i.e. single-team co-op game) */
+			/* Team does not have both a guesser and a cluegiver.
+			   Allow for a team with neither (i.e. single-team co-op game). */
 			return false
 		}
 		if (game.actions[t][cluegiver] > 1 || game.actions[t][guesser] > 1) {
