@@ -141,7 +141,8 @@ func AbortGameHandler(event Event, c *Client) error {
 		if !game.validGame() {
 			/* TODO: consider having a bot fill in for any unfilled role
 			as long as there is at least one remaining human player. */
-			game.removeGame("Essential roles unfilled. Cannot continue the game.")
+			game.notifyPlayers(EventInvalidState, "Essential roles unfilled. Cannot continue the game.")
+			game.removeGame(nil)
 		}
 	}
 	return nil
