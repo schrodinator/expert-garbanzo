@@ -138,19 +138,16 @@ function disableBotCheckboxes(boolean) {
 }
 
 function abortGame() {
-    currentGame = null;
-
+    document.getElementById("abort-button").hidden = true;
     sendEvent("abort_game", null);
+}
+
+function resetGame() {
+    currentGame = null;
 
     resetCards();
     resetClueNotification();
     resetScoreboard();
-
-    document.getElementById("cluebox").hidden = true;
-    document.getElementById("abort-button").hidden = true;
-    document.getElementById("newgame-button").hidden = false;
-    document.getElementById("sort-cards").disabled = true;
-
     disableBotCheckboxes(false);
 
     const team = document.getElementById("team");
@@ -166,9 +163,15 @@ function abortGame() {
         changeRole();
     }
     role.disabled = false;
+
+    document.getElementById("sort-cards").disabled = true;
+    document.getElementById("newgame-button").disabled = false;
+    document.getElementById("newgame-button").hidden = false;
+    document.getElementById("game-setup").hidden = false;
+    document.getElementById("gameboard-container").hidden = true;
 }
 
-function setupBoard(payload) {
+function newGameHandler(payload) {
     // Set global variable
     currentGame = Object.assign(new NewGameResponseEvent, payload);
     document.getElementById("gameboard-container").hidden = false;
@@ -454,8 +457,7 @@ function abortGameHandler(payload) {
     const message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
     if (name === userName && selectedChat !== defaultRoom) {
-        document.getElementById("game-setup").hidden = false;
-        document.getElementById("gameboard-container").hidden = true;
+        resetGame();
     }
 }
 
@@ -610,7 +612,7 @@ function routeEvent(event) {
             appendChatMessage(event.payload);
             break;
         case "new_game":
-            setupBoard(event.payload);
+            newGameHandler(event.payload);
             break;
         case "update_participant":
             updateParticipant(event.payload);
