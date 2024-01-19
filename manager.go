@@ -71,15 +71,11 @@ func NewGameHandler(event Event, c *Client) error {
 
 	/* All clients in the chat room at the time of
 	   game creation are added as players. */
-	game := m.makeGame(c.chatroom, m.chats[c.chatroom], &gameRequest.Bots)
-
-	/* Ensure initial game state is valid. */
-	if !game.validGame() {
-		game.notifyPlayers(EventInvalidState,
-			"Essential roles unfilled. " +
-			"Need exactly one guesser and one cluegiver per team, " +
-			"and at least one team. Cannot start game.")
-		delete(m.games, c.chatroom)
+	game, err := m.makeGame(c.chatroom, m.chats[c.chatroom], &gameRequest.Bots)
+	/* Ensure game was created (valid initial state). */
+	if err != nil {
+		m.notifyClients(c.chatroom, EventInvalidState,
+			"Need one guesser and one cluegiver per team.")
 		return fmt.Errorf("invalid game state requested")
 	}
 
@@ -359,16 +355,20 @@ func (m *Manager) makeChatRoom(name string) {
 	m.chats[name] = make(ClientList)
 }
 
-func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *Game {
+func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) (*Game, error) {
 	game, exists := m.games[name]
 	if exists {
-		return game
+		return game, nil
+	}
+	actions := getActions(players, bots)
+	if !actions.validate() {
+		return nil, fmt.Errorf("invalid actions")
 	}
 	game = &Game {
 		name: name,
 		players: maps.Clone(players),
 		cards: getCards(),
-		actions: getActions(players, bots),
+		actions: actions,
 		teamTurn: red,
 		roleTurn: cluegiver,
 		score: Score {
@@ -388,7 +388,7 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) *G
 		player.game = game
 	}
 
-	return game
+	return game, nil
 }
 
 /* Return true if game was deleted. */
