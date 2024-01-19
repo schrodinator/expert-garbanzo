@@ -15,9 +15,10 @@ var (
 )
 
 type Participant struct {
-	Name  string  `json:"name"`
-	Team  Team    `json:"teamColor"`
-	Role  Role    `json:"role"`
+	Name   string  `json:"name"`
+	Team   Team    `json:"teamColor"`
+	Role   Role    `json:"role"`
+	InGame bool    `json:"inGame"`
 }
 
 type ClientList map[string]*Client
@@ -26,10 +27,15 @@ func (cl ClientList) listClients() []Participant {
 	participants := make([]Participant, len(cl))
 	i := 0
 	for name, client := range cl {
+		inGame := false
+		if client.game != nil {
+			inGame = true
+		}
 		participants[i] = Participant {
 			Name: name,
 			Team: client.team,
 			Role: client.role,
+			InGame: inGame,
 		}
 		i++
 	}

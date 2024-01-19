@@ -47,9 +47,10 @@ class NewGameResponseEvent {
 }
 
 class AbortGameEvent {
-    constructor(name, color) {
+    constructor(name, color, role) {
         this.name = name;
-        this.teamColor = color; 
+        this.teamColor = color;
+        this.role = role;
     }
 }
 
@@ -109,6 +110,7 @@ let userTeam = defaultTeam;
 let userRole = guesserRole;
 let selectedChat = "";
 let currentGame = null;
+let gameInProgress = false;
 let teamTurn;
 let roleTurn;
 
@@ -172,8 +174,10 @@ function resetGame() {
 }
 
 function newGameHandler(payload) {
-    // Set global variable
+    // Set global variables
     currentGame = Object.assign(new NewGameResponseEvent, payload);
+    gameInProgress = true;
+
     document.getElementById("gameboard-container").hidden = false;
 
     let i = 0;
@@ -359,13 +363,37 @@ function addParticipantsList(participantsList) {
     }
 }
 
-function updateParticipant({name, teamColor, role}) {
+function updateParticipant({name, teamColor, role, inGame}) {
     const participant = document.getElementById(`participant-${name}`);
     if (selectedChat === defaultRoom) {
         participant.innerHTML = name;
         return;
     }
-    participant.innerHTML = `${name} <span style="color:${teamColor}">${teamColor} ${role}</span>`;
+    if (!gameInProgress || inGame) {
+        participant.innerHTML = `${name} <span style="color:${teamColor}">${teamColor} ${role}</span>`;
+    } else {
+        participant.innerHTML = name;
+    }
+}
+
+function resetAllParticipants() {
+    for (const child of document.getElementById("participants").children) {
+        let name = child.innerHTML.split(" ", 1)[0];
+        /* Game has ended. Players (who currently have displayed teams and roles
+           in the participants list) have not left the game view yet. Non-player
+           users in the chat room (who do not have displayed teams and roles;
+           they are listed only by name in the participants list) are now free to
+           select a team and role to start a new game. Swap the players and
+           non-players. (Former players will get a team/role display upon exiting
+           the game view.) */
+        if (name.length === child.innerHTML.length) {
+            /* This user had been displayed by name only. */
+            child.innerHTML = `${name} <span style="color:${defaultTeam}">${defaultTeam} ${defaultRole}</span>`;
+        } else {
+            /* This user is a (former) player in the just-ended game. */
+            child.innerHTML = name;
+        }
+    }
 }
 
 function removeParticipant(name) {
@@ -408,6 +436,7 @@ function goToRoom(room) {
 
 function notifyRoomEntry(payload) {
     let roomChange = Object.assign(new ChangeChatRoomEvent, payload);
+    gameInProgress = roomChange.gameInProgress;
 
     if (roomChange.participants != null && roomChange.participants.length > 0) {
         addParticipantsList(roomChange.participants);
@@ -430,7 +459,7 @@ function notifyRoomEntry(payload) {
         }
 
         document.getElementById("participants-title").innerText = `Participants in ${selectedChat}`;
-        if (roomChange.gameInProgress) {
+        if (gameInProgress) {
             // TOOD: consider adding a "join game" option
             document.getElementById("team").disabled = true;
             document.getElementById("role").disabled = true;
@@ -453,9 +482,10 @@ function notifyRoomExit(payload) {
 }
 
 function abortGameHandler(payload) {
-    const {name, teamColor} = Object.assign(new AbortGameEvent, payload);
+    const {name, teamColor, role} = Object.assign(new AbortGameEvent, payload);
     const message = `<span style="color:${teamColor}">${name} has left the game.</span>`;
     appendToChat(message);
+    updateParticipant({name: name, teamColor: teamColor, role: role, inGame: false});
     if (name === userName && selectedChat !== defaultRoom) {
         resetGame();
     }
@@ -778,7 +808,6 @@ function login() {
 
 function connectWebsocket(otp, room) {
     if (window["WebSocket"]) {
-        console.log("supports websockets");
         // connect to ws
         conn = new WebSocket("wss://" + document.location.host + "/ws?otp=" + otp);
 
@@ -807,6 +836,7 @@ function connectWebsocket(otp, room) {
 }
 
 function gameOverHandler(message) {
+    gameInProgress = false;
     if (message !== null && message !== "") {
         alert(message);
     }
@@ -814,6 +844,7 @@ function gameOverHandler(message) {
     const turnElement = document.getElementById("turn");
     turnElement.innerHTML = "Game Over";
     turnElement.style.color = "black";
+    resetAllParticipants();
     if (currentGame === null) {
         /* A non-player client in the chat room, waiting for the game to end. */
         document.getElementById("team").disabled = false;

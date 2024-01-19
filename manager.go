@@ -122,8 +122,9 @@ func AbortGameHandler(event Event, c *Client) error {
 	abortGame := PlayerAlignmentResponse {
 		UserName: c.username,
 		TeamColor: c.team,
+		Role: c.role,
 	}
-	if err := game.notifyPlayers(EventAbortGame, abortGame); err != nil {
+	if err := c.manager.notifyClients(c.chatroom, EventAbortGame, abortGame); err != nil {
 		return err
 	}
 
@@ -258,20 +259,21 @@ func ChatRoomHandler(event Event, c *Client) error {
 	// notify old chat room that client has left
 	c.manager.notifyClients(oldroom, EventExitRoom, event.Payload)
 
-	// notify new room that the client is entering
-	c.manager.notifyClients(newroom, EventEnterRoom, event.Payload)
-
-	// enter client into new chat room
-	c.chatroom = newroom
-	c.manager.makeChatRoom(newroom)
-	c.manager.chats[newroom][c.username] = c
-
-	// notify client if there is a game in progress
+	// record whether there is a game in progress
+	changeroom.GameInProgress = false
 	if _, exists:= c.manager.games[newroom]; exists {
 		if len(c.manager.games[newroom].players) > 0 {
 			changeroom.GameInProgress = true
 		}
 	}
+
+	// notify new room that the client is entering
+	c.manager.notifyClients(newroom, EventEnterRoom, changeroom)
+
+	// enter client into new chat room
+	c.chatroom = newroom
+	c.manager.makeChatRoom(newroom)
+	c.manager.chats[newroom][c.username] = c
 
 	// send list of current chat room participants to client
 	changeroom.Participants = c.manager.chats[newroom].listClients()
