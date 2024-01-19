@@ -135,6 +135,17 @@ func (actions Actions) teamCount() int {
 func (actions Actions) playerCount(team Team) int {
 	return actions[team][guesser] + actions[team][cluegiver]
 }
+func (actions Actions) validate() bool {
+	for _, t := range []Team{ red, blue } {
+		if (actions[t][cluegiver] == 0 && actions[t][guesser] != 0) ||
+		   (actions[t][cluegiver] != 0 && actions[t][guesser] == 0) {
+			/* Team does not have both a guesser and a cluegiver.
+			   Allow for a team with neither (i.e. single-team co-op game). */
+			return false
+		}
+	}
+	return true
+}
 
 type GameList map[string]*Game
 type Score    map[Team]int
@@ -272,13 +283,10 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 }
 
 func (game *Game) validGame() bool {
+	if !game.actions.validate() {
+		return false
+	}
 	for _, t := range []Team{ red, blue } {
-		if (game.actions[t][cluegiver] == 0 && game.actions[t][guesser] != 0) ||
-		   (game.actions[t][cluegiver] != 0 && game.actions[t][guesser] == 0) {
-			/* Team does not have both a guesser and a cluegiver.
-			   Allow for a team with neither (i.e. single-team co-op game). */
-			return false
-		}
 		if (game.actions[t][cluegiver] > 1 || game.actions[t][guesser] > 1) {
 			/* Team has more than one guesser or more than one cluegiver */
 			return false
