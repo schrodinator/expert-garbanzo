@@ -381,6 +381,9 @@ func (m *Manager) makeChatRoom(name string) {
 }
 
 func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) (*Game, error) {
+	m.Lock()
+	defer m.Unlock()
+
 	if game, exists := m.games[name]; exists {
 		return game, nil
 	}
@@ -417,6 +420,9 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) (*
 
 /* Return true if game was deleted. */
 func (m *Manager) removeGame(room string, message any) bool {
+	m.Lock()
+	defer m.Unlock()
+	
 	game := m.games[room]
 	if game != nil {
 		if game.active {
