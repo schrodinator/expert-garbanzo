@@ -264,14 +264,15 @@ func parseGPTResponseClue(respStr string) string {
 			word = words[3]
 		}
 	}
-	return strings.Trim(word, "\".")
+	nonAlphaNum := regexp.MustCompile("[^a-zA-Z0-9 ]+")
+	return nonAlphaNum.ReplaceAllString(word, "")
 }
 
 func parseGPTResponseMatches(respStr string) string {
 	/* Words are upper case and at least 2 letters long.
        Words could be separated by a comma and/or a space. */
-	re := regexp.MustCompile("([[:upper:]]{2,}[, ]{1,2})*[[:upper:]]{2,}")
-	return re.FindString(respStr)
+	upperCaseWordList := regexp.MustCompile("([[:upper:]]{2,}[, ]{1,2})*[[:upper:]]{2,}")
+	return upperCaseWordList.FindString(respStr)
 }
 
 func findGuessWords(respStr string) ([]string, error) {
@@ -294,8 +295,8 @@ func findGuessWords(respStr string) ([]string, error) {
 }
 
 func findUniqueAllCapsWords(respStr string) ([]string, error) {
-	re := regexp.MustCompile("[[:upper:]]{2,}")
-	match := re.FindAllString(respStr, -1)
+	upperCaseWord := regexp.MustCompile("[[:upper:]]{2,}")
+	match := upperCaseWord.FindAllString(respStr, -1)
 	if len(match) == 0 {
 		return match, fmt.Errorf("could not find any all-caps words")
 	}
@@ -303,8 +304,8 @@ func findUniqueAllCapsWords(respStr string) ([]string, error) {
 }
 
 func findUniqueNumberedListWords(respStr string) ([]string, error) {
-	re := regexp.MustCompile("[1-9][.)]? \"?([[:alpha:]]{2,})")
-	match := re.FindAllStringSubmatch(respStr, -1)
+	numberedListWords := regexp.MustCompile("[1-9][.)]? \"?([[:alpha:]]{2,})")
+	match := numberedListWords.FindAllStringSubmatch(respStr, -1)
 	if len(match) == 0 {
 		return []string{}, fmt.Errorf("could not find a numbered list of words")
 	}
@@ -318,8 +319,8 @@ func findUniqueNumberedListWords(respStr string) ([]string, error) {
 }
 
 func findUniqueWordsInQuotes(respStr string) ([]string, error) {
-	re := regexp.MustCompile("\"[[:alpha:]]{2,}[.]?\"")
-	match := re.FindAllString(respStr, -1)
+	quotesWords := regexp.MustCompile("\"[[:alpha:]]{2,}[.]?\"")
+	match := quotesWords.FindAllString(respStr, -1)
 	if len(match) == 0 {
 		return match, fmt.Errorf("could not find any words in quotation marks")
 	}
