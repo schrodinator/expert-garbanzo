@@ -18,8 +18,10 @@ func setupManager(t *testing.T, ws *websocket.Conn) *Manager {
 
 	ctx := context.Background()
 	manager := NewManager(ctx)
-	client := NewClient("testClient", ws, manager)
-	manager.addClient(client)
+	client1 := NewClient("testClient1", ws, manager)
+	manager.addClient(client1)
+	client2 := NewClient("testClient2", nil, manager)
+	manager.addClient(client2)
 	return manager
 }
 
@@ -28,9 +30,12 @@ func setupGame(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 
 	manager := setupManager(t, ws)
 	readDictionary("./codenames-wordlist.txt")
-	client := manager.clients["testClient"]
-	client.chatroom = "test"
-	manager.makeGame("test", ClientList{"testClient": client}, bots)
+	client1 := manager.clients["testClient1"]
+	client2 := manager.clients["testClient2"]
+	client1.chatroom = "test"
+	client2.chatroom = "test"
+	client2.role = cluegiver
+	manager.makeGame("test", ClientList{"testClient1": client1, "testClient2": client2}, bots)
 	
 	return manager
 }
@@ -46,6 +51,15 @@ func setupDeck(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 		"neutralword": "neutral",
 		"deathword": deathCard,
 	}
+	return manager
+}
+
+func setupWSTest(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
+	t.Helper()
+
+	manager := setupDeck(t, ws, bots)
+	// testClient2 has no websocket. Must be removed for WS test.
+	manager.games["test"].removePlayer("testClient2")
 	return manager
 }
 
@@ -88,44 +102,54 @@ func setupWSTestServer(t *testing.T) (*httptest.Server, *websocket.Conn) {
 
 func TestMakeGame(t *testing.T) {
 	manager := setupGame(t, nil, nil)
-
 	if _, exists := manager.games["test"]; !exists {
-		t.Error("test game does not exist")
+		t.Errorf("test game does not exist")
+	}
+	game := manager.games["test"]
+
+	if reflect.TypeOf(game.players) != reflect.TypeOf(ClientList{}) {
+		t.Errorf("'players' is type %T, not type ClientList", game.players)
 	}
 
-	var cl ClientList
-	if reflect.TypeOf(manager.games["test"].players) != reflect.TypeOf(cl) {
-		t.Errorf("'players' is type %T, not type ClientList", manager.games["test"].players)
-	}
-
-	if _, exists := manager.games["test"].players["testClient"]; !exists {
+	if _, exists := game.players["testClient1"]; !exists {
 		t.Error("could not add client to 'players'")
 	}
 
-	if len(manager.games["test"].cards) != totalNumCards {
-		t.Errorf("not dealing with a full deck: %v cards", len(manager.games["test"].cards))
+	if len(game.cards) != totalNumCards {
+		t.Errorf("not dealing with a full deck: %v cards", len(game.cards))
 	}
 
-	if manager.games["test"].score[red] != 9 {
-		t.Errorf("initial score for red team is %v", manager.games["test"].score[red])
+	if game.score[red] != 9 {
+		t.Errorf("initial score for red team is %v", game.score[red])
+	}
+
+	if game.teamTurn != red {
+		t.Error("initial team turn is not red")
+	}
+
+	if game.roleTurn != cluegiver {
+		t.Error("initial role turn is not cluegiver")
 	}
 }
 
 func TestGuessEvaluationHandler(t *testing.T) {
 	s, ws := setupWSTestServer(t)
-	manager := setupDeck(t, ws, nil)
+	defer s.Close()
+	defer ws.Close()
+	
+	manager := setupWSTest(t, ws, nil)
 	game := manager.games["test"]
 	game.roleTurn = guesser
 	game.guessRemaining = totalNumCards
 	manager.games["test"] = game
-	client := manager.clients["testClient"]
+	client := manager.clients["testClient1"]
 	client.game = game
 
 	go client.writeMessages()
 
 	guess := GuessEvent{
 		Guess: "redword",
-		Guesser: "testClient",
+		Guesser: "testClient1",
 	}
 	payload, err := json.Marshal(guess)
 	if err != nil {
@@ -150,7 +174,7 @@ func TestGuessEvaluationHandler(t *testing.T) {
 		t.Errorf("wrong Type: %v", e.Type)
 	}
 	expect := GuessResponseEvent{
-		GuessEvent: GuessEvent{Guess: "redword", Guesser: "testClient",},
+		GuessEvent: GuessEvent{Guess: "redword", Guesser: "testClient1",},
 		EndTurnEvent: EndTurnEvent{TeamTurn: red, RoleTurn: guesser,},
 		TeamColor: red,
 		CardColor: "red",
@@ -172,7 +196,4 @@ func TestGuessEvaluationHandler(t *testing.T) {
 	if !reflect.DeepEqual(gre, expect) {
 		t.Errorf("Expected: %#v\nGot: %#v", expect, gre)
 	}
-
-	ws.Close()
-	s.Close()
 }

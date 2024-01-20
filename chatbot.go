@@ -86,57 +86,57 @@ func NewBot(game *Game, ba *BotActions) *Bot {
 	return b
 }
 
-func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct) {
+func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct, Team, Role) {
 	game := bot.game
-	t := game.teamTurn
-	r := game.roleTurn
-	if game.score[t] <= 0 {
+	team := game.teamTurn
+	role := game.roleTurn
+	if game.score[team] <= 0 {
 		// No cards left to guess.
-		return "", nil
+		return "", nil, team, role
 	}
-	if bot.actions.hasTeamAction(t, r) {
-		game.notifyPlayers(EventBotWait, nil)
-		bot.client.team = t
-		bot.client.role = r
-		c := &ClueStruct{
+	if bot.actions.hasTeamAction(team, role) {
+		bot.client.team = team
+		bot.client.role = role
+		clueStruct := &ClueStruct{
 			capsWords: make([]string, 0),
 		}
-		var e string
-		switch r {
+		eventName := ""
+		switch role {
 		case cluegiver:
-			e = EventGiveClue
-			c.word = t.String()
-			bot.clue_chan <- c
+			if game.playerActions[team][role] == 0 {
+				game.notifyPlayers(EventBotWait, nil)
+			}
+			eventName = EventGiveClue
+			clueStruct.word = team.String()
+			bot.clue_chan <- clueStruct
 			/* Reset connection timeout while waiting
 			   for ChatGPT response. */
 			for _, player := range game.players {
-				fmt.Println("waiting for bot")
 				player.pongHandler("pong")
 			}
-			c =<-bot.clue_chan
+			clueStruct =<-bot.clue_chan
 		case guesser:
-			e = EventMakeGuess
-			c.word = clue.Clue
+			eventName = EventMakeGuess
+			clueStruct.word = clue.Clue
 			if clue.NumCards > 0 {
-				c.numGuess = clue.NumCards
+				clueStruct.numGuess = clue.NumCards
 			} else {
 				/* Unspecified number of cards, unlimited
 				   guesses. Set it to the number of cards
 				   remaining for this team. */
-				c.numGuess = game.score[game.teamTurn]
+				clueStruct.numGuess = game.score[game.teamTurn]
 			}
-			bot.guess_chan <- c
+			bot.guess_chan <- clueStruct
 			/* Reset connection timeout while waiting
 			   for ChatGPT response. */
 			for _, player := range game.players {
-				fmt.Println("waiting for bot")
 				player.pongHandler("pong")
 			}
-			c =<-bot.guess_chan
+			clueStruct =<-bot.guess_chan
 		}
-		return e, c
+		return eventName, clueStruct, team, role
 	}
-	return "", nil
+	return "", nil, team, role
 }
 
 /* Real call to OpenAI ChatGPT. Function stored in a var so it

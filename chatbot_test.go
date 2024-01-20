@@ -272,7 +272,7 @@ func TestMakeClueMock(t *testing.T) {
 			expectNum: 6,
 			expectWord: "My",
 			expectMatch: "SHADOW SHOW SLIP VACUUM WATCH WITCH",
-			expectErr: fmt.Errorf("Could not parse number in ChatCompletion response"),
+			expectErr: fmt.Errorf("could not parse number in ChatCompletion response"),
 		},
 		{
 			name: "Response with no matched explanation words",
@@ -422,7 +422,7 @@ func TestBotPlayCluegiver(t *testing.T) {
 		}, nil
 	}
 
-	e, c := bot.Play(GiveClueEvent{})
+	e, c, _, _ := bot.Play(GiveClueEvent{})
 	if e == "" || c == nil {
 		t.Fatal("Play returned empty values")
 	}
@@ -469,7 +469,7 @@ func TestBotPlayGuesser(t *testing.T) {
 		}, nil
 	}
 
-	e, c := bot.Play(clue)
+	e, c, _, _ := bot.Play(clue)
 	if e == "" || c == nil {
 		t.Fatal("Play returned empty values")
 	}

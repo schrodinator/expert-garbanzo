@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"time"
 )
 
 const totalNumCards = 25
@@ -105,15 +106,6 @@ func (d Deck) getGuessWords() string {
 	return strings.Join(words, ", ")
 }
 
-func (d Deck) contains(word string) bool {
-	for k := range d {
-		if strings.Compare(k, word) == 0 {
-			return true
-		}
-	}
-	return false
-}
-
 func (d Deck) whiteCards() Deck {
 	whiteDeck := make(Deck, totalNumCards)
 	for card := range d {
@@ -156,6 +148,7 @@ type Game struct {
 	cards           Deck
 	teamTurn        Team
 	actions         Actions
+	playerActions   Actions
 	roleTurn        Role
 	guessRemaining  int
 	score           Score
@@ -172,6 +165,21 @@ func (game *Game) notifyPlayers(messageType string, message any) error {
 
 	for _, client := range game.players {
 		client.egress <- outgoingEvent
+	}
+
+	return nil
+}
+
+func (game *Game) notifySomePlayers(team Team, role Role, messageType string, message any) error {
+	outgoingEvent, err := packageMessage(messageType, message)
+	if err != nil {
+		return err
+	}
+
+	for _, client := range game.players {
+		if client.team == team && client.role == role {
+			client.egress <- outgoingEvent
+		}
 	}
 
 	return nil
@@ -227,29 +235,44 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 	if game.bot == nil {
 		return nil
 	}
-	eventType, clueStruct := game.bot.Play(clue)
+	eventType, clueStruct, team, role := game.bot.Play(clue)
 	if eventType == "" || clueStruct == nil {
+		// TODO: better handling of missing bot response
+		return nil
+	}
+	/* If human players share this role, tell them the bot's
+	   suggestion. Do not play for them. */
+	if game.playerActions[team][role] > 0 {
+		message := NewMessageEvent {
+			SentTime: time.Now(),
+			SendMessageEvent: SendMessageEvent {
+				Message: clueStruct.response,
+				From: "ChatBot " + role.String(),
+				Color: team.String(),
+			},
+		}
+		game.notifySomePlayers(team, role, EventNewMessage, message)
 		return nil
 	}
 	switch eventType {
 	case EventMakeGuess:
 		/* The bot could/should return multiple guesses. */
 		for _, guess := range clueStruct.capsWords {
-			if !game.cards.contains(guess) {
+			if _, exists := game.cards[guess]; !exists {
 				continue
 			}
-			e := GuessEvent {
-				Guess: guess,
-				Guesser: "ChatBot",
+			guessResponse := GuessResponseEvent {
+				GuessEvent: GuessEvent{
+					Guess: guess,
+					Guesser: "ChatBot",
+				},
+				TeamColor: team,
 			}
-			evt, err := packageMessage(eventType, e)
-			if err != nil {
-				return err
-			}
-			GuessEvaluationHandler(evt, game.bot.client)
-			/* If the guess was incorrect, we're done. */
-			if game.teamTurn != game.bot.client.team ||
-			   game.roleTurn != game.bot.client.role {
+			if !GuessEvaluation(guessResponse, game.bot.client) {
+				/* Incorrect guess, or game over. */
+				if game != nil && game.active {
+					return game.botPlay(GiveClueEvent{})
+				}
 				return nil
 			}
 		}
@@ -283,16 +306,15 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 }
 
 func (game *Game) validGame() bool {
-	if !game.actions.validate() {
-		return false
+	return game.actions.validate()
+}
+
+func (game *Game) removePlayer(name string) {
+	if player, exists := game.players[name]; exists {
+		game.actions[player.team][player.role] -= 1
+		game.playerActions[player.team][player.role] -= 1
+		delete(game.players, name)
 	}
-	for _, t := range []Team{ red, blue } {
-		if (game.actions[t][cluegiver] > 1 || game.actions[t][guesser] > 1) {
-			/* Team has more than one guesser or more than one cluegiver */
-			return false
-		}
-	}
-	return true
 }
 
 func (game *Game) removeGame(message any) bool {
@@ -344,7 +366,7 @@ func getCards() Deck {
 	return cards
 }
 
-func getActions(players ClientList, bots *BotActions) Actions {
+func getPlayerActions(players ClientList) Actions {
 	actions := Actions{
 		red: {
 			cluegiver: 0,
@@ -356,20 +378,34 @@ func getActions(players ClientList, bots *BotActions) Actions {
 		},
 	}
 
-	// count player actions
 	for _, player := range players {
 		actions[player.team][player.role] += 1
 	}
+	return actions
+}
 
-	// count bot actions
-	if bots != nil {
-		for _, t := range []Team{ red, blue } {
-			for _, r := range []Role{ guesser, cluegiver } {
-				if bots.hasTeamAction(t, r) {
-					actions[t][r] += 1
-				}
+func getActions(players ClientList, bots *BotActions) (Actions, Actions) {
+	allActions := Actions{
+		red: {
+			cluegiver: 0,
+			guesser: 0,
+		},
+		blue: {
+			cluegiver: 0,
+			guesser: 0,
+		},
+	}
+	// Go doesn't have a "deep copy" function
+	playerActions := getPlayerActions(players)
+
+	// add bot actions to player actions
+	for _, t := range []Team{ red, blue } {
+		for _, r := range []Role{ guesser, cluegiver } {
+			allActions[t][r] = playerActions[t][r]
+			if bots != nil && bots.hasTeamAction(t, r) {
+				allActions[t][r] += 1
 			}
 		}
 	}
-	return actions
+	return playerActions, allActions
 }

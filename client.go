@@ -137,12 +137,9 @@ func (c *Client) writeMessages() {
 			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
 				log.Println("failed to send message: ", err)
 			}
-			log.Println("message sent")
 
 		// Heartbeats
 		case <-ticker.C:
-			log.Println("ping")
-
 			// Send a Ping to the Client
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
 				log.Println("writemsg err: ", err)
@@ -154,6 +151,5 @@ func (c *Client) writeMessages() {
 
 // Heartbeats - reset the timer
 func (c *Client) pongHandler(pongMsg string) error {
-	log.Println("pong")
 	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
 }

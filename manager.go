@@ -38,7 +38,7 @@ func NewManager(ctx context.Context) *Manager {
 		clients:  make(ClientList),
 		chats:    make(ChatRooms),
 		games:    make(GameList),
-		handlers: make(map[string]EventHandler),
+		handlers: make(EventHandlerList),
 		otps:     NewRetentionMap(ctx, 5*time.Second),
 	}
 
@@ -124,8 +124,7 @@ func AbortGameHandler(event Event, c *Client) error {
 		return err
 	}
 
-	delete(game.players, c.username)
-	c.game = nil
+	game.removePlayer(c.username)
 	if len(game.players) == 0 {
 		if !game.removeGame(nil) {
 			return fmt.Errorf("could not remove game %v", c.chatroom)
@@ -134,7 +133,6 @@ func AbortGameHandler(event Event, c *Client) error {
 	}
 
 	if game.active {
-		game.actions[c.team][c.role] -= 1
 		if !game.validGame() {
 			/* TODO: consider having a bot fill in for any unfilled role
 			as long as there is at least one remaining human player. */
@@ -147,6 +145,12 @@ func AbortGameHandler(event Event, c *Client) error {
 
 func EndTurnHandler(event Event, c *Client) error {
 	game := c.game
+	if game == nil {
+		return fmt.Errorf("game does not exist")
+	}
+	if !game.active {
+		return fmt.Errorf("inactive game")
+	}
 	game.changeTurn()
 
 	payload := EndTurnEvent {
@@ -161,6 +165,12 @@ func EndTurnHandler(event Event, c *Client) error {
 
 func GuessEvaluationHandler(event Event, c *Client) error {
 	game := c.game
+	if game == nil {
+		return fmt.Errorf("game does not exist")
+	}
+	if !game.active {
+		return fmt.Errorf("inactive game")
+	}
 	if c.team != game.teamTurn {
 		return errors.New("player team doesn't match team turn")
 	}
@@ -172,40 +182,55 @@ func GuessEvaluationHandler(event Event, c *Client) error {
 	if err := json.Unmarshal(event.Payload, &guessResponse); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
-	card := guessResponse.Guess
-	cardColor := game.cards[guessResponse.Guess]
-	guessResponse.Correct = game.evaluateGuess(cardColor)
-	guessResponse.GuessRemaining = game.guessRemaining
 	guessResponse.TeamColor = c.team
-	guessResponse.CardColor = cardColor
-	guessResponse.TeamTurn  = game.teamTurn
-	guessResponse.RoleTurn  = game.roleTurn
-	guessResponse.Score     = game.score
-
-	game.cards[card] = "guessed-" + cardColor
-
-	if err := game.notifyPlayers(EventMakeGuess, guessResponse); err != nil {
-		return err
-	}
-	if cardColor == deathCard {
-		t := c.team.Title()
-		game.removeGame(fmt.Sprintf("%v Team uncovers the Black Card. %v Team loses!", t, t))
-		return nil
-	}
-	if game.score[c.team] <= 0  {
-		game.removeGame(fmt.Sprintf("%v Team wins!", c.team.Title()))
-		return nil
-	}
-	if guessResponse.Correct && game.guessRemaining > 0 {
-		/* It's still the current guesser's turn.
-		   Short circuit the call to bots. */
+	if GuessEvaluation(guessResponse, c) {
+		/* It's still the current guesser's turn. */
 		return nil
 	}
 	return game.botPlay(GiveClueEvent{})
 }
 
+func GuessEvaluation(guessResponse GuessResponseEvent, c *Client) bool {
+	game := c.game
+	guess := guessResponse.Guess
+	if _, exists := game.cards[guess]; !exists {
+		return false
+	}
+	cardColor := game.cards[guess]
+	guessResponse.Correct = game.evaluateGuess(cardColor)
+	guessResponse.GuessRemaining = game.guessRemaining
+	guessResponse.CardColor = cardColor
+	guessResponse.TeamTurn  = game.teamTurn
+	guessResponse.RoleTurn  = game.roleTurn
+	guessResponse.Score     = game.score
+
+	game.cards[guess] = "guessed-" + cardColor
+	game.notifyPlayers(EventMakeGuess, guessResponse)
+
+	if cardColor == deathCard {
+		t := c.team.Title()
+		game.removeGame(fmt.Sprintf("%v Team uncovers the Black Card. %v Team loses!", t, t))
+		return false
+	}
+	if game.score[c.team] <= 0  {
+		game.removeGame(fmt.Sprintf("%v Team wins!", c.team.Title()))
+		return false
+	}
+	if guessResponse.Correct && game.guessRemaining > 0 {
+		/* It's still the current guesser's turn. */
+		return true
+	}
+	return false
+}
+
 func ClueHandler(event Event, c *Client) error {
 	game := c.game
+	if game == nil {
+		return fmt.Errorf("game does not exist")
+	}
+	if !game.active {
+		return fmt.Errorf("inactive game")
+	}
 
 	// if we're here, a clue was given; now it's the guesser's turn
 	game.roleTurn = guesser
@@ -236,7 +261,6 @@ func ClueHandler(event Event, c *Client) error {
 
 func ChatRoomHandler(event Event, c *Client) error {
 	var changeroom ChangeRoomEvent
-
 	if err := json.Unmarshal(event.Payload, &changeroom); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
@@ -300,7 +324,6 @@ func RoleChangeHandler(event Event, c *Client) error {
 
 func SendMessage(event Event, c *Client) error {
 	var chatevent SendMessageEvent
-
 	if err := json.Unmarshal(event.Payload, &chatevent); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
@@ -349,6 +372,9 @@ func packageMessage(messageType string, message any) (Event, error) {
 }
 
 func (m *Manager) makeChatRoom(name string) {
+	m.Lock()
+	defer m.Unlock()
+
 	if _, exists := m.chats[name]; exists {
 		return
 	}
@@ -360,15 +386,16 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) (*
 	if exists {
 		return game, nil
 	}
-	actions := getActions(players, bots)
-	if !actions.validate() {
+	playerActions, allActions := getActions(players, bots)
+	if !allActions.validate() {
 		return nil, fmt.Errorf("invalid actions")
 	}
 	game = &Game {
 		name: name,
 		players: maps.Clone(players),
 		cards: getCards(),
-		actions: actions,
+		actions: allActions,
+		playerActions: playerActions,
 		teamTurn: red,
 		roleTurn: cluegiver,
 		score: Score {
@@ -514,9 +541,7 @@ func (m *Manager) removeClient(client *Client) {
 
 	room := client.chatroom
 	if _, exists := m.games[room]; exists {
-		delete(m.games[room].players, client.username)
-		// remove the game if no more players
-		m.removeGame(room, nil)
+		m.games[room].removePlayer(client.username)
 	}
 	if _, exists := m.chats[room]; exists {
 		delete(m.chats[room], client.username)

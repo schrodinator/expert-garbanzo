@@ -11,8 +11,6 @@ Install third-party Go libraries:
 
 Generate a self-signed certificate by running `gencert.bash`
 
-Save the master password in a file called `password.txt` in the top-level directory.
-
 Start the server: `go run !(*_test).go`
 
 In a browser, navigate to: `https://localhost:8080`
@@ -23,7 +21,7 @@ To play a game, go to any chat room except for the lobby. The lobby is intended 
 
 A game must have (at least) one guesser and (at least) one cluegiver per team. These roles may be played by ChatBots. You may elect to play a cooperative game by filling both roles on only one team.
 
-Caution: While it is possible to have multiple players with the same role, this is currently untested, unreliable, and chaotic. It is a work in progress.
+Multiple players with the same role are permitted. You may elect to give yourself a (possibly unhelpful) helper bot by selecting a bot to fill the same role as you.
 
 ### AI Players
 
@@ -37,5 +35,3 @@ AI players are powered by OpenAI ChatGPT 3.5. Using AI players requires an API k
 Start the server locally (see above) and run Playwright **without** parallelism: `npx playwright test --workers=1`
 
 Or execute the tests for each browser type individually in `npx playwright test --ui`
-
-When running tests in parallel, one will usually randomly fail to log in; rerunning the test on its own is successful.

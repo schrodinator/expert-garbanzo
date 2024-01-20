@@ -9,21 +9,13 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-
-func setupTwoPlayerGame(t *testing.T, game *Game) {
-	t.Helper()
-
-	for _, r := range []Role{ cluegiver, guesser } {
-		game.actions[red][r] = 1
-	}
-}
-
 func setupFourPlayerGame(t *testing.T, game *Game) {
 	t.Helper()
 
 	for _, t := range []Team{ red, blue } {
 		for _, r := range []Role{ cluegiver, guesser } {
 			game.actions[t][r] = 1
+			game.playerActions[t][r] = 1
 		}
 	}
 }
@@ -232,8 +224,6 @@ func modGame(t *testing.T, numPlayers int, numGuess int) *Game {
 	game := manager.games["test"]
 	if numPlayers == 4 {
 		setupFourPlayerGame(t, game)
-	} else {
-		setupTwoPlayerGame(t, game)
 	}
 	game.roleTurn = guesser
 	game.guessRemaining = numGuess
@@ -517,16 +507,19 @@ func TestMakeBot(t *testing.T) {
 
 func TestBotPlay(t *testing.T) {
 	s, ws := setupWSTestServer(t)
+	defer s.Close()
+	defer ws.Close()
+
 	bot := &BotActions {
 		Cluegiver: TeamActions{
 			Red: true,
 		},
 	}
-	manager := setupDeck(t, ws, bot)
+	manager := setupWSTest(t, ws, bot)
 	game := manager.games["test"]
 	game.teamTurn = red
 	game.roleTurn = cluegiver
-	client := game.players["testClient"]
+	client := game.players["testClient1"]
 	go client.writeMessages()
 
 	response := "Clue: Measure\nNumber of words that " +
@@ -577,7 +570,4 @@ func TestBotPlay(t *testing.T) {
 	if c != expect {
 		t.Errorf("Expected: %#v\nGot: %#v", expect, c)
 	}
-
-	ws.Close()
-	s.Close()
 }
