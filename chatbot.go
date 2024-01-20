@@ -171,18 +171,12 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 	c := make(chan *ClueStruct)
 
 	go func(bot *Bot) () {
-		prompt := "You are playing a word game. In this game, " +
-			"your objective is to give a one-word clue that will " +
-			"help your team guess as many words as possible " +
-			"from your team's word list, while NOT guessing words " +
-			"from the opposing team's word list. The clue must not " +
-			"exactly match any of the words on the lists, nor may it " +
-			"be a direct derivative of any of the words (for example, " +
-			"it may not be a plural of any of the words). " +
-			"A good clue is a synonym or a related word that evokes as " +
-			"many words on your team's word list as possible, without " +
-			"evoking any of the opposing team's words. When prompted, " +
-			"reply with ONLY the following: " +
+		prompt := "We are playing the game CodeNames. " +
+		    "You are the Spymaster (clue giver) for your team. " +
+			"You must give a clue that helps your team identify " +
+			"as many words from your team's list as possible, " +
+			"while NOT incorrectly matching words from the other " +
+			"team's list. When prompted, reply with ONLY the following: " +
 			"your clue, the number of words from your team's list " +
 			"that match your clue, and the specific words " +
 			"that match your clue."
@@ -351,9 +345,10 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 	c := make(chan *ClueStruct)
 
 	go func(bot *Bot) () {
-		prompt := "You are playing a word game. Your teammate " +
-		"will give you a clue and a number. " +
-		"Choose that number of words from your word list that " +
+		prompt := "We are playing the game CodeNames. " +
+		"You are a field operative (a guesser). " +
+		"When given a clue and a number, " +
+		"choose that number of words from the word list that " +
 		"best match the clue. Reply with only those words, in " +
 		"ALL CAPITAL LETTERS."
 
