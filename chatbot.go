@@ -88,6 +88,9 @@ func NewBot(game *Game, ba *BotActions) *Bot {
 
 func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct, Team, Role) {
 	game := bot.game
+	if game == nil || !game.active {
+		return "", &ClueStruct{}, red, guesser
+	}
 	team := game.teamTurn
 	role := game.roleTurn
 	if game.score[team] <= 0 {
