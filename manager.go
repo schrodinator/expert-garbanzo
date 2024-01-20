@@ -425,6 +425,7 @@ func (m *Manager) removeGame(room string, message any) bool {
 		if game.active {
 			m.notifyClients(room, EventGameOver, message)
 			game.active = false
+			game.bot = nil
 		}
 		if len(game.players) == 0 {
 			delete(m.games, room)
