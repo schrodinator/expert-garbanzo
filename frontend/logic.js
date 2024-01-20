@@ -586,7 +586,11 @@ function updateScoreboard({score}) {
 function setMaxGuessLimit(teamTurn) {
     const loc = document.getElementById(`${teamTurn}score`);
     const val = parseInt(loc.innerText);
-    document.getElementById("number-input").setAttribute("max", val);
+    const numInput = document.getElementById("number-input");
+    numInput.setAttribute("max", val);
+    if (numInput.value > val) {
+        numInput.value = val;
+    }
 }
 
 function disableCardEvents(word) {
