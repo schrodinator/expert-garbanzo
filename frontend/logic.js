@@ -132,7 +132,7 @@ function disableBotCheckboxes(boolean) {
     let boxes = bots.querySelectorAll('input[type="checkbox"]');
     for (let i = 0; i < boxes.length; i++) {
         boxes[i].disabled = boolean;
-        if (boolean === false) {
+        if (!boolean) {
             boxes[i].checked = false;
         }
     }
@@ -358,8 +358,8 @@ function addParticipant(name) {
 
 function addParticipantsList(participantsList) {
     /* Expect particpantsList to be sorted already. */
-    for (let i = 0; i < participantsList.length; i++) {
-        appendParticipantDiv(participantsList[i]);
+    for (const participant of participantsList) {
+        appendParticipantDiv(participant);
     }
 }
 
