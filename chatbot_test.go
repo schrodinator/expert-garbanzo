@@ -23,12 +23,12 @@ func ErrorContains(t *testing.T, out error, want error) bool {
     return strings.Contains(out.Error(), want.Error())
 }
 
-func getSomeCards() *Game {
-	game := &Game{}
-	game.score = Score {
-		red: 9,
-		blue: 8,
-	}
+func getSomeCards(t *testing.T, ba *BotActions) *Game {
+	t.Helper()
+	
+	manager := setupGame(t, nil, ba)
+	game := manager.games["test"]
+	game.players = nil
 	game.cards = Deck{
 		"AMAZON": "blue",
 		"BOOT": "blue",
@@ -56,7 +56,6 @@ func getSomeCards() *Game {
 		"VACUUM": "red",
 		"WATCH":"red",
 	}
-	game.teamTurn = red
 	return game
 }
 
@@ -208,14 +207,14 @@ func TestMakeClueReal(t *testing.T) {
 	}
 
 	token = getMasterPassword("gpt-secretkey.txt")
-	game := getSomeCards()
-	game.roleTurn = cluegiver
 	ba := &BotActions{
 		Cluegiver: TeamActions{
 			Red: true,
 		},
 	}
-	bot := NewBot(game, ba)
+	game := getSomeCards(t, ba)
+	game.roleTurn = cluegiver
+	bot := game.bot
 	clue := &ClueStruct{
 		word: "red",
 		capsWords: make([]string, 0),	
@@ -237,14 +236,14 @@ func TestMakeClueReal(t *testing.T) {
 }
 
 func TestMakeClueMock(t *testing.T) {
-	game := getSomeCards()
-	game.roleTurn = cluegiver
 	ba := &BotActions{
 		Cluegiver: TeamActions{
 			Red: true,
 		},
 	}
-	bot := NewBot(game, ba)
+	game := getSomeCards(t, ba)
+	game.roleTurn = cluegiver
+	bot := game.bot
 
 	type testStruct struct {
 		name        string
@@ -327,14 +326,14 @@ func TestMakeGuessReal(t *testing.T) {
 	}
 	
 	token = getMasterPassword("gpt-secretkey.txt")
-	game := getSomeCards()
-	game.roleTurn = guesser
 	ba := &BotActions{
 		Guesser: TeamActions{
 			Red: true,
 		},
 	}
-	bot := NewBot(game, ba)
+	game := getSomeCards(t, ba)
+	game.roleTurn = guesser
+	bot := game.bot
 	clue := &ClueStruct{
 		word: "Measure",
 		numGuess: 4,
@@ -354,14 +353,13 @@ func TestMakeGuessReal(t *testing.T) {
 }
 
 func TestMakeGuessMock(t *testing.T) {
-	game := getSomeCards()
-	game.roleTurn = guesser
 	ba := &BotActions{
 		Guesser: TeamActions{
 			Red: true,
 		},
 	}
-	bot := NewBot(game, ba)
+	game := getSomeCards(t, ba)
+	bot := game.bot
 	clue := &ClueStruct{
 		word: "Measure",
 		numGuess: 4,
@@ -397,14 +395,13 @@ func TestMakeGuessMock(t *testing.T) {
 }
 
 func TestBotPlayCluegiver(t *testing.T) {
-	game := getSomeCards()
-	game.roleTurn = cluegiver
 	ba := &BotActions{
 		Cluegiver: TeamActions{
 			Red: true,
 		},
 	}
-	bot := NewBot(game, ba)
+	game := getSomeCards(t, ba)
+	bot := game.bot
 
 	response := "Clue: Measure\nNumber of words that " +
 		"match the clue: 3\nWords that match the clue: " +
@@ -441,14 +438,13 @@ func TestBotPlayCluegiver(t *testing.T) {
 }
 
 func TestBotPlayGuesser(t *testing.T) {
-	game := getSomeCards()
-	game.roleTurn = guesser
 	ba := &BotActions{
-		Guesser: TeamActions{
+		Cluegiver: TeamActions{
 			Red: true,
 		},
 	}
-	bot := NewBot(game, ba)
+	game := getSomeCards(t, ba)
+	bot := game.bot
 
 	clue := GiveClueEvent {
 		Clue: "Measure",

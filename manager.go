@@ -337,8 +337,7 @@ func SendMessage(event Event, c *Client) error {
 		},
 	}
 
-	status := c.manager.notifyClients(c.chatroom, EventNewMessage, broadMessage)
-	return status
+	return c.manager.notifyClients(c.chatroom, EventNewMessage, broadMessage)
 }
 
 func (m *Manager) notifyClients(room string, messageType string, message any) error {
@@ -382,20 +381,18 @@ func (m *Manager) makeChatRoom(name string) {
 }
 
 func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) (*Game, error) {
-	game, exists := m.games[name]
-	if exists {
+	if game, exists := m.games[name]; exists {
 		return game, nil
 	}
-	playerActions, allActions := getActions(players, bots)
-	if !allActions.validate() {
+	actions := getActions(players, bots)
+	if !actions.validate() {
 		return nil, fmt.Errorf("invalid actions")
 	}
-	game = &Game {
+	game := &Game {
 		name: name,
 		players: maps.Clone(players),
 		cards: getCards(),
-		actions: allActions,
-		playerActions: playerActions,
+		actions: actions,
 		teamTurn: red,
 		roleTurn: cluegiver,
 		score: Score {

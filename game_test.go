@@ -15,7 +15,6 @@ func setupFourPlayerGame(t *testing.T, game *Game) {
 	for _, t := range []Team{ red, blue } {
 		for _, r := range []Role{ cluegiver, guesser } {
 			game.actions[t][r] = 1
-			game.playerActions[t][r] = 1
 		}
 	}
 }

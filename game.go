@@ -128,11 +128,9 @@ func (actions Actions) playerCount(team Team) int {
 	return actions[team][guesser] + actions[team][cluegiver]
 }
 func (actions Actions) validate() bool {
+	/* XOR. A team cannot have only one role filled. */
 	for _, t := range []Team{ red, blue } {
-		if (actions[t][cluegiver] == 0 && actions[t][guesser] != 0) ||
-		   (actions[t][cluegiver] != 0 && actions[t][guesser] == 0) {
-			/* Team does not have both a guesser and a cluegiver.
-			   Allow for a team with neither (i.e. single-team co-op game). */
+		if (actions[t][cluegiver] > 0) != (actions[t][guesser] > 0) {
 			return false
 		}
 	}
@@ -148,7 +146,6 @@ type Game struct {
 	cards           Deck
 	teamTurn        Team
 	actions         Actions
-	playerActions   Actions
 	roleTurn        Role
 	guessRemaining  int
 	score           Score
@@ -242,7 +239,7 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 	}
 	/* If human players share this role, tell them the bot's
 	   suggestion. Do not play for them. */
-	if game.playerActions[team][role] > 0 {
+	if game.actions[team][role] > 1 {
 		message := NewMessageEvent {
 			SentTime: time.Now(),
 			SendMessageEvent: SendMessageEvent {
@@ -312,7 +309,6 @@ func (game *Game) validGame() bool {
 func (game *Game) removePlayer(name string) {
 	if player, exists := game.players[name]; exists {
 		game.actions[player.team][player.role] -= 1
-		game.playerActions[player.team][player.role] -= 1
 		delete(game.players, name)
 	}
 }
@@ -366,7 +362,7 @@ func getCards() Deck {
 	return cards
 }
 
-func getPlayerActions(players ClientList) Actions {
+func getActions(players ClientList, bot *BotActions) Actions {
 	actions := Actions{
 		red: {
 			cluegiver: 0,
@@ -381,31 +377,16 @@ func getPlayerActions(players ClientList) Actions {
 	for _, player := range players {
 		actions[player.team][player.role] += 1
 	}
-	return actions
-}
-
-func getActions(players ClientList, bots *BotActions) (Actions, Actions) {
-	allActions := Actions{
-		red: {
-			cluegiver: 0,
-			guesser: 0,
-		},
-		blue: {
-			cluegiver: 0,
-			guesser: 0,
-		},
-	}
-	// Go doesn't have a "deep copy" function
-	playerActions := getPlayerActions(players)
 
 	// add bot actions to player actions
-	for _, t := range []Team{ red, blue } {
-		for _, r := range []Role{ guesser, cluegiver } {
-			allActions[t][r] = playerActions[t][r]
-			if bots != nil && bots.hasTeamAction(t, r) {
-				allActions[t][r] += 1
+	if bot != nil {
+		for _, t := range []Team{ red, blue } {
+			for _, r := range []Role{ guesser, cluegiver } {
+				if bot.hasTeamAction(t, r) {
+					actions[t][r] += 1
+				}
 			}
 		}
 	}
-	return playerActions, allActions
+	return actions
 }

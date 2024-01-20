@@ -106,7 +106,10 @@ func (bot *Bot) Play(clue GiveClueEvent) (string, *ClueStruct, Team, Role) {
 		eventName := ""
 		switch role {
 		case cluegiver:
-			if game.playerActions[team][role] == 0 {
+			/* Notify all players that we're waiting for
+			   the bot response. Only do so if this role
+			   is not also filled by a human player. */
+			if game.actions[team][role] == 1 {
 				game.notifyPlayers(EventBotWait, nil)
 			}
 			eventName = EventGiveClue
