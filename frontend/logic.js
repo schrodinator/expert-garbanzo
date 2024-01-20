@@ -100,7 +100,6 @@ const guesserRole = "guesser";
 const cluegiverRole = "cluegiver";
 const defaultTeam = "red";
 const defaultRole = guesserRole;
-const deathCard = "black";
 const botWaitMsg = "Waiting for ChatBot...";
 
 let conn;  // websocket connection
@@ -234,8 +233,9 @@ function sortCards(how) {
                     align[color] = [word];
                 }
             }
-            const colorOrder = ["white", "red", "blue", deathCard, "neutral",
-                                "guessed", "guessed red", "guessed blue", "guessed neutral"];
+            const colorOrder = ["white", "red", "blue", "black", "neutral",
+                                "guessed", "guessed red", "guessed blue", "guessed neutral",
+                                "guessed black"];
             colorOrder.forEach(function (color) {
                 if (align.hasOwnProperty(color)) {
                     align[color].forEach(function (word) {
@@ -840,6 +840,7 @@ function gameOverHandler(message) {
     if (message !== null && message !== "") {
         alert(message);
     }
+    disableAllCardEvents();
     document.getElementById("end-turn").style.visibility = "hidden";
     const turnElement = document.getElementById("turn");
     turnElement.innerHTML = "Game Over";
