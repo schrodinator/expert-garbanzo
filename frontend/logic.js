@@ -741,7 +741,7 @@ function giveClue() {
 
 function clueHandler(payload) {
     const clueEvent = Object.assign(new GiveClueEvent, payload);
-    const {teamColor, clue, numCards} = clueEvent;
+    const {teamColor, clue, numCards, from} = clueEvent;
     const numguess = document.getElementById("numguess");
 
     let msg = clue;
@@ -753,6 +753,7 @@ function clueHandler(payload) {
     }
 
     document.getElementById("clue").innerHTML = msg;
+    appendToChat(`<span style="color:${teamColor}">${from} gives clue</span> ${clue}`);
 
     whoseTurn(teamColor, guesserRole);
 }
