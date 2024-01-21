@@ -3,7 +3,7 @@ This started as a chat app using websockets, based on ProgrammingPercy's tutoria
 Now it's a game, a knockoff of [CodeNames](https://boardgamegeek.com/boardgame/178900/codenames), with AI players courtesy of ChatGPT 3.5.
 
 ### Running locally
-
+#### Linux
 Install third-party Go libraries:
 - `go get github.com/gorilla/websocket`
 - `go get github.com/google/uuid`
@@ -14,6 +14,13 @@ Generate a self-signed certificate by running `gencert.bash`
 Start the server: `go run !(*_test).go`
 
 In a browser, navigate to: `https://localhost:8080`
+
+#### Docker
+Alternately, use the provided Dockerfile to create a container. From the directory containing the Dockerfile and source code:
+
+`docker build -t expert-garbanzo .`
+
+`docker run -p 8080:8080 expert-garbanzo`
 
 ### Starting a Game
 
