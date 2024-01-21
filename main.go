@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
-var token string
-
-/* Print ChatGPT responses to stdout. */
-var verbose bool
+var (
+	token string
+	verbose bool
+)
 
 const (
 	defaultChatRoom = "lobby"
@@ -20,18 +21,19 @@ const (
 )
 
 func main() {
+	/* Log ChatGPT responses */
 	verbose = true
-	token = getMasterPassword("gpt-secretkey.txt")
 
+	token = getGPTToken("gpt-secretkey.txt")
 	setupAPI()
-
-	log.Fatal(http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil))
+	log.Fatal().Err(http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil))
 }
 
-// At the point where you start running multiple instances, it is common to include
-// Redis or RabbitMQ to allow distributed messages for the websockets.
-// You would then listen on the PubSub schema used and push messages on RabbitMQ/Redis,
-// then read from those topics and push onto the Websockets.
+/* CodeNames as a Service: If you wanted to make this S C A L E...
+   At the point where you start running multiple instances, it is common to include
+   Redis or RabbitMQ to allow distributed messages for the websockets.
+   You would then listen on the PubSub schema used and push messages on RabbitMQ/Redis,
+   then read from those topics and push onto the Websockets. */
 func setupAPI() {
 	ctx := context.Background()
 
@@ -44,17 +46,17 @@ func setupAPI() {
 	http.HandleFunc("/login", manager.loginHandler)
 }
 
-func getMasterPassword(path string) string {
+func getGPTToken(path string) string {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println("Error opening password.txt:", err)
+		log.Error().Err(err).Msg(fmt.Sprintf("Error opening %v", path))
 		return ""
 	}
 	defer file.Close() // Close the file when we're done
 
 	pword, err := io.ReadAll(file)
 	if err != nil {
-		fmt.Println("Error reading password.txt:", err)
+		log.Error().Err(err).Msg(fmt.Sprintf("Error reading %v", path))
 		return ""
 	}
 	return string(pword)

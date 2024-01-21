@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"sort"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -79,7 +79,7 @@ func (c *Client) readMessages() {
 
 	// Heartbeats
 	if err := c.connection.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
-		log.Println(err)
+		log.Error().Err(err)
 		return
 	}
 	c.connection.SetPongHandler(c.pongHandler)
@@ -101,12 +101,12 @@ func (c *Client) readMessages() {
 		var request Event
 
 		if err := json.Unmarshal(payload, &request); err != nil {
-			log.Printf("error unmarshalling event: %v", err)
+			log.Error().Err(err).Msg("error unmarshalling event")
 			break
 		}
 
 		if err := c.manager.routeEvent(request, c); err != nil {
-			log.Println(err)
+			log.Error().Str("event", request.Type).Err(err)
 		}
 	}
 }
@@ -123,26 +123,26 @@ func (c *Client) writeMessages() {
 		case message, ok := <-c.egress:
 			if !ok {
 				if err := c.connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
-					log.Println("connection closed: ", err)
+					log.Error().Err(err).Msg("error closing websocket")
 				}
 				return
 			}
 
 			data, err := json.Marshal(message)
 			if err != nil {
-				log.Println(err)
+				log.Error().Err(err)
 				return
 			}
 
 			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
-				log.Println("failed to send message: ", err)
+				log.Error().Err(err).Msg("failed to send message over websocket")
 			}
 
 		// Heartbeats
 		case <-ticker.C:
 			// Send a Ping to the Client
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
-				log.Println("writemsg err: ", err)
+				log.Error().Err(err).Msg("failed to send message over websocket")
 				return
 			}
 		}

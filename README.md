@@ -8,6 +8,7 @@ Install third-party Go libraries:
 - `go get github.com/gorilla/websocket`
 - `go get github.com/google/uuid`
 - `go get github.com/sashabaranov/go-openai`
+- `go get github.com/rs/zerolog/log`
 
 Generate a self-signed certificate by running `gencert.bash`
 

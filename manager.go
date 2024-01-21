@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"maps"
 	"net/http"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -462,12 +462,12 @@ func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("new connection")
+	log.Info().Msg("new connection")
 
 	// upgrade regular http connection into websocket
 	conn, err := websocketUpgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		log.Error().Err(err).Msg("could not upgrade to websocket")
 		return
 	}
 
@@ -524,7 +524,7 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(resp)
 	if err != nil {
-		log.Println(err)
+		log.Error().Err(err)
 		return
 	}
 

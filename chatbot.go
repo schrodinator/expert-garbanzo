@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -187,13 +188,13 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 		for {
 			clue, ok := <-c
 			if !ok {
-				clue.err = fmt.Errorf("clue channel error")
+				log.Error().Msg("clue channel error")
 				break
 			}
 
 			w := bot.game.cards.getClueWords(bot.game.teamTurn)
 			if len(w.myTeam) == 0 || len(w.others) == 0 {
-				clue.err = fmt.Errorf("makeClue error: got zero-length word list")
+				log.Error().Msg("makeClue error: got zero-length word list")
 				break
 			}
 
@@ -202,15 +203,20 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 
 			resp, err := bot.askGPT3Dot5(prompt, message)
 			if err != nil {
-				clue.err = fmt.Errorf("ChatCompletion error: %v", err)
+				log.Error().Err(err)
 				break
 			}
-
 			respStr := resp.Choices[0].Message.Content
-
 			parseGPTResponse(respStr, clue)
 			if verbose {
-				fmt.Println(clue.response)
+				log.Info().
+					Str("botType", "cluegiver").
+					Str("teamWords", w.myTeam).
+					Str("otherWords", w.others).
+					Str("clue", clue.word).
+					Int("numGuess", clue.numGuess).
+					Str("match", clue.match).
+					Msg(respStr)
 			}
 			c <- clue
 		}
@@ -381,7 +387,13 @@ func (bot *Bot) makeGuess() chan *ClueStruct {
 			clue.response = resp.Choices[0].Message.Content
 			clue.capsWords, clue.err = findGuessWords(clue.response)
 			if verbose {
-				fmt.Println(clue.response)
+				log.Info().
+					Str("botType", "guesser").
+					Str("words", words).
+					Str("clue", clue.word).
+					Int("numGuess", clue.numGuess).
+					Str("guess", strings.Join(clue.capsWords, ",")).
+					Msg(clue.response)
 			}
 			c <- clue
 		}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 const totalNumCards = 25
@@ -234,7 +236,7 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 	}
 	eventType, clueStruct, team, role := game.bot.Play(clue)
 	if eventType == "" || clueStruct == nil {
-		// TODO: better handling of missing bot response
+		// TODO: better handling of missing bot response. Retry?
 		return nil
 	}
 	/* If human players share this role, tell them the bot's
@@ -322,7 +324,7 @@ func readDictionary(filePath string) error {
 	if len(dictionary) == 0 {
 		file, err := os.Open(filePath)
 		if err != nil {
-			fmt.Printf("Failed to open file at path %v: %v", filePath, err)
+			log.Error().Err(err).Msg(fmt.Sprintf("Failed to open file at path %v", filePath))
 			return err
 		}
 		defer file.Close()
@@ -335,7 +337,7 @@ func readDictionary(filePath string) error {
 		dictLen = len(dictionary)
 
 		if err := scanner.Err(); err != nil {
-			fmt.Println("Failed to parse dictionary:", err)
+			log.Error().Err(err).Msg("Failed to parse dictionary:")
 			return err
 		}
 	}

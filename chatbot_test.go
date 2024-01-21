@@ -206,7 +206,7 @@ func TestMakeClueReal(t *testing.T) {
 		t.Skip("Real ChatGPT test skipped in short mode")
 	}
 
-	token = getMasterPassword("gpt-secretkey.txt")
+	token = getGPTToken("gpt-secretkey.txt")
 	ba := &BotActions{
 		Cluegiver: TeamActions{
 			Red: true,
@@ -325,7 +325,7 @@ func TestMakeGuessReal(t *testing.T) {
 		t.Skip("Real ChatGPT test skipped in short mode")
 	}
 	
-	token = getMasterPassword("gpt-secretkey.txt")
+	token = getGPTToken("gpt-secretkey.txt")
 	ba := &BotActions{
 		Guesser: TeamActions{
 			Red: true,
