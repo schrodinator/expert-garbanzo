@@ -253,11 +253,19 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 		game.notifySomePlayers(team, role, EventNewMessage, message)
 		return nil
 	}
+
 	switch eventType {
 	case EventMakeGuess:
 		/* The bot could/should return multiple guesses. */
 		for _, guess := range clueStruct.capsWords {
+			/* Bots will guess words that do not exist in the game. */
 			if _, exists := game.cards[guess]; !exists {
+				continue
+			}
+			/* Bots will guess words that were already guessed,
+			   even though they were not included in the word list
+			   sent to the bot (see above). */
+			if strings.HasPrefix(game.cards[guess], "guess") {
 				continue
 			}
 			guessResponse := GuessResponseEvent {
