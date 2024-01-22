@@ -310,8 +310,12 @@ func (game *Game) validGame() bool {
 
 func (game *Game) removePlayer(name string) {
 	if player, exists := game.players[name]; exists {
+		player.game = nil
 		game.actions[player.team][player.role] -= 1
 		delete(game.players, name)
+	}
+	if len(game.players) == 0 {
+		delete(game.manager.games, game.name)
 	}
 }
 

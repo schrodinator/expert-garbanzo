@@ -273,13 +273,18 @@ func ChatRoomHandler(event Event, c *Client) error {
 		return nil
 	}
 
+	// remove client from game, if there is one
+	if c.game != nil {
+		c.game.removePlayer(c.username)
+	}
+
 	// remove client from old chat room
 	delete(c.manager.chats[oldroom], c.username)
 
 	// notify old chat room that client has left
 	c.manager.notifyClients(oldroom, EventExitRoom, event.Payload)
 
-	// record whether there is a game in progress
+	// record whether there is a game in progress in the new room
 	changeroom.GameInProgress = false
 	if _, exists:= c.manager.games[newroom]; exists {
 		if len(c.manager.games[newroom].players) > 0 {

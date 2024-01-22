@@ -416,10 +416,9 @@ function changeChatRoom() {
         newchat.value = selectedChat;
         return false;
     }
+    currentGame = null;
     removeAllParticipants();
-    if (currentGame !== null) {
-        abortGame();
-    }
+    document.getElementById("gameboard-container").hidden = true;
     return false;
 }
 
@@ -467,6 +466,12 @@ function notifyRoomEntry(payload) {
             document.getElementById("newgame-button").disabled = true;
             document.getElementById("newgame-button").hidden = true;
             appendToChat(`** Game in progress **`);
+        } else {
+            document.getElementById("team").disabled = false;
+            document.getElementById("role").disabled = false;
+            disableBotCheckboxes(false);
+            document.getElementById("newgame-button").disabled = false;
+            document.getElementById("newgame-button").hidden = false;
         }
     } else {
         message += `the room.`;
