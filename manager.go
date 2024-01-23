@@ -207,15 +207,22 @@ func GuessEvaluation(guessResponse GuessResponseEvent, c *Client) bool {
 	game.cards[guess] = "guessed-" + cardColor
 	game.notifyPlayers(EventMakeGuess, guessResponse)
 
+	if cardColor == "neutral" {
+		return false
+	}
+
 	if cardColor == deathCard {
 		t := c.team.Title()
 		game.removeGame(fmt.Sprintf("%v Team uncovers the Black Card. %v Team loses!", t, t))
 		return false
 	}
-	if game.score[c.team] <= 0  {
-		game.removeGame(fmt.Sprintf("%v Team wins!", c.team.Title()))
+
+	t := Team(cardColor)
+	if game.score[t] <= 0  {
+		game.removeGame(fmt.Sprintf("%v Team wins!", t.Title()))
 		return false
 	}
+	
 	if guessResponse.Correct && game.guessRemaining > 0 {
 		/* It's still the current guesser's turn. */
 		return true
