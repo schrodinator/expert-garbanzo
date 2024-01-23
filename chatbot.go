@@ -243,7 +243,7 @@ func parseGPTResponse(respStr string, clue *ClueStruct) {
 }
 
 func parseGPTResponseNumber(respStr string) (int, error) {
-	numRegex := regexp.MustCompile("[0-9]+")
+	numRegex := regexp.MustCompile(`\b[0-9]+\b`)
 	nums := numRegex.FindAllString(respStr, 1)
 	if nums == nil {
 		return -1, fmt.Errorf("could not parse number in ChatCompletion response: %v", respStr)

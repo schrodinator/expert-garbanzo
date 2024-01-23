@@ -87,6 +87,15 @@ func TestParseGPTResponseNumber(t *testing.T) {
 	if num != -1 {
 		t.Errorf("Got %v, expected -1", num)
 	}
+
+	respStr = "K9 10"
+	num, err = parseGPTResponseNumber(respStr)
+	if err != nil {
+		t.Error(err)
+	}
+	if num != 10 {
+		t.Errorf("Got %v, expected 10", num)
+	}
 }
 
 func TestParseGPTResponseClue(t *testing.T) {
