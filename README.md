@@ -4,13 +4,7 @@ Now it's a game, a knockoff of [CodeNames](https://boardgamegeek.com/boardgame/1
 
 ### Running locally
 #### Linux
-Install third-party Go libraries:
-- `go get github.com/gorilla/websocket`
-- `go get github.com/google/uuid`
-- `go get github.com/sashabaranov/go-openai`
-- `go get github.com/rs/zerolog/log`
-
-Generate a self-signed certificate by running `gencert.bash`
+If you do not have a server certificate, generate a self-signed certificate and key by running `gencert.bash`
 
 Start the server: `go run !(*_test).go`
 
@@ -21,7 +15,9 @@ Alternately, use the provided Dockerfile to create a container. From the directo
 
 `docker build -t expert-garbanzo .`
 
-`docker run -p 8080:8080 expert-garbanzo`
+`docker run -v <path on host>:/usr/src/app -p <host port>:8080 expert-garbanzo`
+* `<path on host>` is the full path to the directory containing your server certificate and key (server.crt and server.key)
+* `<host port>` is the port you want to expose on the host machine. Use 8080 to access the game at `https://localhost:8080`
 
 ### Starting a Game
 

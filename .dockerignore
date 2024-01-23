@@ -1,0 +1,7 @@
+server.crt
+server.key
+gencert.bash
+package*json
+playwright*
+node_modules/
+test-results/
