@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	pongWait     = 20 * time.Second
-	pingInterval = pongWait * 9 / 10
+	pongWait     = 10 * time.Second
+	pingInterval = 5 * time.Second
 )
 
 type Participant struct {
@@ -117,6 +117,7 @@ func (c *Client) writeMessages() {
 	}()
 
 	ticker := time.NewTicker(pingInterval)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -135,14 +136,14 @@ func (c *Client) writeMessages() {
 			}
 
 			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
-				log.Error().Err(err).Msg("failed to send message over websocket")
+				log.Error().Err(err).Msg("failed to send TextMessage over websocket")
 			}
 
 		// Heartbeats
 		case <-ticker.C:
 			// Send a Ping to the Client
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
-				log.Error().Err(err).Msg("failed to send message over websocket")
+				log.Error().Err(err).Msg("failed to send PingMessage over websocket")
 				return
 			}
 		}
