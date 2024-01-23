@@ -108,6 +108,16 @@ func (d Deck) getGuessWords() string {
 	return strings.Join(words, ", ")
 }
 
+func (d Deck) getUnrevealedCards() Deck {
+	unrevealed := make(Deck)
+	for card, color := range d {
+		if !strings.HasPrefix(color, "guess") {
+			unrevealed[card] = color
+		}
+	}
+	return unrevealed
+}
+
 func (d Deck) whiteCards() Deck {
 	whiteDeck := make(Deck, totalNumCards)
 	for card := range d {
@@ -327,8 +337,8 @@ func (game *Game) removePlayer(name string) {
 	}
 }
 
-func (game *Game) removeGame(message any) bool {
-	return game.manager.removeGame(game.name, message)
+func (game *Game) removeGame(message ...string) bool {
+	return game.manager.removeGame(game.name, message...)
 }
 
 

@@ -92,6 +92,13 @@ class EndTurnEvent {
     }
 }
 
+class GameOverEvent {
+    constructor(message, cards) {
+        this.message = message
+        this.cards = cards
+    }
+}
+
 const totalNumCards = 25;
 const colors = ["#ff0000", "#ff8c00", "#0000ff", "#005a9c", "#00ff00",
                 "#964b00", "#800080", "#ff69b4", "#000000", "#808080"];
@@ -641,6 +648,20 @@ function markGuessedCard({guess, cardColor}) {
     return false;
 }
 
+function revealUnguessedCards(unguessed) {
+    if (currentGame === null || userRole !== "guesser" || unguessed.size == 0) {
+        return;
+    }
+    Object.assign(currentGame.cards, unguessed);
+    for (let i = 0; i < totalNumCards; i++) {
+        const card = document.getElementById(`card-${i}`);
+        if (!card.className.includes("guessed")) {
+            const word = card.innerText;
+            card.className = `card ${unguessed[word]}`;
+        }
+    }
+}
+
 function routeEvent(event) {
     if (event.type === undefined) {
         alert("no type field in the event");
@@ -845,10 +866,11 @@ function connectWebsocket(otp, room) {
     }
 }
 
-function gameOverHandler(message) {
+function gameOverHandler(payload) {
+    let msg = Object.assign(new GameOverEvent, payload);
     gameInProgress = false;
-    if (message !== null && message !== "") {
-        alert(message);
+    if (msg.message !== null && msg.message !== "") {
+        alert(msg.message);
     }
     disableAllCardEvents();
     document.getElementById("end-turn").style.visibility = "hidden";
@@ -864,6 +886,7 @@ function gameOverHandler(message) {
         document.getElementById("newgame-button").disabled = false;
         document.getElementById("newgame-button").hidden = false;
     }
+    revealUnguessedCards(msg.cards);
     appendToChat("** Game Over **");
 }
 

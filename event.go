@@ -54,8 +54,8 @@ type NewGameRequestEvent struct {
 }
 
 type NewGameResponseEvent struct {
-	Cards      map[string]string  `json:"cards"`
-	TeamTurn   Team               `json:"teamTurn"`
+	Cards      Deck  `json:"cards"`
+	TeamTurn   Team  `json:"teamTurn"`
 }
 
 type PlayerAlignmentResponse struct {
@@ -89,4 +89,9 @@ type GuessResponseEvent struct {
 	Correct        bool   `json:"correct"`
 	GuessRemaining int    `json:"guessRemaining"`
 	Score          Score  `json:"score"`
+}
+
+type GameOverEvent struct {
+	Message  string  `json:"message"`
+	Cards    Deck    `json:"cards"`
 }

@@ -126,7 +126,7 @@ func AbortGameHandler(event Event, c *Client) error {
 
 	game.removePlayer(c.username)
 	if len(game.players) == 0 {
-		if !game.removeGame(nil) {
+		if !game.removeGame() {
 			return fmt.Errorf("could not remove game %v", c.chatroom)
 		}
 		return nil
@@ -137,7 +137,7 @@ func AbortGameHandler(event Event, c *Client) error {
 			/* TODO: consider having a bot fill in for any unfilled role
 			as long as there is at least one remaining human player. */
 			game.notifyPlayers(EventInvalidState, "Essential roles unfilled. Cannot continue the game.")
-			game.removeGame(nil)
+			game.removeGame()
 		}
 	}
 	return nil
@@ -424,14 +424,20 @@ func (m *Manager) makeGame(name string, players ClientList, bots *BotActions) (*
 }
 
 /* Return true if game was deleted. */
-func (m *Manager) removeGame(room string, message any) bool {
+func (m *Manager) removeGame(room string, message ...string) bool {
 	m.Lock()
 	defer m.Unlock()
 	
 	game := m.games[room]
 	if game != nil {
 		if game.active {
-			m.notifyClients(room, EventGameOver, message)
+			gameOverMsg := GameOverEvent{
+				Cards: game.cards.getUnrevealedCards(),
+			}
+			if len(message) > 0 {
+				gameOverMsg.Message = message[0]
+			}
+			m.notifyClients(room, EventGameOver, gameOverMsg)
 			game.active = false
 			game.bot = nil
 		}

@@ -363,6 +363,10 @@ test('play two-player game', async () => {
     await expect(page_clue.getByTestId('turn')).toContainText("Game Over");
     await expect(page_clue.getByTestId('clue')).toBeEmpty();
     await expect(page_clue.getByTestId('numguess')).toBeEmpty();
+    // After game ends, all cards are revealed
+    for (j = 0; j < 25; j++) {
+        await expect(page_guess.locator(`#card-${j}`)).not.toHaveClass(/white/);
+    }
 
     // Close all pages and contexts
     await page_clue.close();
