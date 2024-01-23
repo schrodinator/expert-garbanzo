@@ -497,8 +497,7 @@ func (m *Manager) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		OTP     string `json:"otp"`
-		Message string `json:"message"`
+		OTP string `json:"otp"`
 	}
 
 	var (
