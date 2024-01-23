@@ -16,7 +16,7 @@ Alternately, use the provided Dockerfile to create a container. From the directo
 `docker build -t expert-garbanzo .`
 
 `docker run -v <path on host>:/usr/src/app -p <host port>:8080 expert-garbanzo`
-* `<path on host>` is the full path to the directory containing your server certificate and key (server.crt and server.key)
+* `<path on host>` is the full path to the directory on the host machine containing your server certificate (server.crt), server private key (server.key), and ChatGPT API key (gpt-secretkey.txt)
 * `<host port>` is the port you want to expose on the host machine. Use 8080 to access the game at `https://localhost:8080`
 
 ### Starting a Game
