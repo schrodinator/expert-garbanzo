@@ -8,7 +8,7 @@ require github.com/google/uuid v1.4.0
 
 require (
 	github.com/rs/zerolog v1.31.0
-	github.com/sashabaranov/go-openai v1.17.8
+	github.com/sashabaranov/go-openai v1.19.3
 )
 
 require (
