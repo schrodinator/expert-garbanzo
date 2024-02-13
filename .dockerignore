@@ -6,3 +6,4 @@ package*json
 playwright*
 node_modules/
 test-results/
+external/

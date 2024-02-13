@@ -8,7 +8,8 @@ RUN go mod download && go mod verify
 COPY . ./
 RUN go build -v -o /usr/local/bin/app ./...
 
-EXPOSE 443
+RUN mkdir -p /usr/src/app/external
+
 EXPOSE 8080
 
 CMD ["app"]

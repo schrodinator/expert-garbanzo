@@ -1,10 +1,17 @@
+[expert-garbanzo.com](https://expert-garbanzo.com)
+
 This started as a chat app using websockets, based on ProgrammingPercy's tutorial ([YouTube](https://www.youtube.com/watch?v=pKpKv9MKN-E) / [GitHub](https://github.com/percybolmer/websocketsgo)).
 
 Now it's a game, a knockoff of [CodeNames](https://boardgamegeek.com/boardgame/178900/codenames), with AI players courtesy of ChatGPT 3.5.
 
 ### Running locally
 #### Linux
-If you do not have a server certificate, generate a self-signed certificate and key by running `gencert.bash`
+If you do not have a server certificate, generate a self-signed certificate and key by running `gencert.bash`. This creates the files `server.crt` and `server.key`.
+
+Inside the directory `external`, add the files:
+* `server.crt`: server certificate (for https)
+* `server.key`: server key (for https)
+* `gpt-secretkey.txt`: OpenAI ChatGPT API key (to use AI ChatBot players; see "AI Players" below)
 
 Start the server: `go run !(*_test).go`
 
@@ -15,8 +22,8 @@ Alternately, use the provided Dockerfile to create a container. From the directo
 
 `docker build -t expert-garbanzo .`
 
-`docker run -v <path on host>:/usr/src/app -p <host port>:8080 expert-garbanzo`
-* `<path on host>` is the full path to the directory on the host machine containing your server certificate (server.crt), server private key (server.key), and ChatGPT API key (gpt-secretkey.txt)
+`docker run -v <path on host>:/usr/src/app/external -p <host port>:8080 expert-garbanzo`
+* `<path on host>` is the full path to the directory on the host machine containing your credentials: server certificate (`server.crt`), server private key (`server.key`), and ChatGPT API key (`gpt-secretkey.txt`).
 * `<host port>` is the port you want to expose on the host machine. Use 8080 to access the game at `https://localhost:8080`
 
 ### Starting a Game

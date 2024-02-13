@@ -1,0 +1,9 @@
+# Add to this directory:
+#   server.crt: server certificate, for https (generate self-signed with gencert.bash or obtain from certificate provider)
+#   server.key: server private key, for https (generate self-signed with gencert.bash or obtain from certificate provider)
+#   gpt-secretkey.txt: OpenAI ChatGPT API key (obtain from platform.openai.com/api-keys)
+#
+# As far as git is concerned, ignore everything in this directory
+*
+# Except this file itself
+!.gitignore

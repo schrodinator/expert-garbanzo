@@ -24,9 +24,10 @@ func main() {
 	/* Log ChatGPT responses */
 	verbose = true
 
-	token = getGPTToken("gpt-secretkey.txt")
+	token = getGPTToken("external/gpt-secretkey.txt")
 	setupAPI()
-	log.Fatal().Err(http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil))
+	log.Fatal().Err(http.ListenAndServeTLS(
+		":8080", "external/server.crt", "external/server.key", nil))
 }
 
 /* CodeNames as a Service: If you wanted to make this S C A L E...
