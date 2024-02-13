@@ -38,7 +38,21 @@ func main() {
 func setupAPI() {
 	ctx := context.Background()
 
-	readDictionary("./codenames-wordlist.txt")
+	if _, err := os.Stat("external/wordlist.txt"); err == nil {
+		/* For use with Docker container. May choose to put custom
+		   wordlist in external volume mounted to container,
+		   overriding the default wordlist. */
+		if err := readWordList("external/wordlist.txt"); err != nil {
+			log.Fatal().Err(err).Msg("external wordlist error")
+		}
+	} else if _, err := os.Stat("wordlist.txt"); err == nil {
+		if err := readWordList("wordlist.txt"); err != nil {
+			log.Fatal().Err(err).Msg("wordlist error")
+		}
+	} else {
+		log.Fatal().Msg("wordlist.txt not found")
+	}
+
 
 	manager := NewManager(ctx)
 

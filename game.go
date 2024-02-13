@@ -7,15 +7,13 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 const totalNumCards = 25
 
 var (
-	dictionary []string
-	dictLen    int
+	wordList   []string
+	wordCount  int
 )
 
 type Team string
@@ -342,11 +340,10 @@ func (game *Game) removeGame(message ...string) bool {
 }
 
 
-func readDictionary(filePath string) error {
-	if len(dictionary) == 0 {
+func readWordList(filePath string) error {
+	if len(wordList) == 0 {
 		file, err := os.Open(filePath)
 		if err != nil {
-			log.Error().Err(err).Msg(fmt.Sprintf("Failed to open file at path %v", filePath))
 			return err
 		}
 		defer file.Close()
@@ -354,12 +351,14 @@ func readDictionary(filePath string) error {
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			word := scanner.Text()
-			dictionary = append(dictionary, word)
+			wordList = append(wordList, strings.ToUpper(word))
 		}
-		dictLen = len(dictionary)
+		wordCount = len(wordList)
+		if wordCount < 25 {
+			return fmt.Errorf("word list contains less than 25 words")
+		}
 
 		if err := scanner.Err(); err != nil {
-			log.Error().Err(err).Msg("Failed to parse dictionary:")
 			return err
 		}
 	}
@@ -375,7 +374,7 @@ func getCards() Deck {
 	    "neutral", "neutral", "neutral", "neutral", "neutral", "neutral", "neutral"}
 	cards := make(Deck, totalNumCards)
 	for i := 0; i < totalNumCards; i++ {
-		word := dictionary[rand.Intn(dictLen)]
+		word := wordList[rand.Intn(wordCount)]
 		// ensure each word is unique
 		if _, exists := cards[word]; exists {
 			i--

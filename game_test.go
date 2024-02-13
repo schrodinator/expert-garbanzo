@@ -80,7 +80,7 @@ func TestChangeTurn(t *testing.T) {
 
 /* Calling getCards() returns 25 cards. */
 func TestGetCards(t *testing.T) {
-	readDictionary("./codenames-wordlist.txt")
+	readWordList("./wordlist.txt")
 	cards := getCards()
 	if len(cards) != totalNumCards {
 		t.Errorf("not dealing with a full deck: %v cards", len(cards))

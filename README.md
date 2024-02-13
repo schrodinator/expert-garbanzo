@@ -5,25 +5,29 @@ This started as a chat app using websockets, based on ProgrammingPercy's tutoria
 Now it's a game, a knockoff of [CodeNames](https://boardgamegeek.com/boardgame/178900/codenames), with AI players courtesy of ChatGPT 3.5.
 
 ### Running locally
-#### Linux
-If you do not have a server certificate, generate a self-signed certificate and key by running `gencert.bash`. This creates the files `server.crt` and `server.key`.
-
-Inside the directory `external`, add the files:
+#### Files You'll Need
 * `server.crt`: server certificate (for https)
 * `server.key`: server key (for https)
 * `gpt-secretkey.txt`: OpenAI ChatGPT API key (to use AI ChatBot players; see "AI Players" below)
+* `wordlist.txt`: _Optional_. Custom word list. One word per line. Must contain at least 25 words.
+
+If you do not have a server certificate and key, generate a self-signed certificate and key by running `gencert.bash` in Linux shell. This creates the files `server.crt` and `server.key`.
+
+#### Linux
+Add the above Files You'll Need to the directory `external`.
 
 Start the server: `go run !(*_test).go`
 
 In a browser, navigate to: `https://localhost:8080`
 
 #### Docker
-Alternately, use the provided Dockerfile to create a container. From the directory containing the Dockerfile and source code:
+Alternately, use the provided Dockerfile to create a container. Inside the `expert-garbanzo` top-level directory, run:
 
 `docker build -t expert-garbanzo .`
 
+Then, from any directory:
 `docker run -v <path on host>:/usr/src/app/external -p <host port>:8080 expert-garbanzo`
-* `<path on host>` is the full path to the directory on the host machine containing your credentials: server certificate (`server.crt`), server private key (`server.key`), and ChatGPT API key (`gpt-secretkey.txt`).
+* `<path on host>` is the full path to the directory on the host machine containing the Files You'll Need (see above).
 * `<host port>` is the port you want to expose on the host machine. Use 8080 to access the game at `https://localhost:8080`
 
 ### Starting a Game

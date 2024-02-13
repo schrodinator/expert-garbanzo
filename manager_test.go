@@ -29,7 +29,7 @@ func setupGame(t *testing.T, ws *websocket.Conn, bots *BotActions) *Manager {
 	t.Helper()
 
 	manager := setupManager(t, ws)
-	readDictionary("./codenames-wordlist.txt")
+	readWordList("./wordlist.txt")
 	client1 := manager.clients["testClient1"]
 	client2 := manager.clients["testClient2"]
 	client1.chatroom = "test"
