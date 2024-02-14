@@ -111,6 +111,12 @@ func TestParseGPTResponseClue(t *testing.T) {
 	if word != "Returns" {
 		t.Errorf("Got %v, expected Returns", word)
 	}
+
+	respStr = "I will give the clue \"bobcat\", There is 1 word that matches the clue: KITTY."
+	word = parseGPTResponseClue(respStr)
+	if word != "bobcat" {
+		t.Errorf("Got %v, expected bobcat", word)
+	}
 }
 
 func TestParseGPTResponseMatches(t *testing.T) {

@@ -181,9 +181,9 @@ func (bot *Bot) makeClue() chan *ClueStruct {
 			"as many words from your team's list as possible, " +
 			"while NOT incorrectly matching words from the other " +
 			"team's list. When prompted, reply with ONLY the following: " +
-			"your clue, the number of words from your team's list " +
-			"that match your clue, and the specific words " +
-			"that match your clue."
+			"a ONE-WORD clue, the number of words from your team's list " +
+			"that match the clue, and the specific words from your team's list " +
+			"that match the clue."
 
 		for {
 			clue, ok := <-c
@@ -258,23 +258,34 @@ func parseGPTResponseNumber(respStr string) (int, error) {
 }
 
 func parseGPTResponseClue(respStr string) string {
+	/* For removing non-alphanumeric characters from the clue word. */
+	nonAlphaNum := regexp.MustCompile("[^a-zA-Z0-9 ]+")
+
+	/* Consider only the first line in the response string. */
 	line1, _, _ := strings.Cut(respStr, "\n")
-	words := strings.Split(line1, " ")
-	word := words[0]
-	if len(words) > 1 && strings.HasPrefix(words[0], "Clue") {
-		// e.g. "Clue: ..."
-		word = words[1]
-	} else if len(words) > 2 && strings.Compare(words[1], "clue") == 0 {
-		if len(words) == 3 {
-			// e.g. "My clue: ..." or "The clue: ..."
-			word = words[2]
-		} else {
-			// e.g. "My clue is ..." or "The clue is: ..."
-			word = words[3]
+
+	/* Split first line by spaces. */
+	words := strings.Fields(line1)
+	/* If there are multiple words in the first line of the response string,
+	   it may be a sentence like "The clue is: ..." or "I will give the clue ...".
+	   Try to find the word "clue". If the next word is "is", return the word
+	   after that; else return the word after "clue". */
+	if len(words) > 1 {
+		for i, word := range(words) {
+			w := strings.ToLower(word)
+			if w == "clue" || w == "clue:" {
+				if i < len(words) - 2 && (words[i + 1] == "is" || words[i + 1] == "is:") {
+					return nonAlphaNum.ReplaceAllString(words[i + 2], "")
+				}
+				if i < len(words) - 1 {
+					return nonAlphaNum.ReplaceAllString(words[i + 1], "")
+				}
+			}
 		}
 	}
-	nonAlphaNum := regexp.MustCompile("[^a-zA-Z0-9 ]+")
-	return nonAlphaNum.ReplaceAllString(word, "")
+
+	/* Default to returning the first word. */
+	return nonAlphaNum.ReplaceAllString(words[0], "")
 }
 
 func parseGPTResponseMatches(respStr string) string {
