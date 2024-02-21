@@ -291,10 +291,11 @@ func (game *Game) botPlay(clue GiveClueEvent) error {
 				return nil
 			}
 		}
-		/* We could get here if the bot returns fewer guesses
-		   than requested, or if we could not parse the guess
-		   words from the response. In this case, we need to
-		   end the bot's turn in order to continue the game. */
+		/* We could get here if the bot returned fewer guesses
+		   than requested, or if any guesses were invalid (words
+		   that weren't in the word list), or if we could not parse
+		   the guess words from the response. In this case, we need
+		   to end the bot's turn in order to continue the game. */
 		if game.teamTurn == game.bot.client.team &&
 		   game.roleTurn == game.bot.client.role {
 			EndTurnHandler(Event{}, game.bot.client)
